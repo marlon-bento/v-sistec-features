@@ -1,0 +1,3 @@
+export { 
+    SistecPlugin
+ } from './plugin';

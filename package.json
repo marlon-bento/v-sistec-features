@@ -1,0 +1,50 @@
+{
+  "name": "v-sistec-features",
+  "private": false,
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./core": {
+      "import": "./dist/core.js",
+      "types": "./dist/core.d.ts"
+    },
+    "./iframeCommunicator": {
+      "import": "./dist/iframeCommunicator.js",
+      "types": "./dist/iframeCommunicator.d.ts"
+    },
+    "./style.css": {
+      "import": "./dist/v-sistec-features.css",
+      "require": "./dist/v-sistec-features.css"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "vite build && tsc"
+  },
+  "peerDependencies": {
+    "@tabler/icons-vue": "^3.35.0",
+    "vue": "^3.2.0"
+  },
+  "devDependencies": {
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/github": "^11.0.6",
+    "@semantic-release/npm": "^12.0.2",
+    "@semantic-release/release-notes-generator": "^14.1.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "semantic-release": "^24.2.9",
+    "typescript": "~5.8.3",
+    "vite": "^7.1.7",
+    "vue": "^3.4.31"
+  },
+  "dependencies": {
+    "@tabler/core": "^1.4.0"
+  }
+}
