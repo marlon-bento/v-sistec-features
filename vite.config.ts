@@ -10,6 +10,7 @@ export default defineConfig({
       entry: {
         index: path.resolve(__dirname, 'src/index.ts'),
         core: path.resolve(__dirname, 'src/core/index.ts'),
+        vDataTable: path.resolve(__dirname, 'src/DatatableVue/index.ts'),
         iframeCommunicator: path.resolve(__dirname, 'src/iframeCommunicator/index.ts'),
       },
       // O nome é menos importante aqui, mas pode ser mantido

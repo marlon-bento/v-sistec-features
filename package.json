@@ -19,6 +19,10 @@
       "import": "./dist/core.js",
       "types": "./dist/core.d.ts"
     },
+    "./vDataTable": {
+      "import": "./dist/vDataTable.js",
+      "types": "./dist/vDataTable.d.ts"
+    },
     "./iframeCommunicator": {
       "import": "./dist/iframeCommunicator.js",
       "types": "./dist/iframeCommunicator.d.ts"
@@ -27,13 +31,14 @@
       "import": "./dist/v-sistec-features.css",
       "require": "./dist/v-sistec-features.css"
     }
+
   },
   "files": [
     "dist",
     "src"
   ],
   "scripts": {
-    "build": "vite build && tsc"
+    "build": "vue-tsc -b && vite build"
   },
   "peerDependencies": {
     "@tabler/icons-vue": "^3.35.0",
@@ -47,13 +52,17 @@
     "@semantic-release/github": "^11.0.6",
     "@semantic-release/npm": "^12.0.2",
     "@semantic-release/release-notes-generator": "^14.1.0",
-    "@vitejs/plugin-vue": "^6.0.1",
     "semantic-release": "^24.2.9",
-    "typescript": "~5.8.3",
+    "@types/node": "^24.6.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/tsconfig": "^0.8.1",
+    "sass-embedded": "^1.93.2",
+    "typescript": "~5.9.3",
     "vite": "^7.1.7",
-    "vue": "^3.4.31"
+    "vue-tsc": "^3.1.0"
   },
   "dependencies": {
-    "@tabler/core": "^1.4.0"
+    "@tabler/core": "^1.4.0",
+    "vue": "^3.5.22"
   }
 }

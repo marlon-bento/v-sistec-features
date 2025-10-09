@@ -1,0 +1,712 @@
+<template>
+  <div>
+    <div class="" :class="props.class_container">
+      <slot></slot>
+      <div class="" :class="props.class_content">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div class="text-secondary">
+            Mostrar
+            <div class="mx-2 d-inline-block">
+              <input class="form-control form-control-sm" @change="changePageSize" v-model="page_size" min="1" size="3"
+                aria-label="Número de nóticias por página" />
+            </div>
+            notícias
+          </div>
+          <slot name="fieldMiddle">
+
+          </slot>
+
+          <Search v-model:search="pagination.search" v-model:filter="pagination.filter" :list_filter="props.list_filter"
+            :item_use="item_use" @search="reSearch" />
+        </div>
+
+        <div v-if="props.use_checkbox && selected_items.length > 0"
+          class="alert alert-cyan d-flex justify-content-center align-items-center py-3" role="alert">
+          <h4 class="alert-title m-0"> <strong>Itens Selecionados:</strong> {{ selected_items.length }}</h4>
+          <button class="btn   btn-outline-danger  ms-3 bold " @click="selected_items = []">Limpar Seleção</button>
+        </div>
+        <template v-if="showLoadingState">
+          <template v-if="props.custom_loading">
+            <component :is="props.custom_loading" />
+          </template>
+          <template v-else>
+            <table class="table table-vcenter table-selectable" :class="props.class_table">
+              <thead>
+                <tr>
+                  <th v-for="col in columns" :key="col.field || col.header" :class="col.class_column">
+                    {{ col.header }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <template v-if="props.type_loading === 'placeholder'">
+                  <tr v-for="n in page_size" :key="'placeholder-' + n" class="placeholder-glow">
+                    <td v-for="col in columns" :key="col.field || col.header" :class="col.class_row">
+                      <span v-if="col.bodySlot" >
+                        <span class="placeholder col-8"></span>
+                      </span>
+                      <span :class="col.class_item" v-else-if="col.type === 'text'">
+                        <span class="placeholder col-8"></span>
+                      </span>
+                      <span v-else-if="col.type === 'date'">
+                        <span class="placeholder col-9"></span>
+                      </span>
+                      <div :class="col.class_item" v-else-if="col.type === 'html'">
+                        <div class="placeholder col-12"></div>
+                      </div>
+
+                      <div :class="col.class_item" v-else-if="col.type === 'img'">
+                        <div class="placeholder placeholder-img"></div>
+                      </div>
+
+                      <span class="text-danger erro-custom-container" v-else>tipo <span
+                          class="badge bg-orange text-white erro-custom-text">{{ col.type }}</span> não suportado
+                      </span>
+                    </td>
+                  </tr>
+                </template>
+                <template v-else-if="props.type_loading === 'spiner-table'">
+                  <tr v-for="n in page_size" :key="'placeholder-' + n">
+                    <td v-for="col in columns" :key="col.field || col.header" :class="col.class_row">
+                      <span v-if="col.bodySlot" >
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                      </span>
+                      <span :class="col.class_item" v-else-if="col.type === 'text'">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                      </span>
+                      <span v-else-if="col.type === 'date'">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                      </span>
+                      <div :class="col.class_item" v-else-if="col.type === 'html'">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                      </div>
+
+                      <div class="" :class="col.class_item" v-else-if="col.type === 'img'">
+                        <span class="placeholder-img d-flex justify-content-center align-items-center">
+                          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        </span>
+                      </div>
+
+                      <span class="text-danger erro-custom-container" v-else>tipo <span
+                          class="badge bg-orange text-white erro-custom-text">{{ col.type }}</span> não suportado
+                      </span>
+                    </td>
+                  </tr>
+
+                </template>
+                <template v-else-if="props.type_loading === 'spiner'">
+                  <tr v-for="n in page_size" :key="n">
+                    <td :colspan="columns.length" class="text-center p-0" style="border-bottom: none;">
+                      <div v-if="n === Math.floor(page_size / 2) + 1"
+                        class="d-flex flex-column justify-content-center align-items-center" style="height: 6rem;">
+                        <div class="spinner-border" style="width: 3rem; height: 3rem;" role="status">
+                        </div>
+                        <span class="mt-2">Carregando...</span>
+                      </div>
+                      <div v-else style="height: 3rem;"></div>
+                    </td>
+                  </tr>
+                </template>
+
+              </tbody>
+            </table>
+          </template>
+
+          <div v-if="attempt && attempt.current > 1" class="p-3 text-center text-secondary">
+            A conexão falhou. Tentando novamente... (Tentativa {{ attempt.current }} de {{ attempt.total }})
+          </div>
+        </template>
+        <div v-else-if="error" class="feedback-container text-center">
+          <h4 class="text-danger">Ocorreu um Erro</h4>
+          <p class="text-secondary" v-if="attempt">
+            Não foi possível carregar os dados após {{ attempt.total }} tentativa(s).
+          </p>
+          <p class="text-secondary" v-else>
+            Não foi possível carregar os dados. Verifique sua conexão.
+          </p>
+          <button class="btn btn-primary mt-2" @click="fetchDataWithDelay">
+            Tentar Novamente
+          </button>
+        </div>
+        <div class="table-responsive" v-else-if="items">
+          <div v-if="items.length > 0">
+            <table class="table table-vcenter table-selectable" :class="props.class_table">
+              <thead>
+                <tr>
+                  <th v-if="props.use_checkbox" class="w-1">
+                    <input class="form-check-input m-0" type="checkbox" ref="selectAllCheckbox"
+                      @change="toggleSelectAll" aria-label="Selecionar todos os itens na página" />
+                  </th>
+                  <th v-for="col in columns" :key="col.field || col.header" :class="col.class_column">
+                    {{ col.header }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in items" :key="item[props.item_key]">
+                  <td v-if="props.use_checkbox" class="w-1">
+                    <input class="form-check-input m-0" type="checkbox" :checked="isSelected(item)"
+                      @change="toggleItemSelection(item)" aria-label="Selecionar este item" />
+                  </td>
+                  <td v-for="col in columns" :key="col.field || col.header" :class="col.class_row">
+                    <component v-if="col.bodySlot" :is="col.bodySlot" :item="item" :is-selected="isSelected(item)" />
+                    <span :class="col.class_item" v-else-if="col.type === 'text'">
+                      {{
+                        limiteText(getSubItem(col.field, item, col.transform_function), col.limite_text ?? null)
+                      }}</span>
+
+                    <span v-else-if="col.type === 'date'">
+                      <span v-if="col.format === 'complete'">{{ new Date(getSubItem(col.field, item)).toLocaleString()
+                        }}</span>
+                      <span v-if="col.format === 'simple'"> {{ new Date(getSubItem(col.field,
+                        item)).toLocaleDateString()
+                      }} </span>
+                    </span>
+                    <div :class="col.class_item" v-else-if="col.type === 'html'" v-html="getSubItem(col.field, item)">
+                    </div>
+
+                    <div :class="col.class_item" v-else-if="col.type === 'img'">
+
+                      <div v-if="getSubItem(col.field, item)" v-bind="col.deactivate_img_preview ? {
+                        class: 'container-img'
+                      } :
+                        {
+                          onMouseover: (event) => handleMouseOver(event, getSubItem(col.field, item)),
+                          onMousemove: handleMouseMove,
+                          onMouseleave: handleMouseLeave,
+                          class: 'container-img container-img-preview'
+                        }">
+
+                        <img class="img-tamanho" :src="getSubItem(col.field, item)" />
+                        <img class="img-tamanho-cover" :src="getSubItem(col.field, item)" />
+                        <div class="bg-img"></div>
+                      </div>
+
+                    </div>
+                    <span class="text-danger erro-custom-container" v-else>tipo <span
+                        class="badge bg-orange text-white erro-custom-text">{{ col.type }}</span> não suportado</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+            <div v-else class="text-center p-4 text-secondary">
+              <p class="m-0">Nenhum item encontrado.</p>
+            </div>
+        </div>
+
+      </div>
+
+
+    </div>
+    <slot name="pagination" :pagination="pagination" :tradePage="fetchDataWithDelay" :error="error">
+      <div v-if="!error && pagination.count > 0" class="mt-3 px-3" :class="props.class_pagination">
+        <PaginationDatatable :filtering="true" :pagination="pagination" @tradePage="fetchDataWithDelay" />
+      </div>
+    </slot>
+
+    <div v-if="isHovering" class="image-preview-container" :style="previewStyle">
+      <img :src="previewSrc" alt="Preview" class="image-preview-large" />
+    </div>
+  </div>
+
+</template>
+
+<script setup lang="ts" generic="T extends Record<string, any>" >
+import { ref, provide, computed, watch, onMounted, nextTick, type Component, type Ref, type ComputedRef } from 'vue';
+
+import PaginationDatatable from './PaginationDatatable.vue';
+import Search from './SearchDatatable.vue';
+import { useImagePreview } from '../composables/useImagePreview';
+import { dataTableApiKey, type ColumnConfiguration, type PaginationObject } from '../keys';
+
+const { 
+  isHovering, 
+  previewSrc, 
+  previewStyle, 
+  handleMouseOver, 
+  handleMouseMove, 
+  handleMouseLeave 
+} = useImagePreview();
+
+interface VDataTableProps {
+  /* configuração do useApiFetch */
+  fetch: Function;
+  fetch_name?: string;
+  endpoint: string;
+  /* tipos de loading pré-definidos*/
+  type_loading?: 'placeholder' | 'spiner-table' | 'spiner';
+  /*recebe um component para loading*/
+  custom_loading?: Component | null;
+  /* retira os params default da requisição */
+  deactivate_default_params?: boolean;
+  /* nomes dos parâmetros para passar para o backend */
+  filter_param_name?: string;
+  search_param_name?: string;
+  page_param_name?: string;
+  page_size_param_name?: string;
+  add_params?: Object | Function;
+
+  /* usado para pegar os dados do useApiFetch */
+  data_key?: string;
+  total_key?: string;
+
+  /* filtros que irão ser usados */
+  list_filter?: any[];
+
+  /* props para estilizar o vdatatable */
+  class_table?: string;
+  class_content?: string;
+  class_container?: string;
+  class_pagination?: string;
+
+  /*
+  * tempo mínimo em ms para mostrar o loading para evitar telas piscando
+*/
+  min_loading_delay?: number;
+  /* 
+  - Número de tentativas automáticas em caso de falha.
+  - 1 significa que a requisição será feita apenas uma vez, sem retentativas.
+  - Valor padrão é 3.
+  */
+  retry_attempts?: number;
+  // Atraso em milissegundos entre cada tentativa
+  retry_delay?: number;
+
+  // Ativa a funcionalidade de seleção com checkboxes
+  use_checkbox?: boolean;
+  // Define qual propriedade do item será usada como chave única para a seleção.
+  item_key?: string;
+}
+
+interface ExposedFunctions {
+  execute: () => void;
+  pagination: Ref<PaginationObject>;
+  default_params: Record<string, any>;
+  selected_items: Ref<T[]>;
+  atLeastOneSelected: ComputedRef<boolean>;
+}
+
+// =======================================================
+// 1. DEFINIÇÃO DE PROPS COM VALORES PADRÃO
+// =======================================================
+const props = withDefaults(defineProps<VDataTableProps>(), {
+  fetch_name: '',
+  type_loading: 'placeholder',
+  custom_loading: null,
+  deactivate_default_params: false,
+  filter_param_name: 'filter',
+  search_param_name: 'search',
+  page_param_name: 'page',
+  page_size_param_name: 'page_size',
+  add_params: () => ({}),
+  data_key: 'results',
+  total_key: 'count',
+  list_filter: () => [],
+  class_table: '',
+  class_content: '',
+  class_container: '',
+  class_pagination: '',
+  min_loading_delay: 600,
+  retry_attempts: 3,
+  retry_delay: 2000,
+  use_checkbox: false,
+  item_key: 'id',
+});
+
+
+// =======================================================
+// 2. ESTADO REATIVO PRINCIPAL
+// =======================================================
+
+const page_size = ref<number>(5);
+const columns = ref<ColumnConfiguration[]>([]);
+const items = ref<T[]>([]) as Ref<T[]>;
+const totalItems = ref<number>(0);
+const selected_items = ref<T[]>([]) as Ref<T[]>;
+const selectAllCheckbox = ref<HTMLInputElement | null>(null);
+const isDelaying = ref<boolean>(false);
+const delayTimer = ref<ReturnType<typeof setTimeout> | null>(null);
+
+
+/*--------- definição de páginação ---------------*/
+const pagination = ref<PaginationObject>({
+  current_page: 0, // pagina atual
+  count: 0,  // total de itens
+  limit_per_page: 5, // limite de itens por página
+  search: '', // termo de busca
+  filter: '', // filtro selecionado
+})
+
+// =======================================================
+// 3. LÓGICA DA API (useFetch)
+// =======================================================
+const { data: response, pending, error, execute, attempt } = props.fetch(props.endpoint, {
+  params: () => {
+
+    if (props.deactivate_default_params) {
+      if (props.add_params && typeof props.add_params === 'function') {
+        return props.add_params();
+      }
+      return {
+        ...props.add_params,
+      };
+    }
+    else if (props.add_params && typeof props.add_params === 'function') {
+      return {
+        ...default_params.value,
+        ...props.add_params(),
+      }
+    }
+    return {
+      ...default_params.value,
+      ...props.add_params,
+    };
+  },
+  retry: props.retry_attempts,
+  retryDelay: props.retry_delay,
+  paramsReactives: false,
+  immediate: false,
+}, props.fetch_name);
+
+// =======================================================
+// 4. PROPRIEDADES COMPUTADAS
+// =======================================================
+const item_use = computed<number[]>(() => {
+  let use = [1]
+  if (props.list_filter.length > 0) {
+    use.push(2)
+  }
+  return use;
+});
+
+const default_params = computed<Record<string, any>>(() => ({
+  [props.page_param_name]: pagination.value.current_page + 1,
+  [props.page_size_param_name]: pagination.value.limit_per_page,
+  [props.search_param_name]: pagination.value.search || "",
+  [props.filter_param_name]: pagination.value.filter || "",
+}));
+
+// para controlar a exibição do loading
+const showLoadingState = computed<boolean>(() => {
+  return (pending.value || isDelaying.value)
+});
+
+
+// Helper para verificar se um item está selecionado, comparando pela chave única
+const isSelected = (item: T): boolean => {
+  const key = props.item_key;
+  return selected_items.value.some(selectedItem => selectedItem[key] === item[key]);
+};
+
+// Controla o estado do checkbox "selecionar todos"
+const selectAllState = computed<boolean | 'indeterminate'>(() => {
+  if (!items.value.length) return false;
+  const selectedOnPageCount = items.value.filter(item => isSelected(item)).length;
+  if (selectedOnPageCount === 0) return false;
+  if (selectedOnPageCount === items.value.length) return true;
+  return 'indeterminate';
+});
+
+// computed que mostra se pelo menos um item está selecionado
+const atLeastOneSelected = computed<boolean>(() => selected_items.value.length > 0);
+
+
+// =======================================================
+// 5. WATCHERS (Observadores)
+// =======================================================
+
+// observa o estado e atualiza a propriedade 'indeterminate'
+watch([selectAllState, selectAllCheckbox], ([newState]) => {
+  if (selectAllCheckbox.value) {
+    if (newState === 'indeterminate') {
+      console.log("entrei no indeterminate")
+      // Se o estado for indeterminado:
+      selectAllCheckbox.value.checked = false; // Ele não está "marcado"
+      selectAllCheckbox.value.indeterminate = true; // Ele está com o "traço"
+    } else {
+      selectAllCheckbox.value.checked = newState; // Define o estado marcado/desmarcado
+      selectAllCheckbox.value.indeterminate = false; // Remove o "traço"
+    }
+  }
+}, {
+  immediate: true,
+  flush: 'post'
+});
+
+watch(response, (newResponse: any) => {
+  if (newResponse) {
+    items.value = newResponse[props.data_key] || [];
+    totalItems.value = newResponse[props.total_key] || 0;
+    pagination.value.count = totalItems.value;
+  } else {
+    items.value = [];
+    totalItems.value = 0;
+  }
+}, { immediate: true });
+
+
+// =======================================================
+// 6. MÉTODOS
+// =======================================================
+
+// Função para marcar ou desmarcar todos os itens da página atual
+function toggleSelectAll(): void {
+  const pageItems = items.value;
+  if (!pageItems.length) return;
+
+  // Usa a propriedade computada para saber o estado atual
+  const currentState = selectAllState.value;
+
+  // Se TODOS ou ALGUNS estiverem selecionados, o clique irá LIMPAR a seleção da página.
+  if (currentState === true || currentState === 'indeterminate') {
+    const pageItemKeys = pageItems.map(item => item[props.item_key]);
+    selected_items.value = selected_items.value.filter(
+      selectedItem => !pageItemKeys.includes(selectedItem[props.item_key])
+    );
+  }
+  // Se NENHUM estiver selecionado, o clique irá SELECIONAR TODOS da página.
+  else { // currentState é false
+    pageItems.forEach(item => {
+      if (!isSelected(item)) {
+        selected_items.value.push(item);
+      }
+    });
+  }
+}
+
+// Função para marcar ou desmarcar um item individual
+function toggleItemSelection(item: T): void {
+  const key = props.item_key;
+  const index = selected_items.value.findIndex(selectedItem => selectedItem[key] === item[key]);
+
+  if (index > -1) {
+    selected_items.value.splice(index, 1); // Remove se já existe
+  } else {
+    selected_items.value.push(item); // Adiciona se não existe
+  }
+}
+
+function addColumn(colConfig: ColumnConfiguration): void {
+  columns.value.push(colConfig);
+}
+provide(dataTableApiKey, { addColumn });
+
+// Função que gerencia o delay e a chamada da API
+function fetchDataWithDelay(): void {
+  // Limpa timer anterior, se houver
+  if (delayTimer.value) clearTimeout(delayTimer.value); 
+
+  isDelaying.value = true;
+
+  delayTimer.value = setTimeout(() => {
+    isDelaying.value = false;
+  }, props.min_loading_delay);
+
+  execute(); // Executa a busca de dados original do useApiFetch
+}
+
+function reSearch(): void {
+  pagination.value.current_page = 0; 
+  fetchDataWithDelay();
+}
+
+const changePageSize = (event: Event): void => {
+  const target = event.target as HTMLInputElement;
+  const newSize = parseInt(target.value, 10);
+  if (newSize > 0) {
+    page_size.value = newSize;
+    pagination.value.limit_per_page = newSize; // Atualiza o limite de itens por página
+    pagination.value.current_page = 0; 
+    fetchDataWithDelay();
+  } else {
+    // toast.showToast("Erro", "Tamanho da página deve ser maior que 0", 2);
+    page_size.value = pagination.value.limit_per_page; // Reseta para o valor anterior
+  }
+};
+
+function getSubItem(field: string | null, item: T, transform_function: ((value: any) => any) | null = null): any {
+  if (!field) return item;
+  const parts = field.split('.');
+  let value_item = item;
+
+  for(const part of parts){
+    if (value_item && typeof value_item === 'object' && part in value_item){
+      value_item = value_item[part];
+    }
+    else{
+      throw new Error(`Caminho inválido ou valor nulo em: ${field} na parte ${part}`);
+    }
+  }
+  
+  if (transform_function) {
+    value_item = transform_function(value_item);
+  }
+  return value_item;
+}
+
+
+
+function limiteText(text: string | null, limite: number | null): string | null {
+  if (limite && typeof limite === 'number' && limite > 0 && typeof text === 'string' && text.length > limite) {
+    return text.substring(0, limite) + '...';
+  }
+  return text;
+}
+
+// =======================================================
+// 7. EXPOSE E CICLO DE VIDA
+// =======================================================
+
+defineExpose<
+ExposedFunctions
+>({
+  execute: fetchDataWithDelay,
+  pagination,
+  default_params,
+  selected_items,
+  atLeastOneSelected,
+});
+
+onMounted(() => {
+  nextTick(() => {
+
+    /* 
+    * executar dentro do nextTick para garantir que o pai já tem acesso ao 
+    * ref que foi exposto
+    */
+    fetchDataWithDelay();
+  })
+});
+</script>
+
+<style lang="scss" scoped>
+.table-responsive {
+  overflow-x: auto;
+}
+
+.state-feedback {
+  padding: 1rem;
+  text-align: center;
+}
+
+.state-feedback.error {
+  color: red;
+}
+
+.pagination-controls {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+$max-width-img: 40px;
+
+.placeholder-img {
+  width: $max-width-img;
+  height: $max-width-img;
+  border-radius: 4px;
+}
+
+.container-img {
+  aspect-ratio: 1;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  max-width: $max-width-img;
+  min-width: $max-width-img;
+
+  .img-tamanho-cover {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    opacity: 0.5;
+    filter: blur(4px);
+  }
+
+  .img-tamanho {
+    object-fit: contain;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+  }
+
+  &.container-img-preview {
+    cursor: pointer;
+
+    &:hover {
+      border-style: dashed;
+      border-color: var(--tblr-primary);
+      border-width: 2px;
+      transition: border-width 0.15s ease-in-out;
+
+      .img-tamanho {
+        opacity: 0.3;
+      }
+    }
+  }
+}
+
+.erro-custom-container {
+  display: inline-block;
+  padding: 0.2em 0.6em;
+  border-radius: 4px;
+  background-color: #ffffff;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.erro-custom-text {
+  font-size: 0.8em;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.bg-img {
+  background-color: #0000004d;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+$max-width-preview: 250px;
+
+.image-preview-container {
+  position: fixed;
+
+  z-index: 9999;
+
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  padding: 5px;
+
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out;
+
+  .image-preview-large {
+    display: block;
+    max-width: $max-width-preview;
+
+    max-height: $max-width-preview;
+    border-radius: 4px;
+  }
+}
+
+.form-check-input {
+  border-width: 1px !important;
+  border-color: rgba(0, 0, 0, 0.391) !important;
+  width: 17px;
+  height: 17px;
+}
+
+[data-bs-theme=dark] .form-check-input {
+  border-color: rgba(255, 255, 255, 0.374) !important;
+}
+</style>
