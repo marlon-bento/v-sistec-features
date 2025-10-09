@@ -1,7 +1,7 @@
 {
   "name": "v-sistec-features",
   "private": false,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Márlon Bento Azevedo (https://github.com/marlon-bento)",
   "repository": {
     "type": "git",
@@ -31,7 +31,6 @@
       "import": "./dist/v-sistec-features.css",
       "require": "./dist/v-sistec-features.css"
     }
-
   },
   "files": [
     "dist",
