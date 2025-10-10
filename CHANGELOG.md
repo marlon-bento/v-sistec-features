@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.1.1...v1.2.0) (2025-10-10)
+
+
+### Features
+
+* adicionada a opção de adicionar click em cada item do datatable ([d4e9400](https://github.com/marlon-bento/v-sistec-features/commit/d4e9400b00ad7dca895508f76708fb51a3f7d024))
+
 ## [1.1.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.1.0...v1.1.1) (2025-10-10)
 
 
