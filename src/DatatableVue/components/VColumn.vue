@@ -17,6 +17,7 @@ interface VColumnProps {
   deactivate_img_preview?: boolean;
   limite_text?: number | string | null;
   transform_function?: ((value: any) => any) | null;
+  click?: Function | null;
 }
 const props = withDefaults(defineProps<VColumnProps>(), {
   field: null,
@@ -41,6 +42,7 @@ const props = withDefaults(defineProps<VColumnProps>(), {
 
   /* recebe função para alterar o que é mostrado */
   transform_function:  null ,
+  click: null,
 });
 
 const slots = useSlots();
@@ -83,6 +85,7 @@ onMounted(() => {
     class_column: props.class_column,
     class_row: props.class_row,
     class_item: props.class_item,
+    click: props.click,
     transform_function: props.transform_function,
 
     bodySlot: slots.body,

@@ -8,8 +8,8 @@
             <div class="text-secondary">
               {{ props.first_text_page_size }}
               <div class="mx-2 d-inline-block">
-                <input class="form-control form-control-sm" @change="changePageSize" v-model="page_size" min="1" size="3"
-                  aria-label="Número de nóticias por página" />
+                <input class="form-control form-control-sm" @change="changePageSize" v-model="page_size" min="1"
+                  size="3" aria-label="Número de nóticias por página" />
               </div>
               {{ props.second_text_page_size }}
             </div>
@@ -45,7 +45,7 @@
                 <template v-if="props.type_loading === 'placeholder'">
                   <tr v-for="n in page_size" :key="'placeholder-' + n" class="placeholder-glow">
                     <td v-for="col in columns" :key="col.field || col.header" :class="col.class_row">
-                      <span v-if="col.bodySlot" >
+                      <span v-if="col.bodySlot">
                         <span class="placeholder col-8"></span>
                       </span>
                       <span :class="col.class_item" v-else-if="col.type === 'text'">
@@ -71,7 +71,7 @@
                 <template v-else-if="props.type_loading === 'spiner-table'">
                   <tr v-for="n in page_size" :key="'placeholder-' + n">
                     <td v-for="col in columns" :key="col.field || col.header" :class="col.class_row">
-                      <span v-if="col.bodySlot" >
+                      <span v-if="col.bodySlot">
                         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                       </span>
                       <span :class="col.class_item" v-else-if="col.type === 'text'">
@@ -153,22 +153,25 @@
                   </td>
                   <td v-for="col in columns" :key="col.field || col.header" :class="col.class_row">
                     <component v-if="col.bodySlot" :is="col.bodySlot" :item="item" :is-selected="isSelected(item)" />
-                    <span :class="col.class_item" v-else-if="col.type === 'text'">
+                    <span @click="col.click ? col.click(item) : null"
+                    :class="col.class_item + (col.click ? ' cursor-pointer' : '') " v-else-if="col.type === 'text'">
                       {{
                         limiteText(getSubItem(col.field, item, col.transform_function), col.limite_text ?? null)
                       }}</span>
 
-                    <span v-else-if="col.type === 'date'">
+                    <span @click="col.click ? col.click(item) : null" v-else-if="col.type === 'date'"
+                      :class="col.class_item + (col.click ? ' cursor-pointer' : '') "
+                    >
                       <span v-if="col.format === 'complete'">{{ new Date(getSubItem(col.field, item)).toLocaleString()
-                        }}</span>
+                      }}</span>
                       <span v-if="col.format === 'simple'"> {{ new Date(getSubItem(col.field,
                         item)).toLocaleDateString()
-                      }} </span>
+                        }} </span>
                     </span>
-                    <div :class="col.class_item" v-else-if="col.type === 'html'" v-html="getSubItem(col.field, item)">
+                    <div @click="col.click ? col.click(item) : null" :class="col.class_item + (col.click ? ' cursor-pointer' : '') " v-else-if="col.type === 'html'" v-html="getSubItem(col.field, item)">
                     </div>
 
-                    <div :class="col.class_item" v-else-if="col.type === 'img'">
+                    <div @click="col.click ? col.click(item) : null" :class="col.class_item + (col.click ? ' cursor-pointer' : '') " v-else-if="col.type === 'img'">
 
                       <div v-if="getSubItem(col.field, item)" v-bind="col.deactivate_img_preview ? {
                         class: 'container-img'
@@ -193,9 +196,9 @@
               </tbody>
             </table>
           </div>
-            <div v-else class="text-center p-4 text-secondary">
-              <p class="m-0">Nenhum item encontrado.</p>
-            </div>
+          <div v-else class="text-center p-4 text-secondary">
+            <p class="m-0">Nenhum item encontrado.</p>
+          </div>
         </div>
 
       </div>
@@ -215,7 +218,7 @@
 
 </template>
 
-<script setup lang="ts" generic="T extends Record<string, any>" >
+<script setup lang="ts" generic="T extends Record<string, any>">
 import { ref, provide, computed, watch, onMounted, nextTick, type Component, type Ref, type ComputedRef } from 'vue';
 
 import PaginationDatatable from './PaginationDatatable.vue';
@@ -223,13 +226,13 @@ import Search from './SearchDatatable.vue';
 import { useImagePreview } from '../composables/useImagePreview';
 import { dataTableApiKey, type ColumnConfiguration, type PaginationObject } from '../keys';
 
-const { 
-  isHovering, 
-  previewSrc, 
-  previewStyle, 
-  handleMouseOver, 
-  handleMouseMove, 
-  handleMouseLeave 
+const {
+  isHovering,
+  previewSrc,
+  previewStyle,
+  handleMouseOver,
+  handleMouseMove,
+  handleMouseLeave
 } = useImagePreview();
 
 interface VDataTableProps {
@@ -504,7 +507,7 @@ provide(dataTableApiKey, { addColumn });
 // Função que gerencia o delay e a chamada da API
 function fetchDataWithDelay(): void {
   // Limpa timer anterior, se houver
-  if (delayTimer.value) clearTimeout(delayTimer.value); 
+  if (delayTimer.value) clearTimeout(delayTimer.value);
 
   isDelaying.value = true;
 
@@ -516,7 +519,7 @@ function fetchDataWithDelay(): void {
 }
 
 function reSearch(): void {
-  pagination.value.current_page = 0; 
+  pagination.value.current_page = 0;
   fetchDataWithDelay();
 }
 
@@ -526,7 +529,7 @@ const changePageSize = (event: Event): void => {
   if (newSize > 0) {
     page_size.value = newSize;
     pagination.value.limit_per_page = newSize; // Atualiza o limite de itens por página
-    pagination.value.current_page = 0; 
+    pagination.value.current_page = 0;
     fetchDataWithDelay();
   } else {
     // toast.showToast("Erro", "Tamanho da página deve ser maior que 0", 2);
@@ -539,15 +542,15 @@ function getSubItem(field: string | null, item: T, transform_function: ((value: 
   const parts = field.split('.');
   let value_item = item;
 
-  for(const part of parts){
-    if (value_item && typeof value_item === 'object' && part in value_item){
+  for (const part of parts) {
+    if (value_item && typeof value_item === 'object' && part in value_item) {
       value_item = value_item[part];
     }
-    else{
+    else {
       console.error(`Caminho inválido ou valor nulo em: ${field} na parte ${part}`);
     }
   }
-  
+
   if (transform_function) {
     value_item = transform_function(value_item);
   }
@@ -568,7 +571,7 @@ function limiteText(text: string | null, limite: number | null): string | null {
 // =======================================================
 
 defineExpose<
-ExposedFunctions
+  ExposedFunctions
 >({
   execute: fetchDataWithDelay,
   pagination,

@@ -13,6 +13,7 @@ export interface ColumnConfiguration {
   limite_text?: number;
   deactivate_img_preview?: boolean;
   format?: 'complete' | 'simple';
+  click: Function | null;
 }
 
 // A API que o VDataTable "fornece" para os filhos
