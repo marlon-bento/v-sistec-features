@@ -8,8 +8,8 @@
             <div class="text-secondary">
               {{ props.first_text_page_size }}
               <div class="mx-2 d-inline-block">
-                <input class="form-control form-control-sm" @change="changePageSize" v-model="pagination.limit_per_page" min="1"
-                  size="3" aria-label="Número de nóticias por página" />
+                <input class="form-control form-control-sm" @change="changePageSize" v-model.lazy="pagination.limit_per_page" min="1"
+                  size="3" aria-label="Número de registros por página" type="number" />
               </div>
               {{ props.second_text_page_size }}
             </div>
@@ -219,7 +219,7 @@
 </template>
 
 <script setup lang="ts" generic="T extends Record<string, any>">
-import { ref, provide, computed, watch, onMounted, nextTick, type Component, type Ref, type ComputedRef } from 'vue';
+import { readonly,ref, provide, computed, watch, onMounted, nextTick, type Component, type Ref, type ComputedRef } from 'vue';
 
 import PaginationDatatable from './PaginationDatatable.vue';
 import Search from './SearchDatatable.vue';
@@ -297,6 +297,10 @@ interface ExposedFunctions {
   default_params: Record<string, any>;
   selected_items: Ref<T[]>;
   atLeastOneSelected: ComputedRef<boolean>;
+  set_limit_per_page: (newLimit: number) => void;
+  set_search: (newSearch: string) => void;
+  set_filter: (newFilter: string) => void;
+  set_page: (newPage: number) => void;
 }
 
 // =======================================================
@@ -569,12 +573,43 @@ function limiteText(text: string | null, limite: number | null): string | null {
 // =======================================================
 // 7. EXPOSE E CICLO DE VIDA
 // =======================================================
+function set_limit_per_page(newLimit: number): void {
+  if (newLimit > 0) {
+    pagination.value.limit_per_page = newLimit;
+    pagination.value.current_page = 0;
+    fetchDataWithDelay();
+  }else {
+    console.warn("O limite deve ser um número maior que zero.");
+  }
+}
+function set_search(newSearch: string): void {
+  pagination.value.search = newSearch;
+  pagination.value.current_page = 0;
+  fetchDataWithDelay();
+}
+function set_filter(newFilter: string): void {
+  pagination.value.filter = newFilter;
+  pagination.value.current_page = 0;
+  fetchDataWithDelay();
+}
+function set_page(newPage: number): void {
+  if (newPage >= 1 && newPage <= Math.ceil(pagination.value.count / pagination.value.limit_per_page)) {
+    pagination.value.current_page = newPage - 1;
+    fetchDataWithDelay();
+  } else {
+    console.warn("Número de página inválido.");
+  }
+}
 
 defineExpose<
   ExposedFunctions
 >({
   execute: fetchDataWithDelay,
-  pagination,
+  pagination: readonly(pagination),
+  set_limit_per_page: set_limit_per_page,
+  set_search: set_search,
+  set_filter: set_filter,
+  set_page: set_page,
   default_params,
   selected_items,
   atLeastOneSelected,
