@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.2.0...v1.2.1) (2025-10-10)
+
+
+### Bug Fixes
+
+* agora é possível alterar o limite de itens por páginas antes de começar a mostrar ([f860096](https://github.com/marlon-bento/v-sistec-features/commit/f860096bc61e79de6776d63b7594e1be821658f4))
+
 # [1.2.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.1.1...v1.2.0) (2025-10-10)
 
 
