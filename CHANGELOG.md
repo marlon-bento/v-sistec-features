@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.2.2...v1.2.3) (2025-10-10)
+
+
+### Bug Fixes
+
+* bug de alterar o valor do input de mostrar registros e mesmo sem o evento change acontecer a paginação refletia a mudança, agora o pagination não pode mais ser alterado por fora do componente, ele está encapsulado pelas funções de set, set_search, set_limit_per_page, set_page e set_search ([921a53b](https://github.com/marlon-bento/v-sistec-features/commit/921a53bf755ec12839456d43b30a3dadf831e823))
+
 ## [1.2.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.2.1...v1.2.2) (2025-10-10)
 
 
