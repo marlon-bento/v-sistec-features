@@ -4,11 +4,11 @@
       <slot></slot>
       <div class="" :class="props.class_content">
         <div class="d-flex justify-content-between align-items-start mb-2">
-          <slot name="pageSize" :changePageSize="changePageSize" :page_size="page_size">
+          <slot name="pageSize" :changePageSize="changePageSize" :limit_per_page="pagination.limit_per_page">
             <div class="text-secondary">
               {{ props.first_text_page_size }}
               <div class="mx-2 d-inline-block">
-                <input class="form-control form-control-sm" @change="changePageSize" v-model="page_size" min="1"
+                <input class="form-control form-control-sm" @change="changePageSize" v-model="pagination.limit_per_page" min="1"
                   size="3" aria-label="Número de nóticias por página" />
               </div>
               {{ props.second_text_page_size }}
@@ -43,7 +43,7 @@
               </thead>
               <tbody>
                 <template v-if="props.type_loading === 'placeholder'">
-                  <tr v-for="n in page_size" :key="'placeholder-' + n" class="placeholder-glow">
+                  <tr v-for="n in pagination.limit_per_page" :key="'placeholder-' + n" class="placeholder-glow">
                     <td v-for="col in columns" :key="col.field || col.header" :class="col.class_row">
                       <span v-if="col.bodySlot">
                         <span class="placeholder col-8"></span>
@@ -69,7 +69,7 @@
                   </tr>
                 </template>
                 <template v-else-if="props.type_loading === 'spiner-table'">
-                  <tr v-for="n in page_size" :key="'placeholder-' + n">
+                  <tr v-for="n in pagination.limit_per_page" :key="'placeholder-' + n">
                     <td v-for="col in columns" :key="col.field || col.header" :class="col.class_row">
                       <span v-if="col.bodySlot">
                         <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -98,9 +98,9 @@
 
                 </template>
                 <template v-else-if="props.type_loading === 'spiner'">
-                  <tr v-for="n in page_size" :key="n">
+                  <tr v-for="n in pagination.limit_per_page" :key="n">
                     <td :colspan="columns.length" class="text-center p-0" style="border-bottom: none;">
-                      <div v-if="n === Math.floor(page_size / 2) + 1"
+                      <div v-if="n === Math.floor(pagination.limit_per_page / 2) + 1"
                         class="d-flex flex-column justify-content-center align-items-center" style="height: 6rem;">
                         <div class="spinner-border" style="width: 3rem; height: 3rem;" role="status">
                         </div>
@@ -334,7 +334,7 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
 // 2. ESTADO REATIVO PRINCIPAL
 // =======================================================
 
-const page_size = ref<number>(5);
+
 const columns = ref<ColumnConfiguration[]>([]);
 const items = ref<T[]>([]) as Ref<T[]>;
 const totalItems = ref<number>(0);
@@ -530,14 +530,11 @@ const changePageSize = (event: Event): void => {
   const target = event.target as HTMLInputElement;
   const newSize = parseInt(target.value, 10);
   if (newSize > 0) {
-    page_size.value = newSize;
+    pagination.value.limit_per_page = newSize;
     pagination.value.limit_per_page = newSize; // Atualiza o limite de itens por página
     pagination.value.current_page = 0;
     fetchDataWithDelay();
-  } else {
-    // toast.showToast("Erro", "Tamanho da página deve ser maior que 0", 2);
-    page_size.value = pagination.value.limit_per_page; // Reseta para o valor anterior
-  }
+  } 
 };
 
 function getSubItem(field: string | null, item: T, transform_function: ((value: any) => any) | null = null): any {
