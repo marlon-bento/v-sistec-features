@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.1.0...v1.1.1) (2025-10-10)
+
+
+### Bug Fixes
+
+* melhoria na performance e mudado o mostrar notícias para mostrar registros e dando opção de modificação ([31deccd](https://github.com/marlon-bento/v-sistec-features/commit/31deccd5909a77dfe9b0870290471d802d829628))
+
 # [1.1.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.0.0...v1.1.0) (2025-10-09)
 
 
