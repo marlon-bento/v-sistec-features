@@ -4,14 +4,17 @@
       <slot></slot>
       <div class="" :class="props.class_content">
         <div class="d-flex justify-content-between align-items-start mb-2">
-          <div class="text-secondary">
-            Mostrar
-            <div class="mx-2 d-inline-block">
-              <input class="form-control form-control-sm" @change="changePageSize" v-model="page_size" min="1" size="3"
-                aria-label="Número de nóticias por página" />
+          <slot name="pageSize" :changePageSize="changePageSize" :page_size="page_size">
+            <div class="text-secondary">
+              {{ props.first_text_page_size }}
+              <div class="mx-2 d-inline-block">
+                <input class="form-control form-control-sm" @change="changePageSize" v-model="page_size" min="1" size="3"
+                  aria-label="Número de nóticias por página" />
+              </div>
+              {{ props.second_text_page_size }}
             </div>
-            notícias
-          </div>
+          </slot>
+
           <slot name="fieldMiddle">
 
           </slot>
@@ -253,6 +256,10 @@ interface VDataTableProps {
 
   /* filtros que irão ser usados */
   list_filter?: any[];
+  /* mudar o que está escrito no select de mudança de items_per_page*/
+  first_text_page_size?: string;
+  second_text_page_size?: string;
+
 
   /* props para estilizar o vdatatable */
   class_table?: string;
@@ -312,6 +319,8 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   retry_delay: 2000,
   use_checkbox: false,
   item_key: 'id',
+  first_text_page_size: 'Mostrar',
+  second_text_page_size: 'registros',
 });
 
 
@@ -535,7 +544,7 @@ function getSubItem(field: string | null, item: T, transform_function: ((value: 
       value_item = value_item[part];
     }
     else{
-      throw new Error(`Caminho inválido ou valor nulo em: ${field} na parte ${part}`);
+      console.error(`Caminho inválido ou valor nulo em: ${field} na parte ${part}`);
     }
   }
   
