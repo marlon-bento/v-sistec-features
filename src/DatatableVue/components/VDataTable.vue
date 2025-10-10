@@ -287,6 +287,8 @@ interface VDataTableProps {
   use_checkbox?: boolean;
   // Define qual propriedade do item será usada como chave única para a seleção.
   item_key?: string;
+
+  limit_per_page?: number;
 }
 
 interface ExposedFunctions {
@@ -324,6 +326,7 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   item_key: 'id',
   first_text_page_size: 'Mostrar',
   second_text_page_size: 'registros',
+  limit_per_page: 5,
 });
 
 
@@ -345,7 +348,7 @@ const delayTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 const pagination = ref<PaginationObject>({
   current_page: 0, // pagina atual
   count: 0,  // total de itens
-  limit_per_page: 5, // limite de itens por página
+  limit_per_page: props.limit_per_page, // limite de itens por página
   search: '', // termo de busca
   filter: '', // filtro selecionado
 })
