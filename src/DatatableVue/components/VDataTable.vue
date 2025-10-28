@@ -3,7 +3,7 @@
     <div class="" :class="props.class_container">
       <slot></slot>
       <div class="" :class="props.class_content">
-        <div :class="props.class_filters" class="d-flex justify-content-between align-items-start mb-2">
+        <div :class="props.class_filters" class="d-flex justify-content-between align-items-start ">
           <slot name="pageSize" :changePageSize="changePageSize" :limit_per_page="pagination.limit_per_page">
             <div class="text-secondary">
               {{ props.first_text_page_size }}
