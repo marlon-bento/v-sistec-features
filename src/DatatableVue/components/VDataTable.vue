@@ -206,7 +206,7 @@
 
     </div>
     <slot name="pagination" :pagination="pagination" :tradePage="fetchDataWithDelay" :error="error">
-      <div v-if="!error && pagination.count > 0" class="mt-3 px-3" :class="props.class_pagination">
+      <div v-if="!error && pagination.count > 0" class="px-3" :class="props.class_pagination">
         <PaginationDatatable :filtering="true" :pagination="pagination" @tradePage="fetchDataWithDelay" />
       </div>
     </slot>

@@ -141,7 +141,7 @@ const svg_uma_seta = `
         props.pagination.limit_per_page * (props.pagination.current_page + 1) < props.pagination.count ?
           props.pagination.limit_per_page * (props.pagination.current_page + 1) : props.pagination.count }} de {{
           props.pagination.count }} registros </span>
-        <div class="d-flex align-items-center p-2 gap-2" v-if="total_pages > 0">
+        <div class="d-flex align-items-center gap-2" v-if="total_pages > 0">
           <div class="d-flex">
             <button class="btn btn-estilo" @click.prevent="firstPage" :disabled="props.pagination.current_page === 0" v-html="svg_duas_setas">
             </button>
