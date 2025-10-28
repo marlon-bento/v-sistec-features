@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/marlon-bento/v-sistec-features/compare/v1.2.3...v1.2.4) (2025-10-28)
+
+
+### Bug Fixes
+
+* adicionada class de alteração para o filters ([159e12c](https://github.com/marlon-bento/v-sistec-features/commit/159e12c618baa72501e944ab2ecb70eca4b35c50))
+
 ## [1.2.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.2.2...v1.2.3) (2025-10-10)
 
 
