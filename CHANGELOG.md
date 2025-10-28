@@ -1,3 +1,10 @@
+## [1.2.5](https://github.com/marlon-bento/v-sistec-features/compare/v1.2.4...v1.2.5) (2025-10-28)
+
+
+### Bug Fixes
+
+* retirado alguns espaços desnecessários ([1f3635f](https://github.com/marlon-bento/v-sistec-features/commit/1f3635f64b00008329b5584fc52d50458c744817))
+
 ## [1.2.4](https://github.com/marlon-bento/v-sistec-features/compare/v1.2.3...v1.2.4) (2025-10-28)
 
 
