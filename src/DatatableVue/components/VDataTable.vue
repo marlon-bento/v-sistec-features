@@ -3,7 +3,7 @@
     <div class="" :class="props.class_container">
       <slot></slot>
       <div class="" :class="props.class_content">
-        <div class="d-flex justify-content-between align-items-start mb-2">
+        <div :class="props.class_filters" class="d-flex justify-content-between align-items-start mb-2">
           <slot name="pageSize" :changePageSize="changePageSize" :limit_per_page="pagination.limit_per_page">
             <div class="text-secondary">
               {{ props.first_text_page_size }}
@@ -269,6 +269,7 @@ interface VDataTableProps {
   class_content?: string;
   class_container?: string;
   class_pagination?: string;
+  class_filters?: string;
 
   /*
   * tempo mínimo em ms para mostrar o loading para evitar telas piscando
@@ -323,6 +324,7 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   class_content: '',
   class_container: '',
   class_pagination: '',
+  class_filters: '',
   min_loading_delay: 600,
   retry_attempts: 3,
   retry_delay: 2000,
