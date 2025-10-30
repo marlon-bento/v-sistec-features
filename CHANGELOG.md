@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.3.1...v1.3.2) (2025-10-30)
+
+
+### Bug Fixes
+
+* melhoria em como o add_params funciona,agora não é mais preciso usar a função getter para garantir que tenha os params e não é mais preciso usar watch para escutar mudanças no add_params ([bfc8b46](https://github.com/marlon-bento/v-sistec-features/commit/bfc8b463d68bbed990fc6ee79baab2830930aa1b))
+
 ## [1.3.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.3.0...v1.3.1) (2025-10-30)
 
 
