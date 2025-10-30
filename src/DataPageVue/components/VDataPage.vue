@@ -101,7 +101,8 @@ interface VDataPageProps {
     next_page_response_name?: string;
     page_starts_at: number;
     element_id?: string;
-    watch?: WatchSource[]
+    watch?: WatchSource[];
+    scroll_on_trade_page?: boolean;
 }
 
 interface ExposedFunctions {
@@ -112,6 +113,8 @@ interface ExposedFunctions {
     set_search: (newSearch: string) => void;
     set_filter: (newFilter: string) => void;
     set_page: (newPage: number) => void;
+
+
 }
 
 // =======================================================
@@ -147,6 +150,7 @@ const props = withDefaults(defineProps<VDataPageProps>(), {
     type_fetch: 'pagination',
     page_starts_at: 0,
     element_id: '',
+    scroll_on_trade_page: false,
     watch: () => []
 });
 
@@ -488,6 +492,12 @@ if (props.watch && Array.isArray(props.watch)) {
         }
     });
 }
+watch(() => pagination.value.current_page, () => {
+    //scrola para o topo da página ao mudar de página
+    if (props.type_fetch === 'pagination' && props.scroll_on_trade_page) {
+        window.scrollTo({ top: 0, behavior: 'auto' })
+    }
+});
 if (watchSources.length > 0) {
     if (props.type_fetch === 'pagination') {
         watch(watchSources, () => {
