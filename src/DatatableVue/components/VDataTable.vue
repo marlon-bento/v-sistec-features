@@ -8,8 +8,9 @@
             <div class="text-secondary">
               {{ props.first_text_page_size }}
               <div class="mx-2 d-inline-block">
-                <input class="form-control form-control-sm" @change="changePageSize" v-model.lazy="pagination.limit_per_page" min="1"
-                  size="3" aria-label="Número de registros por página" type="number" />
+                <input class="form-control form-control-sm" @change="changePageSize"
+                  v-model.lazy="pagination.limit_per_page" min="1" size="3" aria-label="Número de registros por página"
+                  type="number" />
               </div>
               {{ props.second_text_page_size }}
             </div>
@@ -154,24 +155,26 @@
                   <td v-for="col in columns" :key="col.field || col.header" :class="col.class_row">
                     <component v-if="col.bodySlot" :is="col.bodySlot" :item="item" :is-selected="isSelected(item)" />
                     <span @click="col.click ? col.click(item) : null"
-                    :class="col.class_item + (col.click ? ' cursor-pointer' : '') " v-else-if="col.type === 'text'">
+                      :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'text'">
                       {{
                         limiteText(getSubItem(col.field, item, col.transform_function), col.limite_text ?? null)
                       }}</span>
 
                     <span @click="col.click ? col.click(item) : null" v-else-if="col.type === 'date'"
-                      :class="col.class_item + (col.click ? ' cursor-pointer' : '') "
-                    >
+                      :class="col.class_item + (col.click ? ' cursor-pointer' : '')">
                       <span v-if="col.format === 'complete'">{{ new Date(getSubItem(col.field, item)).toLocaleString()
                       }}</span>
                       <span v-if="col.format === 'simple'"> {{ new Date(getSubItem(col.field,
                         item)).toLocaleDateString()
                         }} </span>
                     </span>
-                    <div @click="col.click ? col.click(item) : null" :class="col.class_item + (col.click ? ' cursor-pointer' : '') " v-else-if="col.type === 'html'" v-html="getSubItem(col.field, item)">
+                    <div @click="col.click ? col.click(item) : null"
+                      :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'html'"
+                      v-html="getSubItem(col.field, item)">
                     </div>
 
-                    <div @click="col.click ? col.click(item) : null" :class="col.class_item + (col.click ? ' cursor-pointer' : '') " v-else-if="col.type === 'img'">
+                    <div @click="col.click ? col.click(item) : null"
+                      :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'img'">
 
                       <div v-if="getSubItem(col.field, item)" v-bind="col.deactivate_img_preview ? {
                         class: 'container-img'
@@ -219,7 +222,7 @@
 </template>
 
 <script setup lang="ts" generic="T extends Record<string, any>">
-import { readonly,ref, provide, computed, watch, onMounted, nextTick, type Component, type Ref, type ComputedRef } from 'vue';
+import { readonly, ref, provide, computed, watch, nextTick, type Component, type Ref, type ComputedRef } from 'vue';
 
 import PaginationDatatable from './PaginationDatatable.vue';
 import Search from './SearchDatatable.vue';
@@ -441,7 +444,6 @@ const atLeastOneSelected = computed<boolean>(() => selected_items.value.length >
 watch([selectAllState, selectAllCheckbox], ([newState]) => {
   if (selectAllCheckbox.value) {
     if (newState === 'indeterminate') {
-      console.log("entrei no indeterminate")
       // Se o estado for indeterminado:
       selectAllCheckbox.value.checked = false; // Ele não está "marcado"
       selectAllCheckbox.value.indeterminate = true; // Ele está com o "traço"
@@ -540,7 +542,7 @@ const changePageSize = (event: Event): void => {
     pagination.value.limit_per_page = newSize; // Atualiza o limite de itens por página
     pagination.value.current_page = 0;
     fetchDataWithDelay();
-  } 
+  }
 };
 
 function getSubItem(field: string | null, item: T, transform_function: ((value: any) => any) | null = null): any {
@@ -580,7 +582,7 @@ function set_limit_per_page(newLimit: number): void {
     pagination.value.limit_per_page = newLimit;
     pagination.value.current_page = 0;
     fetchDataWithDelay();
-  }else {
+  } else {
     console.warn("O limite deve ser um número maior que zero.");
   }
 }
@@ -616,17 +618,23 @@ defineExpose<
   selected_items,
   atLeastOneSelected,
 });
+const on_mounted_called = ref<boolean>(false);
+watch(
+  () => props.add_params,
+  () => {
+    if (!on_mounted_called.value) {
+      on_mounted_called.value = true;
+      // esperar até existir os exposes
+      nextTick(() => {
+        reSearch();
+      });
+    } else {
+      reSearch();
+    }
+  },
+  { deep: true, immediate: true }
+)
 
-onMounted(() => {
-  nextTick(() => {
-
-    /* 
-    * executar dentro do nextTick para garantir que o pai já tem acesso ao 
-    * ref que foi exposto
-    */
-    fetchDataWithDelay();
-  })
-});
 </script>
 
 <style lang="scss" scoped>

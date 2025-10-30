@@ -37,7 +37,7 @@
 </template>
 
 <script setup lang="ts" generic="T extends Record<string, any>">
-import { readonly, ref, isRef, computed, watch, onMounted, nextTick, type Component, type Ref, type WatchSource } from 'vue';
+import { readonly, ref, isRef, computed, watch, nextTick, type Component, type Ref, type WatchSource } from 'vue';
 import InfiniteLoading from "v3-infinite-loading";
 import PaginationDatatable from './PaginationDatatable.vue';
 // import Search from './SearchDatatable.vue';
@@ -102,7 +102,6 @@ interface VDataPageProps {
     page_starts_at: number;
     element_id?: string;
     watch?: WatchSource[];
-    scroll_on_trade_page?: boolean;
 }
 
 interface ExposedFunctions {
@@ -116,6 +115,7 @@ interface ExposedFunctions {
 
 
 }
+const emit = defineEmits(['tradePage', 'beforeFetch', 'afterFetch']);
 
 // =======================================================
 // 1. DEFINIÇÃO DE PROPS COM VALORES PADRÃO
@@ -150,7 +150,6 @@ const props = withDefaults(defineProps<VDataPageProps>(), {
     type_fetch: 'pagination',
     page_starts_at: 0,
     element_id: '',
-    scroll_on_trade_page: false,
     watch: () => []
 });
 
@@ -222,13 +221,6 @@ const { data: response, pending: _pending, error, execute, attempt: _attempt } =
 // =======================================================
 // 4. PROPRIEDADES COMPUTADAS
 // =======================================================
-// const item_use = computed<number[]>(() => {
-//     let use = [1]
-//     if (props.list_filter.length > 0) {
-//         use.push(2)
-//     }
-//     return use;
-// });
 
 const default_params = computed<Record<string, any>>(() => ({
     [props.page_param_name]: pagination.value.current_page + 1,
@@ -276,16 +268,24 @@ async function fetchDataWithDelay(): Promise<void> {
     delayTimer.value = setTimeout(() => {
         isDelaying.value = false;
     }, props.min_loading_delay);
+    if (props.type_fetch === 'infinite-scroll') {
+        return execute();
+    } else if (props.type_fetch === 'pagination') {
+        emit("beforeFetch")
+        await execute();
+        emit("afterFetch")
+    }
 
-    return execute(); // Executa a busca de dados original do useApiFetch
 }
 async function initDataInfinite() {
     items.value = [];
     items_infinite.value = [];
 
     pagination.value.current_page = props.page_starts_at;
-
+    emit("beforeFetch")
     await fetchDataWithDelay();
+    emit("afterFetch")
+
 
     nextTick(() => {
         items_infinite.value.push(...items.value);
@@ -294,25 +294,6 @@ async function initDataInfinite() {
         topLoaderId.value++;
     });
 }
-
-
-// function reSearch(): void {
-//     pagination.value.current_page = 0;
-//     fetchDataWithDelay();
-// }
-
-// const changePageSize = (event: Event): void => {
-//     const target = event.target as HTMLInputElement;
-//     const newSize = parseInt(target.value, 10);
-//     if (newSize > 0) {
-//         pagination.value.limit_per_page = newSize;
-//         pagination.value.limit_per_page = newSize; // Atualiza o limite de itens por página
-//         pagination.value.current_page = 0;
-//         fetchDataWithDelay();
-//     }
-// };
-
-
 
 // =======================================================
 // 7. EXPOSE E CICLO DE VIDA
@@ -357,23 +338,6 @@ defineExpose<
     default_params
 });
 
-onMounted(() => {
-    nextTick(() => {
-
-        /* 
-        * executar dentro do nextTick para garantir que o pai já tem acesso ao 
-        * ref que foi exposto
-        */
-        if (first_fetch.value && props.type_fetch === 'infinite-scroll') {
-            initDataInfinite();
-            first_fetch.value = false;
-        } else if (first_fetch.value && props.type_fetch === 'pagination') {
-            fetchDataWithDelay();
-            first_fetch.value = false;
-        }
-
-    })
-});
 const proxima_pagina = computed(() => {
     return response.value?.[props.next_page_response_name] || null
 })
@@ -493,10 +457,7 @@ if (props.watch && Array.isArray(props.watch)) {
     });
 }
 watch(() => pagination.value.current_page, () => {
-    //scrola para o topo da página ao mudar de página
-    if (props.type_fetch === 'pagination' && props.scroll_on_trade_page) {
-        window.scrollTo({ top: 0, behavior: 'auto' })
-    }
+    emit("tradePage")
 });
 if (watchSources.length > 0) {
     if (props.type_fetch === 'pagination') {
@@ -505,14 +466,44 @@ if (watchSources.length > 0) {
             fetchDataWithDelay();
         }, { deep: true });
     } else if (props.type_fetch === 'infinite-scroll') {
-        watch(watchSources, () =>{
+        watch(watchSources, () => {
             dadosInicializados.value = false;
             initDataInfinite();
-        } , { deep: true });
+        }, { deep: true });
     }
 
 }
-
+const on_mounted_called = ref<boolean>(false);
+watch(
+    () => props.add_params,
+    () => {
+        if (!on_mounted_called.value) {
+            on_mounted_called.value = true;
+            nextTick(() => {
+                /* 
+                * executar dentro do nextTick para garantir que o pai já tem acesso ao 
+                * ref que foi exposto
+                */
+                if (first_fetch.value && props.type_fetch === 'infinite-scroll') {
+                    initDataInfinite();
+                    first_fetch.value = false;
+                } else if (first_fetch.value && props.type_fetch === 'pagination') {
+                    fetchDataWithDelay();
+                    first_fetch.value = false;
+                }
+            })
+        } else {
+            if (props.type_fetch === 'pagination') {
+                pagination.value.current_page = props.page_starts_at;
+                fetchDataWithDelay();
+            } else if (props.type_fetch === 'infinite-scroll') {
+                dadosInicializados.value = false;
+                initDataInfinite();
+            }
+        }
+    },
+    { deep: true }
+)
 </script>
 
 <style lang="scss" scoped>
