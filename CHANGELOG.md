@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.2.6...v1.3.0) (2025-10-30)
+
+
+### Features
+
+* agora é possivel criar o datapage que é parecido com o datatable, mas para criação de páginas por paginação ou scroll infinito ([e365edb](https://github.com/marlon-bento/v-sistec-features/commit/e365edb068b9c74734e5cd151cba881ebc1a5ebe))
+
 ## [1.2.6](https://github.com/marlon-bento/v-sistec-features/compare/v1.2.5...v1.2.6) (2025-10-28)
 
 
