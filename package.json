@@ -23,6 +23,10 @@
       "import": "./dist/vDataTable.js",
       "types": "./dist/vDataTable.d.ts"
     },
+    "./vDataPage": {
+      "import": "./dist/vDataPage.js",
+      "types": "./dist/vDataPage.d.ts"
+    },
     "./iframeCommunicator": {
       "import": "./dist/iframeCommunicator.js",
       "types": "./dist/iframeCommunicator.d.ts"
@@ -51,17 +55,18 @@
     "@semantic-release/github": "^11.0.6",
     "@semantic-release/npm": "^12.0.2",
     "@semantic-release/release-notes-generator": "^14.1.0",
-    "semantic-release": "^24.2.9",
     "@types/node": "^24.6.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/tsconfig": "^0.8.1",
     "sass-embedded": "^1.93.2",
+    "semantic-release": "^24.2.9",
     "typescript": "~5.9.3",
     "vite": "^7.1.7",
     "vue-tsc": "^3.1.0"
   },
   "dependencies": {
     "@tabler/core": "^1.4.0",
-    "vue": "^3.5.22"
+    "v3-infinite-loading": "^1.3.2",
+    "vue": "^3.2.0"
   }
 }
