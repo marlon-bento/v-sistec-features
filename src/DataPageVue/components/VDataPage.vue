@@ -1,12 +1,38 @@
 <template>
     <div>
-        <div v-if="type_fetch === 'pagination'" class="" :class="props.class_container">
-            <template v-for="item in items" :key="item[props.item_key]">
-                <slot name="body" :item="item">
+        <template v-if="type_fetch === 'pagination'" class="">
+            
+            <template v-if="showLoadingState">
+                <div :class="props.class_loading_container">
+                    <template v-for="n in pagination.limit_per_page" :key="'placeholder-' + n">
+                        <slot name="loading" :n="n">
 
+                        </slot>
+                    </template>
+                </div>
+            </template>
+            <template v-else-if="error">
+                <slot name="error" :error="error">
+                    <div class="alert alert-danger" role="alert">
+                        Ocorreu um erro ao carregar os dados.
+                    </div>
                 </slot>
             </template>
-        </div>
+            <template v-else-if="pagination.count === 0">
+                <slot name="empty">
+                    <div class="alert alert-info" role="alert">
+                        Nenhum registro encontrado.
+                    </div>
+                </slot>
+            </template>
+            <div v-else :class="props.class_container">
+                <template v-for="item in items" :key="item[props.item_key]">
+                    <slot name="body" :item="item">
+
+                    </slot>
+                </template>
+            </div>
+        </template>
         <div v-else-if="type_fetch === 'infinite-scroll'" :class="props.class_container">
 
             <InfiniteLoading :identifier="topLoaderId" direction="top" @infinite="carregarPaginaTop">
@@ -29,7 +55,7 @@
         <slot v-if="type_fetch === 'pagination'" name="pagination" :pagination="pagination"
             :tradePage="fetchDataWithDelay" :error="error">
             <div v-if="!error && pagination.count > 0" class="px-3" :class="props.class_pagination">
-                <PaginationDatatable :filtering="true" :pagination="pagination" @tradePage="fetchDataWithDelay" />
+                <PaginationDatatable :filtering="true" :pagination="pagination" @tradePage="tradePageEmit" />
             </div>
         </slot>
     </div>
@@ -75,6 +101,7 @@ interface VDataPageProps {
 
     /* props para estilizar o vdatatable */
     class_container?: string;
+    class_loading_container?: string;
     class_pagination?: string;
     class_filters?: string;
 
@@ -150,6 +177,7 @@ const props = withDefaults(defineProps<VDataPageProps>(), {
     type_fetch: 'pagination',
     page_starts_at: 0,
     element_id: '',
+    class_loading_container: '',
     watch: () => []
 });
 
@@ -190,7 +218,7 @@ const pagination = ref<PaginationObject>({
 // =======================================================
 // 3. LÓGICA DA API (useFetch)
 // =======================================================
-const { data: response, pending: _pending, error, execute, attempt: _attempt } = props.fetch(props.endpoint, {
+const { data: response, pending: pending, error, execute, attempt: _attempt } = props.fetch(props.endpoint, {
     params: () => {
 
         if (props.deactivate_default_params) {
@@ -230,9 +258,9 @@ const default_params = computed<Record<string, any>>(() => ({
 }));
 
 // para controlar a exibição do loading
-// const showLoadingState = computed<boolean>(() => {
-//     return (pending.value || isDelaying.value)
-// });
+const showLoadingState = computed<boolean>(() => {
+    return (pending.value || isDelaying.value)
+});
 
 
 
@@ -472,6 +500,10 @@ if (watchSources.length > 0) {
         }, { deep: true });
     }
 
+}
+function tradePageEmit() {
+    emit("tradePage");
+    fetchDataWithDelay();
 }
 const on_mounted_called = ref<boolean>(false);
 watch(
