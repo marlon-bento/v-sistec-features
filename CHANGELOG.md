@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.4.0...v1.4.1) (2025-10-31)
+
+
+### Bug Fixes
+
+* agora o infinite loading também possui placeholder para loading ([2db6f97](https://github.com/marlon-bento/v-sistec-features/commit/2db6f97fe3f327671e5106da79b09c0e33c866c1))
+
 # [1.4.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.3.3...v1.4.0) (2025-10-31)
 
 
