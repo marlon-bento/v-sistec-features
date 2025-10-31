@@ -1,7 +1,7 @@
 <template>
     <div>
         <template v-if="type_fetch === 'pagination'" class="">
-            
+
             <template v-if="showLoadingState">
                 <div :class="props.class_loading_container">
                     <template v-for="n in pagination.limit_per_page" :key="'placeholder-' + n">
@@ -40,7 +40,10 @@
                 <template #spinner><span></span></template>
             </InfiniteLoading>
             <template v-for="item in items_infinite" :key="item[props.item_key]">
-                <slot name="body" :item="item">
+                <slot v-if="!item.loading" name="body" :item="item">
+                </slot>
+                <slot v-else name="loading">
+
                 </slot>
             </template>
             <InfiniteLoading :identifier="bottomLoaderId" @infinite="carregarPaginaBottom">
@@ -305,7 +308,12 @@ async function fetchDataWithDelay(): Promise<void> {
     }
 
 }
+// Função para inicializar dados no infinite scroll e evitar condições de corrida
+let init_id = 0;
 async function initDataInfinite() {
+    init_id++;
+    const current_init_id = init_id;
+
     items.value = [];
     items_infinite.value = [];
 
@@ -314,14 +322,34 @@ async function initDataInfinite() {
     await fetchDataWithDelay();
     emit("afterFetch")
 
+    if (current_init_id !== init_id) {
+        return;
+    }
 
     nextTick(() => {
+        if (current_init_id !== init_id) {
+            return;
+        }
+        let idhashInfiniteLoading = crypto.randomUUID();
+        items.value.forEach((item: any) => {
+            item.loading = true;
+            item.idhashInfiniteLoading = idhashInfiniteLoading;
+        });
         items_infinite.value.push(...items.value);
+        setTimeout(() => {
+            items_infinite.value.forEach((item: any) => {
+                if (item.idhashInfiniteLoading === idhashInfiniteLoading) {
+                    item.loading = false;
+                    delete item.idhashInfiniteLoading;
+                }
+            });
+        }, props.min_loading_delay)
         dadosInicializados.value = true;
         bottomLoaderId.value++;
         topLoaderId.value++;
     });
 }
+
 
 // =======================================================
 // 7. EXPOSE E CICLO DE VIDA
@@ -400,8 +428,20 @@ async function carregarPaginaBottom($state: any) {
         $state.loaded();
         return;
     }
-
+    const idhashInfiniteLoading = crypto.randomUUID();
+    novosItens.forEach((item: any) => {
+        item.loading = true;
+        item.idhashInfiniteLoading = idhashInfiniteLoading;
+    });
     items_infinite.value.push(...novosItens);
+    setTimeout(() => {
+        items_infinite.value.forEach((item: any) => {
+            if (item.idhashInfiniteLoading === idhashInfiniteLoading) {
+                item.loading = false;
+                delete item.idhashInfiniteLoading;
+            }
+        });
+    }, props.min_loading_delay)
 
     nextTick(() => {
         if (items_infinite.value && items_infinite.value.length > pagination.value.limit_per_page * 2) {
@@ -431,7 +471,6 @@ async function carregarPaginaTop($state: any) {
         $state.error();
         return
     };
-
     pagination.value.current_page -= 1;
     await execute();
 
@@ -444,11 +483,17 @@ async function carregarPaginaTop($state: any) {
         $state.loaded();
         return;
     }
-
+    
     // --- FILTRAR DUPLICATAS ---
     const novosItens = items.value.filter(
         (novoItem: any) => !items_infinite.value.some(itemExistente => itemExistente[props.item_key] === novoItem[props.item_key])
     );
+    const idhashInfiniteLoading = crypto.randomUUID();
+    novosItens.forEach((item: any) => {
+        item.loading = true;
+        item.idhashInfiniteLoading = idhashInfiniteLoading;
+    });
+
     if (novosItens.length === 0 && items.value.length > 0) {
         $state.loaded();
         return; // Evita adicionar duplicatas
@@ -459,6 +504,14 @@ async function carregarPaginaTop($state: any) {
     if (items_infinite.value && items_infinite.value.length > pagination.value.limit_per_page * 2) {
         items_infinite.value.splice(-pagination.value.limit_per_page, pagination.value.limit_per_page);
     }
+    setTimeout(() => {
+        items_infinite.value.forEach((item: any) => {
+            if (item.idhashInfiniteLoading === idhashInfiniteLoading) {
+                item.loading = false;
+                delete item.idhashInfiniteLoading;
+            }
+        });
+    }, props.min_loading_delay)
     nextTick(() => {
 
         const elementoAlvo = document.getElementById(props.element_id + id_primeiro_artigo);
@@ -505,12 +558,15 @@ function tradePageEmit() {
     emit("tradePage");
     fetchDataWithDelay();
 }
-const on_mounted_called = ref<boolean>(false);
+// watch(() => showLoadingState.value, (newVal) => {
+
+// });
+
 watch(
     () => props.add_params,
     () => {
-        if (!on_mounted_called.value) {
-            on_mounted_called.value = true;
+        if (first_fetch.value) {
+
             nextTick(() => {
                 /* 
                 * executar dentro do nextTick para garantir que o pai já tem acesso ao 
