@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.3.3...v1.4.0) (2025-10-31)
+
+
+### Features
+
+* agora é possível gerenciar os estados da paginação enquanto está carregando, se deu erro e se está vazio ([aa24176](https://github.com/marlon-bento/v-sistec-features/commit/aa241767eff6a99011c17c9abcf02cad0b70bce7))
+
 ## [1.3.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.3.2...v1.3.3) (2025-10-31)
 
 
