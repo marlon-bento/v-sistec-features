@@ -1,3 +1,10 @@
+## [1.3.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.3.2...v1.3.3) (2025-10-31)
+
+
+### Bug Fixes
+
+* bug de não fazer imediatamente as requisições resolvido ([e9ccbb6](https://github.com/marlon-bento/v-sistec-features/commit/e9ccbb6fd58b9c18da2185d7389e2a43ca5ed2c3))
+
 ## [1.3.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.3.1...v1.3.2) (2025-10-30)
 
 
