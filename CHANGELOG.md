@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.4.1...v1.5.0) (2025-11-03)
+
+
+### Features
+
+* agora o v-data-table possui função de conseguir mover a coluna de lugar e deixar configurado do jeito que quiser, assim como travar uma coluna para não poder ser movida ([bc0c8bb](https://github.com/marlon-bento/v-sistec-features/commit/bc0c8bb26ae3c76eaf28c1a820afb664c635cf14))
+
 ## [1.4.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.4.0...v1.4.1) (2025-10-31)
 
 
