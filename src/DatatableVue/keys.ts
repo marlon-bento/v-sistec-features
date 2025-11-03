@@ -14,6 +14,7 @@ export interface ColumnConfiguration {
   deactivate_img_preview?: boolean;
   format?: 'complete' | 'simple';
   click: Function | null;
+  locked: boolean;
 }
 
 // A API que o VDataTable "fornece" para os filhos

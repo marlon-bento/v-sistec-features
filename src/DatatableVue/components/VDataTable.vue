@@ -136,7 +136,7 @@
           <div v-if="items.length > 0">
             <table class="table table-vcenter table-selectable" :class="props.class_table">
               <thead>
-                <tr>
+                <!-- <tr>
                   <th v-if="props.use_checkbox" class="w-1">
                     <input class="form-check-input m-0" type="checkbox" ref="selectAllCheckbox"
                       @change="toggleSelectAll" aria-label="Selecionar todos os itens na página" />
@@ -144,15 +144,40 @@
                   <th v-for="col in columns" :key="col.field || col.header" :class="col.class_column">
                     {{ col.header }}
                   </th>
-                </tr>
+                </tr> -->
+
+                <draggable v-model="draggableColumns" tag="tr" item-key="header" :animation="400"
+                  ghost-class="ghost-item" drag-class="dragging-item">
+                  <template #header>
+                    <th v-if="props.use_checkbox" class="w-1">
+                      <input class="form-check-input m-0" type="checkbox" ref="selectAllCheckbox"
+                        @change="toggleSelectAll" aria-label="Selecionar todos os itens na página" />
+                    </th>
+                  </template>
+
+                  <template #item="{ element: col }">
+                    <th class="header-draggable" :class="col.class_column">
+                      {{ col.header }}
+                    </th>
+                  </template>
+
+                  <template #footer>
+                    <template v-for="col in lockedColumns" :key="col.field || col.header">
+                      <th class="header-locked" :class="col.class_column">
+                        {{ col.header }}
+                      </th>
+                    </template>
+                  </template>
+                </draggable>
+
               </thead>
               <tbody>
-                <tr v-for="item in items" :key="item[props.item_key]">
+                <TransitionGroup tag="tr" v-for="item in items" :key="item[props.item_key]" name="column-move">
                   <td v-if="props.use_checkbox" class="w-1">
                     <input class="form-check-input m-0" type="checkbox" :checked="isSelected(item)"
                       @change="toggleItemSelection(item)" aria-label="Selecionar este item" />
                   </td>
-                  <td v-for="col in columns" :key="col.field || col.header" :class="col.class_row">
+                  <td v-for="col in renderedColumns" :key="col.field || col.header" :class="col.class_row">
                     <component v-if="col.bodySlot" :is="col.bodySlot" :item="item" :is-selected="isSelected(item)" />
                     <span @click="col.click ? col.click(item) : null"
                       :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'text'">
@@ -163,10 +188,10 @@
                     <span @click="col.click ? col.click(item) : null" v-else-if="col.type === 'date'"
                       :class="col.class_item + (col.click ? ' cursor-pointer' : '')">
                       <span v-if="col.format === 'complete'">{{ new Date(getSubItem(col.field, item)).toLocaleString()
-                      }}</span>
+                        }}</span>
                       <span v-if="col.format === 'simple'"> {{ new Date(getSubItem(col.field,
                         item)).toLocaleDateString()
-                        }} </span>
+                      }} </span>
                     </span>
                     <div @click="col.click ? col.click(item) : null"
                       :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'html'"
@@ -195,7 +220,7 @@
                     <span class="text-danger erro-custom-container" v-else>tipo <span
                         class="badge bg-orange text-white erro-custom-text">{{ col.type }}</span> não suportado</span>
                   </td>
-                </tr>
+                </TransitionGroup>
               </tbody>
             </table>
           </div>
@@ -203,10 +228,7 @@
             <p class="m-0">Nenhum item encontrado.</p>
           </div>
         </div>
-
       </div>
-
-
     </div>
     <slot name="pagination" :pagination="pagination" :tradePage="fetchDataWithDelay" :error="error">
       <div v-if="!error && pagination.count > 0" class="px-3" :class="props.class_pagination">
@@ -228,6 +250,7 @@ import PaginationDatatable from './PaginationDatatable.vue';
 import Search from './SearchDatatable.vue';
 import { useImagePreview } from '../composables/useImagePreview';
 import { dataTableApiKey, type ColumnConfiguration, type PaginationObject } from '../keys';
+import draggable from 'vuedraggable';
 
 const {
   isHovering,
@@ -396,6 +419,26 @@ const { data: response, pending, error, execute, attempt } = props.fetch(props.e
 // =======================================================
 // 4. PROPRIEDADES COMPUTADAS
 // =======================================================
+
+// colunas TRAVADAS (apenas leitura)
+const lockedColumns = computed(() =>
+  columns.value.filter(c => c.locked)
+);
+// 'v-model' para as colunas ARRASTÁVEIS (com get/set)
+const draggableColumns = computed({
+  get() {
+    return columns.value.filter(c => !c.locked);
+  },
+  set(newUnlockedOrder) {
+    const locked = lockedColumns.value;
+    columns.value = [...newUnlockedOrder, ...locked];
+  }
+});
+// colunas RENDERIZADAS (ordem final)
+const renderedColumns = computed(() => {
+  return [...draggableColumns.value, ...lockedColumns.value];
+});
+
 const item_use = computed<number[]>(() => {
   let use = [1]
   if (props.list_filter.length > 0) {
@@ -765,5 +808,42 @@ $max-width-preview: 250px;
 
 [data-bs-theme=dark] .form-check-input {
   border-color: rgba(255, 255, 255, 0.374) !important;
+}
+
+
+
+/*
+  Estilos para arrastar e soltar colunas
+*/
+
+.ghost-item {
+  opacity: 0.5;
+  background: var(--tblr-primary-lt, #e6f0ff);
+  border-radius: 8px;
+}
+
+.dragging-item {
+  cursor: grabbing;
+  background: var(--tblr-primary);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  opacity: 0.5;
+  background-color: var(--tblr-primary-bg-subtle);
+  filter: grayscale(0) invert(0);
+}
+
+.header-draggable {
+  cursor: grab;
+}
+
+/*
+  Animações para movimentação de colunas
+*/
+.column-move-move {
+  transition: transform 0.4s ease;
+}
+
+.column-move-enter-active,
+.column-move-leave-active {
+  transition: all 0.4s ease;
 }
 </style>

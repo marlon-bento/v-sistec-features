@@ -18,6 +18,8 @@ interface VColumnProps {
   limite_text?: number | string | null;
   transform_function?: ((value: any) => any) | null;
   click?: Function | null;
+  // bloqueia a coluna para não ser movida
+  locked?: boolean;
 }
 const props = withDefaults(defineProps<VColumnProps>(), {
   field: null,
@@ -43,6 +45,7 @@ const props = withDefaults(defineProps<VColumnProps>(), {
   /* recebe função para alterar o que é mostrado */
   transform_function:  null ,
   click: null,
+  locked: false,
 });
 
 const slots = useSlots();
@@ -87,6 +90,7 @@ onMounted(() => {
     class_item: props.class_item,
     click: props.click,
     transform_function: props.transform_function,
+    locked: props.locked,
 
     bodySlot: slots.body,
     ...(props.type === 'text' && { limite_text: Number(props.limite_text) }),

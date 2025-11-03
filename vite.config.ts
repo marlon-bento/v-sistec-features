@@ -20,7 +20,7 @@ export default defineConfig({
       formats: ['es'] // 'es' (ES Module) é o mais importante para Vite
     },
     rollupOptions: {
-      external: ['vue', '@tabler/icons-vue'],
+      external: ['vue', '@tabler/icons-vue', 'vuedraggable'],
       output: {
         // Garante que os arquivos de saída mantenham a estrutura de pastas
         entryFileNames: '[name].js',
