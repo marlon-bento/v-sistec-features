@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.5.0...v1.6.0) (2025-11-03)
+
+
+### Features
+
+* agora é possivel colocar ordenação nas colunas desejadas, para crescente e decrescente ([a0a0193](https://github.com/marlon-bento/v-sistec-features/commit/a0a0193a1680b48a928409438d044b4839668e99))
+
 # [1.5.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.4.1...v1.5.0) (2025-11-03)
 
 
