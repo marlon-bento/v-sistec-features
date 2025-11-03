@@ -20,6 +20,10 @@ interface VColumnProps {
   click?: Function | null;
   // bloqueia a coluna para não ser movida
   locked?: boolean;
+  use_ordering?: boolean;
+  param_ordering?: string;
+  decreasing_value?: string;
+  increasing_value?: string;
 }
 const props = withDefaults(defineProps<VColumnProps>(), {
   field: null,
@@ -46,6 +50,11 @@ const props = withDefaults(defineProps<VColumnProps>(), {
   transform_function:  null ,
   click: null,
   locked: false,
+
+  use_ordering: false,
+  param_ordering: '',
+  decreasing_value: '',
+  increasing_value: '',
 });
 
 const slots = useSlots();
@@ -91,6 +100,10 @@ onMounted(() => {
     click: props.click,
     transform_function: props.transform_function,
     locked: props.locked,
+    use_ordering: props.use_ordering,
+    param_ordering: props.param_ordering,
+    decreasing_value: props.decreasing_value,
+    increasing_value: props.increasing_value,
 
     bodySlot: slots.body,
     ...(props.type === 'text' && { limite_text: Number(props.limite_text) }),

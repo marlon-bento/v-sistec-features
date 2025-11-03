@@ -15,6 +15,10 @@ export interface ColumnConfiguration {
   format?: 'complete' | 'simple';
   click: Function | null;
   locked: boolean;
+  use_ordering: boolean;
+  param_ordering: string;
+  decreasing_value: string;
+  increasing_value: string;
 }
 
 // A API que o VDataTable "fornece" para os filhos

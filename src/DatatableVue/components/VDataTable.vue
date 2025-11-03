@@ -156,16 +156,110 @@
                   </template>
 
                   <template #item="{ element: col }">
-                    <th class="header-draggable" :class="col.class_column">
-                      {{ col.header }}
-                    </th>
+                    <template v-if="col.use_ordering">
+                      <th class="header-draggable" :class="col.class_column">
+                        <div class="header-ordering">
+                          <span>{{ col.header }}</span>
+
+                          <span @click="() => toggleOrderingState(col.header)" class="ms-2 cursor-pointer">
+                            <svg v-if="!orderings_state[col.header] || orderings_state[col.header] === 'none'"
+                              xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="m3 8 4-4 4 4"></path>
+                              <path d="m11 16-4 4-4-4"></path>
+                              <path d="M7 4v16"></path>
+                              <path d="M15 8h6"></path>
+                              <path d="M15 16h6"></path>
+                              <path d="M13 12h8"></path>
+                            </svg>
+
+
+                            <svg v-else-if="orderings_state[col.header] === 'decreasing'"
+                              xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="m3 16 4 4 4-4"></path>
+                              <path d="M7 20V4"></path>
+                              <path d="M11 4h10"></path>
+                              <path d="M11 8h7"></path>
+                              <path d="M11 12h4"></path>
+                            </svg>
+
+                            <svg v-else-if="orderings_state[col.header] === 'increasing'"
+                              xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <path d="m3 8 4-4 4 4"></path>
+                              <path d="M7 4v16"></path>
+                              <path d="M11 12h4"></path>
+                              <path d="M11 16h7"></path>
+                              <path d="M11 20h10"></path>
+                            </svg>
+
+                          </span>
+                        </div>
+
+                      </th>
+                    </template>
+                    <template v-else>
+                      <th class="header-draggable" :class="col.class_column">
+                        {{ col.header }}
+                      </th>
+                    </template>
+
                   </template>
 
                   <template #footer>
                     <template v-for="col in lockedColumns" :key="col.field || col.header">
-                      <th class="header-locked" :class="col.class_column">
-                        {{ col.header }}
-                      </th>
+                      <template v-if="col.use_ordering">
+                        <th class="header-locked header-ordering" :class="col.class_column">
+                          <div class="header-ordering">
+                            <span>{{ col.header }}</span>
+
+                            <span @click="() => toggleOrderingState(col.header)" class="ms-2 cursor-pointer">
+                              <svg v-if="!orderings_state[col.header] || orderings_state[col.header] === 'none'"
+                                xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="m3 8 4-4 4 4"></path>
+                                <path d="m11 16-4 4-4-4"></path>
+                                <path d="M7 4v16"></path>
+                                <path d="M15 8h6"></path>
+                                <path d="M15 16h6"></path>
+                                <path d="M13 12h8"></path>
+                              </svg>
+
+
+                              <svg v-else-if="orderings_state[col.header] === 'decreasing'"
+                                xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="m3 16 4 4 4-4"></path>
+                                <path d="M7 20V4"></path>
+                                <path d="M11 4h10"></path>
+                                <path d="M11 8h7"></path>
+                                <path d="M11 12h4"></path>
+                              </svg>
+
+                              <svg v-else-if="orderings_state[col.header] === 'increasing'"
+                                xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="m3 8 4-4 4 4"></path>
+                                <path d="M7 4v16"></path>
+                                <path d="M11 12h4"></path>
+                                <path d="M11 16h7"></path>
+                                <path d="M11 20h10"></path>
+                              </svg>
+                            </span>
+                          </div>
+                        </th>
+                      </template>
+
+                      <template v-else>
+                        <th class="header-locked" :class="col.class_column">
+                          {{ col.header }}
+                        </th>
+                      </template>
+
                     </template>
                   </template>
                 </draggable>
@@ -367,6 +461,7 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
 // =======================================================
 
 
+const orderings_state = ref<Record<string, 'none' | 'increasing' | 'decreasing'>>({});
 const columns = ref<ColumnConfiguration[]>([]);
 const items = ref<T[]>([]) as Ref<T[]>;
 const totalItems = ref<number>(0);
@@ -390,24 +485,29 @@ const pagination = ref<PaginationObject>({
 // =======================================================
 const { data: response, pending, error, execute, attempt } = props.fetch(props.endpoint, {
   params: () => {
-
     if (props.deactivate_default_params) {
       if (props.add_params && typeof props.add_params === 'function') {
-        return props.add_params();
+        return {
+          ...props.add_params(),
+          ...params_ordering.value
+        };
       }
       return {
         ...props.add_params,
+        ...params_ordering.value
       };
     }
     else if (props.add_params && typeof props.add_params === 'function') {
       return {
         ...default_params.value,
         ...props.add_params(),
+        ...params_ordering.value
       }
     }
     return {
       ...default_params.value,
       ...props.add_params,
+      ...params_ordering.value
     };
   },
   retry: props.retry_attempts,
@@ -445,6 +545,24 @@ const item_use = computed<number[]>(() => {
     use.push(2)
   }
   return use;
+});
+const params_ordering = computed(() => {
+  const objectOrdering: Record<string, any> = {};
+  for (const col of columns.value) {
+    if (col.use_ordering) {
+      if (orderings_state.value[col.header] === 'increasing') {
+        objectOrdering[col.param_ordering] = col.increasing_value || 'increasing';
+      } else if (orderings_state.value[col.header] === 'decreasing') {
+        objectOrdering[col.param_ordering] = col.decreasing_value || 'decreasing';
+      } else {
+        continue;
+      }
+    } else {
+      continue;
+    }
+  }
+
+  return objectOrdering;
 });
 
 const default_params = computed<Record<string, any>>(() => ({
@@ -616,6 +734,27 @@ function limiteText(text: string | null, limite: number | null): string | null {
   }
   return text;
 }
+
+function toggleOrderingState(header: string) {
+  // desabilita todos que não são o header clicado
+  for (const key in orderings_state.value) {
+    if (key !== header) {
+      orderings_state.value[key] = 'none';
+    }
+  }
+
+  const currentState = orderings_state.value[header] || 'none';
+  if (currentState === 'none') {
+    orderings_state.value[header] = 'increasing';
+  } else if (currentState === 'increasing') {
+    orderings_state.value[header] = 'decreasing';
+  } else {
+    orderings_state.value[header] = 'none';
+  }
+
+  reSearch();
+}
+
 
 // =======================================================
 // 7. EXPOSE E CICLO DE VIDA
@@ -835,6 +974,7 @@ $max-width-preview: 250px;
   cursor: grab;
 }
 
+
 /*
   Animações para movimentação de colunas
 */
@@ -845,5 +985,11 @@ $max-width-preview: 250px;
 .column-move-enter-active,
 .column-move-leave-active {
   transition: all 0.4s ease;
+}
+
+
+.header-ordering {
+  display: flex;
+  justify-content: space-between;
 }
 </style>
