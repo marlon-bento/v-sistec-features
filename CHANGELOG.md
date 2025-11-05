@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.6.0...v1.6.1) (2025-11-05)
+
+
+### Bug Fixes
+
+* adicionada novas opções para o filtro que fica perto do search do datatable, paginação melhorada para o datatable, estilização e melhorias em como funciona o uso dos checkbox dos items ([6c7ea16](https://github.com/marlon-bento/v-sistec-features/commit/6c7ea164bdb11dde81a4e2357c821936364635a4))
+
 # [1.6.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.5.0...v1.6.0) (2025-11-03)
 
 
