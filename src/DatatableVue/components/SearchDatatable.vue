@@ -15,9 +15,14 @@
             <input type="text" class="form-control ms-1" id="inputSearchLaudos" v-model="modelSearch"
                 @keyup.enter="$emit('search')" placeholder="Buscar...">
 
-            <span v-if="modelSearch" @click="cleanSearch()" class=" inputClose" 
-                title="Limpar pesquisa">
-            <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-x"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+            <span v-if="modelSearch" @click="cleanSearch()" class=" inputClose" title="Limpar pesquisa">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="icon icon-tabler icons-tabler-outline icon-tabler-x">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <path d="M18 6l-12 12" />
+                    <path d="M6 6l12 12" />
+                </svg>
             </span>
             <span v-else class="input-icon-addon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -30,13 +35,19 @@
         </div>
         <div v-if="item_use.includes(2)" class="dropdown-menu">
             <template v-for="(filter, index) in props.list_filter" :key="index">
-                <router-link v-if="'type' in filter ? filter.type === 1 : false" :to="filter?.to"
+                <router-link v-if="('type' in filter ? filter.type === 1 : false) && ('visible' in filter ? filter.visible : true)" :to="filter?.to"
                     class="dropdown-item cursor-pointer">
                     {{ filter.text }}
                 </router-link>
-                <a v-else-if="'type' in filter ? filter.type === 2 : true"
+                <a v-else-if="('type' in filter ? filter.type === 2 : true) && ('visible' in filter ? filter.visible : true)"
                     @click.prevent="tradeFilter(String(filter.value))" class="dropdown-item cursor-pointer"
                     :class="modelFilter === filter?.value ? 'bg-info text-dark selected' : ''">
+                    {{ filter.text }}
+                </a>
+                <a v-else-if="('type' in filter ? filter.type === 3 : true) && ('visible' in filter ? filter.visible : true)" @click.prevent="clickItem(filter)"
+                    class="dropdown-item cursor-pointer"
+                    :class="filter?.active ? 'bg-info text-dark selected' : ''"
+                    >
                     {{ filter.text }}
                 </a>
             </template>
@@ -83,6 +94,8 @@ const props = withDefaults(defineProps<SearchProps>(), {
     // até o momento existem 2 items: 1 (search) e 2 (filter)
     item_use: () => [1, 2], // se não for passado, assume que é para todos os itens
     // até o momento existem 2 items: 1 (search) e 2 (filter)
+
+    click: null,
 });
 
 const emit = defineEmits(['update:search', 'update:filter', "search"])
@@ -128,10 +141,20 @@ function tradeFilter(newFilter: string): void {
         modelFilter.value = newFilter;
     }
 }
+
 function cleanSearch(): void {
     modelSearch.value = ""
     emit('search'); // emite o evento de busca para atualizar a lista
 }
+
+function clickItem(filter: any): void {
+    if (filter.click && typeof filter.click === 'function') {
+        filter.click();
+    } else {
+        console.error("O filtro selecionado não possui uma função de clique válida.");
+    }
+}
+
 </script>
 <style scoped>
 .inputClose {

@@ -5,13 +5,14 @@ import { computed } from "vue";
 // 1. DEFINIÇÃO DE TIPOS E INTERFACES 
 // =======================================================
 interface PaginationObject {
-  current_page: number;
+  current_page: number; // Este é o valor da API (pode ser 0 ou 1 para a primeira pág)
   count: number;
   limit_per_page: number;
 }
 interface PaginationProps {
   pagination: PaginationObject;
   filtering?: boolean;
+  page_starts_at?: number; // 0 ou 1, define o que a API espera para a primeira página
 }
 
 // =======================================================
@@ -19,6 +20,7 @@ interface PaginationProps {
 // =======================================================
 const props = withDefaults(defineProps<PaginationProps>(), {
   filtering: false,
+  page_starts_at: 0 // Padrão para API base 0
 });
 const emit = defineEmits<{
   (e: 'tradePage'): void
@@ -33,8 +35,8 @@ const total_pages = computed<number>(() => {
 });
 
 const next = computed(() => {
-  return props.pagination.current_page + 1 < total_pages.value
-    ? props.pagination.current_page + 1
+  return paginaAtual.value < total_pages.value
+    ? paginaAtual.value
     : null;
 });
 
@@ -44,19 +46,19 @@ const nextPage = (): void => {
   emit("tradePage");
 };
 const setPage = (newPage: number): void => {
-  props.pagination.current_page = newPage - 1;
+  props.pagination.current_page = newPage + (props.page_starts_at - 1);
   emit("tradePage");
 };
 const lastPage = (): void => {
-  props.pagination.current_page = total_pages.value - 1;
+  props.pagination.current_page = total_pages.value + (props.page_starts_at - 1);
   emit("tradePage");
 };
 const firstPage = (): void => {
-  props.pagination.current_page = 0;
+  props.pagination.current_page = props.page_starts_at;
   emit("tradePage");
 };
 const prevPage = (): void => {
-  if (props.pagination.current_page > 0) {
+  if (props.pagination.current_page > props.page_starts_at) {
     props.pagination.current_page--;
     emit("tradePage");
   }
@@ -65,7 +67,9 @@ const prevPage = (): void => {
 // =======================================================
 // 4. LÓGICA DE GERAÇÃO DE PÁGINAS
 // =======================================================
-
+const paginaAtual = computed(() => {
+  return props.pagination.current_page - (props.page_starts_at - 1);
+});
 /**
  * @description Computa um array com os números das páginas e as reticências a serem exibidas.
  * Ex: [1, 2, '...', 10, 11, 12, '...', 33, 34]
@@ -75,15 +79,15 @@ const paginasParaExibir = computed(() => {
   if (total_pages.value <= 7) {
     return Array.from({ length: total_pages.value }, (_, i) => i + 1);
   }
+  
 
-  const paginaAtual = props.pagination.current_page + 1;
   const total = total_pages.value;
 
   // O conjunto de páginas visíveis sempre inclui as 2 primeiras, 2 últimas,
   // a atual e suas duas vizinhas. O Set cuida de remover duplicatas.
   const paginasEssenciais = new Set([
     1, 2,                           // Sempre mostra as 2 primeiras
-    paginaAtual - 1, paginaAtual, paginaAtual + 1, // Mostra a atual e vizinhas
+    paginaAtual.value - 1, paginaAtual.value, paginaAtual.value + 1, // Mostra a atual e vizinhas
     total - 1, total                // Sempre mostra as 2 últimas
   ]);
 
@@ -133,27 +137,27 @@ const svg_uma_seta = `
       Mostrando de
       {{
         props.pagination.count !== 0
-          ? props.pagination.limit_per_page * props.pagination.current_page + 1
+          ? props.pagination.limit_per_page * (paginaAtual - 1) + 1
           : 0
       }}
       até
       {{
-        props.pagination.limit_per_page * (props.pagination.current_page + 1) < props.pagination.count ?
-          props.pagination.limit_per_page * (props.pagination.current_page + 1) : props.pagination.count }} de {{
+        props.pagination.limit_per_page * (paginaAtual) < props.pagination.count ?
+          props.pagination.limit_per_page * (paginaAtual) : props.pagination.count }} de {{
           props.pagination.count }} registros </span>
         <div class="d-flex align-items-center gap-2" v-if="total_pages > 0">
           <div class="d-flex">
-            <button class="btn btn-estilo" @click.prevent="firstPage" :disabled="props.pagination.current_page === 0" v-html="svg_duas_setas">
+            <button class="btn btn-estilo" @click.prevent="firstPage" :disabled="paginaAtual === 1" v-html="svg_duas_setas">
             </button>
-            <button class="btn btn-estilo" @click.prevent="prevPage" :disabled="props.pagination.current_page === 0" v-html="svg_uma_seta">
+            <button class="btn btn-estilo" @click.prevent="prevPage" :disabled="paginaAtual === 1" v-html="svg_uma_seta">
             </button>
           </div>
 
           <div class="d-flex  gap-2">
             <template v-for="(pagina, index) in paginasParaExibir" :key="index">
               <button v-if="typeof pagina === 'number'"
-                :class="props.pagination.current_page + 1 == pagina ? 'page-select' : ''" class="page-estilo"
-                @click.prevent="setPage(pagina)" :disabled="props.pagination.current_page + 1 == pagina">
+                :class="paginaAtual == pagina ? 'page-select' : ''" class="page-estilo"
+                @click.prevent="setPage(pagina)" :disabled="paginaAtual == pagina">
                 {{ pagina }}
               </button>
               <span v-else class="m-0 p-0">...</span>

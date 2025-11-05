@@ -23,12 +23,16 @@
           <Search v-model:search="pagination.search" v-model:filter="pagination.filter" :list_filter="props.list_filter"
             :item_use="item_use" @search="reSearch" />
         </div>
+        <slot name="item-selected-info" :selected_items="selected_items" :clearSelection="() => selected_items = []">
+          <div v-if="(props.use_checkbox && selected_items.length > 0) && !props.deactivate_selected_info"
+            class="alert alert-cyan d-flex justify-content-center align-items-center py-2" role="alert">
+            <h4 class="alert-title m-0"> <strong>Itens Selecionados:</strong> <span class="badge bg-azure text-azure-fg">{{ selected_items.length }}</span></h4>
+            <a class=" cursor-pointer " @click="selected_items = []">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+              Limpar Seleção</a>
+          </div>
+        </slot>
 
-        <div v-if="props.use_checkbox && selected_items.length > 0"
-          class="alert alert-cyan d-flex justify-content-center align-items-center py-3" role="alert">
-          <h4 class="alert-title m-0"> <strong>Itens Selecionados:</strong> {{ selected_items.length }}</h4>
-          <button class="btn   btn-outline-danger  ms-3 bold " @click="selected_items = []">Limpar Seleção</button>
-        </div>
         <template v-if="showLoadingState">
           <template v-if="props.custom_loading">
             <component :is="props.custom_loading" />
@@ -282,10 +286,10 @@
                     <span @click="col.click ? col.click(item) : null" v-else-if="col.type === 'date'"
                       :class="col.class_item + (col.click ? ' cursor-pointer' : '')">
                       <span v-if="col.format === 'complete'">{{ new Date(getSubItem(col.field, item)).toLocaleString()
-                        }}</span>
+                      }}</span>
                       <span v-if="col.format === 'simple'"> {{ new Date(getSubItem(col.field,
                         item)).toLocaleDateString()
-                      }} </span>
+                        }} </span>
                     </span>
                     <div @click="col.click ? col.click(item) : null"
                       :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'html'"
@@ -326,7 +330,8 @@
     </div>
     <slot name="pagination" :pagination="pagination" :tradePage="fetchDataWithDelay" :error="error">
       <div v-if="!error && pagination.count > 0" class="px-3" :class="props.class_pagination">
-        <PaginationDatatable :filtering="true" :pagination="pagination" @tradePage="fetchDataWithDelay" />
+        <PaginationDatatable :page_starts_at="props.page_starts_at" :filtering="true" :pagination="pagination"
+          @tradePage="fetchDataWithDelay" />
       </div>
     </slot>
 
@@ -410,10 +415,14 @@ interface VDataTableProps {
   item_key?: string;
 
   limit_per_page?: number;
+  page_starts_at?: number;
+  deactivate_selected_info?: boolean;
+
 }
 
 interface ExposedFunctions {
   execute: () => void;
+  reSearch: () => void;
   pagination: Ref<PaginationObject>;
   default_params: Record<string, any>;
   selected_items: Ref<T[]>;
@@ -453,6 +462,8 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   first_text_page_size: 'Mostrar',
   second_text_page_size: 'registros',
   limit_per_page: 5,
+  page_starts_at: 0,
+  deactivate_selected_info: false,
 });
 
 
@@ -473,17 +484,21 @@ const delayTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 
 /*--------- definição de páginação ---------------*/
 const pagination = ref<PaginationObject>({
-  current_page: 0, // pagina atual
+  current_page: props.page_starts_at, // pagina atual
   count: 0,  // total de itens
   limit_per_page: props.limit_per_page, // limite de itens por página
   search: '', // termo de busca
   filter: '', // filtro selecionado
 })
 
+const urlReativa = computed(() => {
+  pagination.value.current_page = props.page_starts_at;
+  return props.endpoint;
+});
 // =======================================================
 // 3. LÓGICA DA API (useFetch)
 // =======================================================
-const { data: response, pending, error, execute, attempt } = props.fetch(props.endpoint, {
+const { data: response, pending, error, execute, attempt } = props.fetch(urlReativa, {
   params: () => {
     if (props.deactivate_default_params) {
       if (props.add_params && typeof props.add_params === 'function') {
@@ -691,7 +706,7 @@ function fetchDataWithDelay(): void {
 }
 
 function reSearch(): void {
-  pagination.value.current_page = 0;
+  pagination.value.current_page = props.page_starts_at;
   fetchDataWithDelay();
 }
 
@@ -701,8 +716,7 @@ const changePageSize = (event: Event): void => {
   if (newSize > 0) {
     pagination.value.limit_per_page = newSize;
     pagination.value.limit_per_page = newSize; // Atualiza o limite de itens por página
-    pagination.value.current_page = 0;
-    fetchDataWithDelay();
+    reSearch();
   }
 };
 
@@ -762,26 +776,22 @@ function toggleOrderingState(header: string) {
 function set_limit_per_page(newLimit: number): void {
   if (newLimit > 0) {
     pagination.value.limit_per_page = newLimit;
-    pagination.value.current_page = 0;
-    fetchDataWithDelay();
+    reSearch();
   } else {
     console.warn("O limite deve ser um número maior que zero.");
   }
 }
 function set_search(newSearch: string): void {
   pagination.value.search = newSearch;
-  pagination.value.current_page = 0;
-  fetchDataWithDelay();
+  reSearch();
 }
 function set_filter(newFilter: string): void {
   pagination.value.filter = newFilter;
-  pagination.value.current_page = 0;
-  fetchDataWithDelay();
+  reSearch();
 }
 function set_page(newPage: number): void {
-  if (newPage >= 1 && newPage <= Math.ceil(pagination.value.count / pagination.value.limit_per_page)) {
-    pagination.value.current_page = newPage - 1;
-    fetchDataWithDelay();
+  if (newPage >= 0 && newPage <= Math.ceil(pagination.value.count / pagination.value.limit_per_page)) {
+    reSearch();
   } else {
     console.warn("Número de página inválido.");
   }
@@ -791,6 +801,7 @@ defineExpose<
   ExposedFunctions
 >({
   execute: fetchDataWithDelay,
+  reSearch:reSearch,
   pagination: readonly(pagination),
   set_limit_per_page: set_limit_per_page,
   set_search: set_search,
