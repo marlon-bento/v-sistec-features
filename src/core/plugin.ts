@@ -26,6 +26,14 @@ import '@tabler/core/dist/css/tabler-themes.min.css'
 import * as Tabler from '@tabler/core/dist/js/tabler.min.js';
 import vRequired from "v-required"
 import '../assets/v-required-style.css'
+import Toast from "vue-toastification";
+
+const options_toast = {
+  transition: "Vue-Toastification__bounce",
+  maxToasts: 20,
+  newestOnTop: true,
+  toastClassName: "custom-toast-class",
+};
 
 const SistecPlugin = {
   // até o momento não usamos opções nem o app, mas deixei aqui caso precise no futuro
@@ -36,6 +44,7 @@ const SistecPlugin = {
     // futuros upgrades podem ser feitos aqui
     // Ex: app.component('MeuComponente', MeuComponente);
     app.directive('required', vRequired);
+    app.use(Toast, options_toast);
   }
 };
 export { SistecPlugin };

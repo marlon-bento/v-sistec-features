@@ -19,6 +19,7 @@ export default defineConfig({
         vDataTable: path.resolve(__dirname, 'src/DatatableVue/index.ts'),
         vDataPage: path.resolve(__dirname, 'src/DataPageVue/index.ts'),
         iframeCommunicator: path.resolve(__dirname, 'src/iframeCommunicator/index.ts'),
+        toast: path.resolve(__dirname, 'src/toast/index.ts'),
       },
       // O nome é menos importante aqui, mas pode ser mantido
       name: 'VSistecFeatures',
@@ -26,7 +27,7 @@ export default defineConfig({
       formats: ['es'] // 'es' (ES Module) é o mais importante para Vite
     },
     rollupOptions: {
-      external: ['vue', '@tabler/icons-vue', 'vuedraggable', 'v-required'],
+      external: ['vue', '@tabler/icons-vue', 'vuedraggable', 'v-required', 'pinia'],
       output: {
         // Garante que os arquivos de saída mantenham a estrutura de pastas
         entryFileNames: '[name].js',
