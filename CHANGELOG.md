@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.6.2...v1.7.0) (2025-11-06)
+
+
+### Features
+
+* agora é possível importar e usar o store de toast para mostrar erros ([f5a9886](https://github.com/marlon-bento/v-sistec-features/commit/f5a9886cd9001e053a57d9b00a669ea42a6dad29))
+
 ## [1.6.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.6.1...v1.6.2) (2025-11-06)
 
 
