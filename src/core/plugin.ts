@@ -24,16 +24,18 @@ import type { App } from 'vue';
 import '@tabler/core/dist/css/tabler.min.css';
 import '@tabler/core/dist/css/tabler-themes.min.css'
 import * as Tabler from '@tabler/core/dist/js/tabler.min.js';
-
+import vRequired from "v-required"
+import '../assets/v-required-style.css'
 
 const SistecPlugin = {
   // até o momento não usamos opções nem o app, mas deixei aqui caso precise no futuro
-  install: (_app: App, _options?: any) => {
+  install: (app: App, _options?: any) => {
     // Disponibiliza o Tabler globalmente
     (window as any).bootstrap = Tabler;
 
     // futuros upgrades podem ser feitos aqui
     // Ex: app.component('MeuComponente', MeuComponente);
+    app.directive('required', vRequired);
   }
 };
 export { SistecPlugin };

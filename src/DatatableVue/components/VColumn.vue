@@ -3,9 +3,12 @@
 </template>
 
 <script setup lang="ts">
-import { inject, onMounted, useSlots } from 'vue';
+import { inject, onMounted, useSlots, defineSlots } from 'vue';
 import { dataTableApiKey } from '../keys';
 
+defineSlots<{
+  body?: () => any 
+}>();
 interface VColumnProps {
   field?: string | null;
   header: string;

@@ -1,0 +1,76 @@
+:root {
+    --color-error-inputs: red;
+}
+[data-bs-theme="dark"] {
+  --color-error-inputs: oklch(0.666 0.179 58.318);
+}
+
+/* estilo default da div */
+.style-custom-v-required-default {
+  display: flex !important;
+  justify-content: center !important;
+  flex-direction: column !important;
+  gap: 2px;
+}
+
+/* estilo default do span */
+.style-custom-v-required-error .v-required-span {
+  color:  var(--color-error-inputs) !important;
+  white-space: pre-wrap;
+}
+
+.multiselect__tags {
+  background-color: var(--cor-bg-inputs);
+  border: var(--border-inputs);
+  border-radius: 5px !important;
+  font-size: 0.875rem;
+  line-height: 1.4285714286;
+}
+
+.multiselect__placeholder {
+  color: var(--color-text-multiselect) !important;
+}
+
+/* estilo default do input */
+.style-custom-v-required-error input {
+  border: 2px solid  var(--color-error-inputs) !important;
+  color:  var(--color-error-inputs) !important;
+}
+
+.style-custom-v-required-error select {
+  border: 2px solid  var(--color-error-inputs) !important;
+  color:  var(--color-error-inputs) !important;
+}
+
+.style-custom-v-required-error textarea {
+  border: 2px solid var(--color-error-inputs) !important;
+  color:  var(--color-error-inputs) !important;
+}
+
+.style-custom-v-required-error .multiselect__tags {
+  border: 2px solid  var(--color-error-inputs) !important;
+}
+
+.style-custom-v-required-error .multiselect__input {
+  border: none !important;
+}
+
+.style-custom-v-required-error .multiselect__placeholder {
+  color:  var(--color-error-inputs) !important;
+}
+
+/* erro do component arrastar ou enviar arquivo */
+.style-custom-v-required-error .image-drop-zone {
+    border-color: var(--color-error-inputs) !important ; /* Adicionado !important para garantir a prioridade se houver conflitos */
+}
+
+/*estilo quando o vue editor der erro */
+.style-custom-v-required-error .quillWrapper {
+  border: 2px solid  var(--color-error-inputs) !important;
+}
+
+/*muda cor do placeholder do input*/
+.style-custom-v-required-error input::placeholder {
+  color: var(--color-error-inputs) !important;
+}
+

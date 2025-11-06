@@ -1,9 +1,15 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
+import dts from 'vite-plugin-dts'
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+    dts({
+      tsconfigPath: './tsconfig.app.json',
+    }) 
+  ],
   build: {
     lib: {
       // Múltiplos pontos de entrada
@@ -20,7 +26,7 @@ export default defineConfig({
       formats: ['es'] // 'es' (ES Module) é o mais importante para Vite
     },
     rollupOptions: {
-      external: ['vue', '@tabler/icons-vue', 'vuedraggable'],
+      external: ['vue', '@tabler/icons-vue', 'vuedraggable', 'v-required'],
       output: {
         // Garante que os arquivos de saída mantenham a estrutura de pastas
         entryFileNames: '[name].js',

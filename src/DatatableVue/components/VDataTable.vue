@@ -26,9 +26,19 @@
         <slot name="item-selected-info" :selected_items="selected_items" :clearSelection="() => selected_items = []">
           <div v-if="(props.use_checkbox && selected_items.length > 0) && !props.deactivate_selected_info"
             class="alert alert-cyan d-flex justify-content-center align-items-center py-2" role="alert">
-            <h4 class="alert-title m-0"> <strong>Itens Selecionados:</strong> <span class="badge bg-azure text-azure-fg">{{ selected_items.length }}</span></h4>
+            <h4 class="alert-title m-0"> <strong>Itens Selecionados:</strong> <span
+                class="badge bg-azure text-azure-fg">{{ selected_items.length }}</span></h4>
             <a class=" cursor-pointer " @click="selected_items = []">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="icon icon-tabler icons-tabler-outline icon-tabler-trash">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M4 7l16 0" />
+                <path d="M10 11l0 6" />
+                <path d="M14 11l0 6" />
+                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+              </svg>
               Limpar Seleção</a>
           </div>
         </slot>
@@ -286,10 +296,10 @@
                     <span @click="col.click ? col.click(item) : null" v-else-if="col.type === 'date'"
                       :class="col.class_item + (col.click ? ' cursor-pointer' : '')">
                       <span v-if="col.format === 'complete'">{{ new Date(getSubItem(col.field, item)).toLocaleString()
-                      }}</span>
+                        }}</span>
                       <span v-if="col.format === 'simple'"> {{ new Date(getSubItem(col.field,
                         item)).toLocaleDateString()
-                        }} </span>
+                      }} </span>
                     </span>
                     <div @click="col.click ? col.click(item) : null"
                       :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'html'"
@@ -343,12 +353,14 @@
 </template>
 
 <script setup lang="ts" generic="T extends Record<string, any>">
-import { readonly, ref, provide, computed, watch, nextTick, type Component, type Ref, type ComputedRef } from 'vue';
+import type { VDataTableProps, ExposedFunctions, PaginationObject  } from '../types/v-data-table.ts';
+import type { Ref } from 'vue';
+import { readonly, ref, provide, computed, watch, nextTick} from 'vue';
 
 import PaginationDatatable from './PaginationDatatable.vue';
 import Search from './SearchDatatable.vue';
 import { useImagePreview } from '../composables/useImagePreview';
-import { dataTableApiKey, type ColumnConfiguration, type PaginationObject } from '../keys';
+import { dataTableApiKey, type ColumnConfiguration } from '../keys';
 import draggable from 'vuedraggable';
 
 const {
@@ -360,78 +372,6 @@ const {
   handleMouseLeave
 } = useImagePreview();
 
-interface VDataTableProps {
-  /* configuração do useApiFetch */
-  fetch: Function;
-  fetch_name?: string;
-  endpoint: string;
-  /* tipos de loading pré-definidos*/
-  type_loading?: 'placeholder' | 'spiner-table' | 'spiner';
-  /*recebe um component para loading*/
-  custom_loading?: Component | null;
-  /* retira os params default da requisição */
-  deactivate_default_params?: boolean;
-  /* nomes dos parâmetros para passar para o backend */
-  filter_param_name?: string;
-  search_param_name?: string;
-  page_param_name?: string;
-  page_size_param_name?: string;
-  add_params?: Object | Function;
-
-  /* usado para pegar os dados do useApiFetch */
-  data_key?: string;
-  total_key?: string;
-
-  /* filtros que irão ser usados */
-  list_filter?: any[];
-  /* mudar o que está escrito no select de mudança de items_per_page*/
-  first_text_page_size?: string;
-  second_text_page_size?: string;
-
-
-  /* props para estilizar o vdatatable */
-  class_table?: string;
-  class_content?: string;
-  class_container?: string;
-  class_pagination?: string;
-  class_filters?: string;
-
-  /*
-  * tempo mínimo em ms para mostrar o loading para evitar telas piscando
-*/
-  min_loading_delay?: number;
-  /* 
-  - Número de tentativas automáticas em caso de falha.
-  - 1 significa que a requisição será feita apenas uma vez, sem retentativas.
-  - Valor padrão é 3.
-  */
-  retry_attempts?: number;
-  // Atraso em milissegundos entre cada tentativa
-  retry_delay?: number;
-
-  // Ativa a funcionalidade de seleção com checkboxes
-  use_checkbox?: boolean;
-  // Define qual propriedade do item será usada como chave única para a seleção.
-  item_key?: string;
-
-  limit_per_page?: number;
-  page_starts_at?: number;
-  deactivate_selected_info?: boolean;
-
-}
-
-interface ExposedFunctions {
-  execute: () => void;
-  reSearch: () => void;
-  pagination: Ref<PaginationObject>;
-  default_params: Record<string, any>;
-  selected_items: Ref<T[]>;
-  atLeastOneSelected: ComputedRef<boolean>;
-  set_limit_per_page: (newLimit: number) => void;
-  set_search: (newSearch: string) => void;
-  set_filter: (newFilter: string) => void;
-  set_page: (newPage: number) => void;
-}
 
 // =======================================================
 // 1. DEFINIÇÃO DE PROPS COM VALORES PADRÃO
@@ -797,11 +737,9 @@ function set_page(newPage: number): void {
   }
 }
 
-defineExpose<
-  ExposedFunctions
->({
+defineExpose<ExposedFunctions<T>>({
   execute: fetchDataWithDelay,
-  reSearch:reSearch,
+  reSearch: reSearch,
   pagination: readonly(pagination),
   set_limit_per_page: set_limit_per_page,
   set_search: set_search,
