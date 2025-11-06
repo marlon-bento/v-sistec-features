@@ -1,3 +1,10 @@
+## [1.6.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.6.1...v1.6.2) (2025-11-06)
+
+
+### Bug Fixes
+
+* Adicionados arquivos .d.ts e configuração do v-required já vem de padrão no plugin do v-sistec ([e3c7195](https://github.com/marlon-bento/v-sistec-features/commit/e3c7195d34edc0236868d13d7f39321488329ba1))
+
 ## [1.6.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.6.0...v1.6.1) (2025-11-05)
 
 
