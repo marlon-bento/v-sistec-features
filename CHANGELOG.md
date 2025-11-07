@@ -1,3 +1,10 @@
+## [1.7.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.7.0...v1.7.1) (2025-11-07)
+
+
+### Bug Fixes
+
+* usando nova versão do v-required ([26f4e47](https://github.com/marlon-bento/v-sistec-features/commit/26f4e474c3b0e0e1c5d533b08daea54d28a103e3))
+
 # [1.7.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.6.2...v1.7.0) (2025-11-06)
 
 
