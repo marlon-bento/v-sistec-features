@@ -74,7 +74,7 @@
   "dependencies": {
     "@formkit/drag-and-drop": "^0.5.3",
     "@tabler/core": "^1.4.0",
-    "v-required": "^2.0.3",
+    "v-required": "^2.1.0",
     "vue-toastification": "^2.0.0-rc.5",
     "v3-infinite-loading": "^1.3.2",
     "pinia": "^2.1.0 || ^3.0.0"
