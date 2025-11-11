@@ -2,14 +2,21 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import dts from 'vite-plugin-dts'
-
+import { fileURLToPath, URL } from 'node:url'
 export default defineConfig({
   plugins: [
     vue(),
     dts({
+      rollupTypes: true,
+      outDir: 'dist',
       tsconfigPath: './tsconfig.app.json',
     }) 
   ],
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
   build: {
     lib: {
       // Múltiplos pontos de entrada
@@ -19,6 +26,7 @@ export default defineConfig({
         vDataTable: path.resolve(__dirname, 'src/DatatableVue/index.ts'),
         vDataPage: path.resolve(__dirname, 'src/DataPageVue/index.ts'),
         iframeCommunicator: path.resolve(__dirname, 'src/iframeCommunicator/index.ts'),
+        Pagination: path.resolve(__dirname, 'src/Pagination/index.ts'),
         toast: path.resolve(__dirname, 'src/toast/index.ts'),
       },
       // O nome é menos importante aqui, mas pode ser mantido

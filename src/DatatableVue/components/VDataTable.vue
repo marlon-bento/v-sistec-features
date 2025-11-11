@@ -357,7 +357,7 @@ import type { VDataTableProps, ExposedFunctions, PaginationObject  } from '../ty
 import type { Ref } from 'vue';
 import { readonly, ref, provide, computed, watch, nextTick} from 'vue';
 
-import PaginationDatatable from './PaginationDatatable.vue';
+import PaginationDatatable from '@/Pagination/Pagination.vue';
 import Search from './SearchDatatable.vue';
 import { useImagePreview } from '../composables/useImagePreview';
 import { dataTableApiKey, type ColumnConfiguration } from '../keys';
@@ -731,7 +731,8 @@ function set_filter(newFilter: string): void {
 }
 function set_page(newPage: number): void {
   if (newPage >= 0 && newPage <= Math.ceil(pagination.value.count / pagination.value.limit_per_page)) {
-    reSearch();
+    pagination.value.current_page = newPage;
+    fetchDataWithDelay();
   } else {
     console.warn("Número de página inválido.");
   }

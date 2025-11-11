@@ -27,6 +27,10 @@
       "import": "./dist/vDataPage.js",
       "types": "./dist/vDataPage.d.ts"
     },
+    "./Pagination": {
+      "import": "./dist/Pagination.js",
+      "types": "./dist/Pagination.d.ts"
+    },
     "./iframeCommunicator": {
       "import": "./dist/iframeCommunicator.js",
       "types": "./dist/iframeCommunicator.d.ts"

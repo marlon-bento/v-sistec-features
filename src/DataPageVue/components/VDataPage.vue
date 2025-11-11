@@ -1,4 +1,5 @@
-<template>
+<template>{{ props.limit_per_page }}
+{{ pagination.limit_per_page }}
     <div>
         <template v-if="type_fetch === 'pagination'" class="">
 
@@ -58,7 +59,7 @@
         <slot v-if="type_fetch === 'pagination'" name="pagination" :pagination="pagination"
             :tradePage="fetchDataWithDelay" :error="error">
             <div v-if="!error && pagination.count > 0" class="px-3" :class="props.class_pagination">
-                <PaginationDatatable :filtering="true" :pagination="pagination" @tradePage="tradePageEmit" />
+                <Pagination :filtering="true" :page_starts_at="props.page_starts_at" :pagination="pagination" @tradePage="tradePageEmit" />
             </div>
         </slot>
     </div>
@@ -68,7 +69,8 @@
 <script setup lang="ts" generic="T extends Record<string, any>">
 import { readonly, ref, isRef, computed, watch, nextTick, type Ref, type WatchSource } from 'vue';
 import InfiniteLoading from "v3-infinite-loading";
-import PaginationDatatable from './PaginationDatatable.vue';
+import Pagination from '@/Pagination/Pagination.vue';
+
 import type { VDataPageProps, ExposedFunctions, PaginationObject } from '../types/v-data-page.ts';
 // import Search from './SearchDatatable.vue';
 
@@ -206,7 +208,10 @@ watch(response, (newResponse: any) => {
     }
 }, { immediate: true });
 
-
+function reSearch() {
+    pagination.value.current_page = props.page_starts_at;
+    fetchDataWithDelay();
+}
 // =======================================================
 // 6. MÉTODOS
 // =======================================================
@@ -279,25 +284,22 @@ async function initDataInfinite() {
 function set_limit_per_page(newLimit: number): void {
     if (newLimit > 0) {
         pagination.value.limit_per_page = newLimit;
-        pagination.value.current_page = 0;
-        fetchDataWithDelay();
+        reSearch();
     } else {
         console.warn("O limite deve ser um número maior que zero.");
     }
 }
 function set_search(newSearch: string): void {
     pagination.value.search = newSearch;
-    pagination.value.current_page = 0;
-    fetchDataWithDelay();
+    reSearch();
 }
 function set_filter(newFilter: string): void {
     pagination.value.filter = newFilter;
-    pagination.value.current_page = 0;
-    fetchDataWithDelay();
+    reSearch();
 }
 function set_page(newPage: number): void {
-    if (newPage >= 1 && newPage <= Math.ceil(pagination.value.count / pagination.value.limit_per_page)) {
-        pagination.value.current_page = newPage - 1;
+    if (newPage >= 0 && newPage <= Math.ceil(pagination.value.count / pagination.value.limit_per_page)) {
+        pagination.value.current_page = newPage;
         fetchDataWithDelay();
     } else {
         console.warn("Número de página inválido.");
@@ -313,6 +315,7 @@ defineExpose<
     set_search: set_search,
     set_filter: set_filter,
     set_page: set_page,
+    reSearch: reSearch,
     default_params
 });
 
@@ -465,8 +468,7 @@ watch(() => pagination.value.current_page, () => {
 if (watchSources.length > 0) {
     if (props.type_fetch === 'pagination') {
         watch(watchSources, () => {
-            pagination.value.current_page = props.page_starts_at;
-            fetchDataWithDelay();
+            reSearch();
         }, { deep: true });
     } else if (props.type_fetch === 'infinite-scroll') {
         watch(watchSources, () => {
@@ -504,8 +506,7 @@ watch(
             })
         } else {
             if (props.type_fetch === 'pagination') {
-                pagination.value.current_page = props.page_starts_at;
-                fetchDataWithDelay();
+                reSearch();
             } else if (props.type_fetch === 'infinite-scroll') {
                 dadosInicializados.value = false;
                 initDataInfinite();
