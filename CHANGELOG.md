@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.7.1...v1.8.0) (2025-11-11)
+
+
+### Features
+
+* padronização de paginação e agora paginação também está disponível para uso ([5e249a3](https://github.com/marlon-bento/v-sistec-features/commit/5e249a330eabe08535f78ca5bd5dc91c60c9ce39))
+
 ## [1.7.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.7.0...v1.7.1) (2025-11-07)
 
 
