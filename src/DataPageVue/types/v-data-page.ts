@@ -58,7 +58,7 @@ export interface VDataPageProps {
     limit_per_page?: number;
 
     next_page_response_name?: string;
-    page_starts_at: number;
+    page_starts_at?: number;
     element_id?: string;
     watch?: WatchSource[];
 }

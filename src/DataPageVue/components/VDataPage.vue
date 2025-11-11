@@ -1,5 +1,4 @@
-<template>{{ props.limit_per_page }}
-{{ pagination.limit_per_page }}
+<template>
     <div>
         <template v-if="type_fetch === 'pagination'" class="">
 

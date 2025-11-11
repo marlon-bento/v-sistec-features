@@ -4,7 +4,7 @@ import { onMounted, onUnmounted, readonly, ref } from 'vue';
  * Um Composable para gerenciar a comunicação entre um iframe e sua janela pai.
  * @param onMessageReceived - Uma função de callback que será executada quando uma mensagem for recebida do pai.
  */
-export function useIframeCommunicator(onMessageReceived: (event: MessageEvent) => void) {
+export function useIframeCommunicator(onMessageReceived?: (event: MessageEvent) => void) {
 
   // Uma ref reativa para saber se o app está rodando dentro de um iframe
   const isInIframe = ref(window.parent !== window);
@@ -22,12 +22,16 @@ export function useIframeCommunicator(onMessageReceived: (event: MessageEvent) =
 
   // Configura o ouvinte de eventos quando o componente é montado
   onMounted(() => {
-    window.addEventListener('message', onMessageReceived);
+    if (onMessageReceived){
+      window.addEventListener('message', onMessageReceived);
+    }
   });
 
   // Remove o ouvinte de eventos quando o componente é desmontado
   onUnmounted(() => {
-    window.removeEventListener('message', onMessageReceived);
+    if (onMessageReceived){
+      window.removeEventListener('message', onMessageReceived);
+    }
   });
 
   // Retorna os valores e funções que o componente poderá usar
