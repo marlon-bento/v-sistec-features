@@ -1,3 +1,11 @@
+## [1.8.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.8.1...v1.8.2) (2025-11-12)
+
+
+### Bug Fixes
+
+* concertado problema de estilos do vue-toastfication faltando ([20d6702](https://github.com/marlon-bento/v-sistec-features/commit/20d67022d37a551086924b5439425d0b08748445))
+* faltou externalizar o vue-toastfication ([f057002](https://github.com/marlon-bento/v-sistec-features/commit/f0570020eb43ae40479a4f8c2f55f625059f5b3b))
+
 ## [1.8.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.8.0...v1.8.1) (2025-11-11)
 
 
