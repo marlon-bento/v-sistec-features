@@ -27,6 +27,7 @@ import * as Tabler from '@tabler/core/dist/js/tabler.min.js';
 import vRequired from "v-required"
 import '../assets/v-required-style.css'
 import Toast from "vue-toastification";
+import "vue-toastification/dist/index.css";
 
 const options_toast = {
   transition: "Vue-Toastification__bounce",
