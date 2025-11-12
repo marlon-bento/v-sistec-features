@@ -1,3 +1,10 @@
+## [1.8.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.8.0...v1.8.1) (2025-11-11)
+
+
+### Bug Fixes
+
+* debug que não deveria ser subido foi removido e melhora em erros de tipagem ([e71d400](https://github.com/marlon-bento/v-sistec-features/commit/e71d400700a1c6a70b671d28b1f6b57e4e0655a6))
+
 # [1.8.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.7.1...v1.8.0) (2025-11-11)
 
 
