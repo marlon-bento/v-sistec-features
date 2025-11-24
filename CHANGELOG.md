@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.8.2...v1.9.0) (2025-11-24)
+
+
+### Features
+
+* agora é possivel no v-data-table passar :immediate='false' para não fazer a requisição imediatamente ([6bae42b](https://github.com/marlon-bento/v-sistec-features/commit/6bae42b854f0e57f0f2281f2ebefd424459612a6))
+
 ## [1.8.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.8.1...v1.8.2) (2025-11-12)
 
 
