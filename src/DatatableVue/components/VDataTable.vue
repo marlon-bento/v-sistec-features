@@ -296,10 +296,10 @@
                     <span @click="col.click ? col.click(item) : null" v-else-if="col.type === 'date'"
                       :class="col.class_item + (col.click ? ' cursor-pointer' : '')">
                       <span v-if="col.format === 'complete'">{{ new Date(getSubItem(col.field, item)).toLocaleString()
-                        }}</span>
+                      }}</span>
                       <span v-if="col.format === 'simple'"> {{ new Date(getSubItem(col.field,
                         item)).toLocaleDateString()
-                      }} </span>
+                        }} </span>
                     </span>
                     <div @click="col.click ? col.click(item) : null"
                       :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'html'"
@@ -332,6 +332,9 @@
               </tbody>
             </table>
           </div>
+          <div v-else-if="first_fetch === false" >
+            
+          </div>
           <div v-else class="text-center p-4 text-secondary">
             <p class="m-0">Nenhum item encontrado.</p>
           </div>
@@ -353,9 +356,9 @@
 </template>
 
 <script setup lang="ts" generic="T extends Record<string, any>">
-import type { VDataTableProps, ExposedFunctions, PaginationObject  } from '../types/v-data-table.ts';
+import type { VDataTableProps, ExposedFunctions, PaginationObject } from '../types/v-data-table.ts';
 import type { Ref } from 'vue';
-import { readonly, ref, provide, computed, watch, nextTick} from 'vue';
+import { readonly, ref, provide, computed, watch, nextTick } from 'vue';
 
 import PaginationDatatable from '@/Pagination/Pagination.vue';
 import Search from './SearchDatatable.vue';
@@ -412,7 +415,8 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
 // 2. ESTADO REATIVO PRINCIPAL
 // =======================================================
 
-
+// variavel para saber quando o datatable já fez alguma busca
+const first_fetch = ref<boolean>(false);
 const orderings_state = ref<Record<string, 'none' | 'increasing' | 'decreasing'>>({});
 const columns = ref<ColumnConfiguration[]>([]);
 const items = ref<T[]>([]) as Ref<T[]>;
@@ -634,6 +638,8 @@ provide(dataTableApiKey, { addColumn });
 
 // Função que gerencia o delay e a chamada da API
 function fetchDataWithDelay(): void {
+  // agora já fez pelo menos a primeira busca então marca como true
+  if (!first_fetch.value) first_fetch.value = true;
   // Limpa timer anterior, se houver
   if (delayTimer.value) clearTimeout(delayTimer.value);
 
