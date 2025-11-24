@@ -404,6 +404,7 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   limit_per_page: 5,
   page_starts_at: 0,
   deactivate_selected_info: false,
+  immediate: true,
 });
 
 
@@ -764,7 +765,7 @@ watch(
       reSearch();
     }
   },
-  { deep: true, immediate: true }
+  { deep: true, immediate: props.immediate }
 )
 
 </script>

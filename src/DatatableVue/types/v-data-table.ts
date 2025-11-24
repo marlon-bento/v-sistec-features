@@ -59,7 +59,7 @@ export interface VDataTableProps {
   limit_per_page?: number;
   page_starts_at?: number;
   deactivate_selected_info?: boolean;
-
+  immediate?: boolean;
 }
 
 export interface ExposedFunctions<T extends Record<string, any>> {
