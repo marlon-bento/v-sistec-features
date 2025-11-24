@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.9.0...v1.9.1) (2025-11-24)
+
+
+### Bug Fixes
+
+* não mostra mais que não existe nenhum dado quando ainda não fez nenhuma busca ([51ba7c4](https://github.com/marlon-bento/v-sistec-features/commit/51ba7c4ce3bd2b655f9c57344d94d14328098b6a))
+
 # [1.9.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.8.2...v1.9.0) (2025-11-24)
 
 
