@@ -5,7 +5,7 @@
       <div class="" :class="props.class_content">
         <div :class="props.class_filters" class="d-flex justify-content-between align-items-start ">
           <slot name="pageSize" :changePageSize="changePageSize" :limit_per_page="pagination.limit_per_page">
-            <div class="text-secondary">
+            <div class="text-secondary" :class="props.class_page_size">
               {{ props.first_text_page_size }}
               <div class="mx-2 d-inline-block">
                 <input class="form-control form-control-sm" @change="changePageSize"
@@ -21,7 +21,9 @@
           </slot>
 
           <Search v-model:search="pagination.search" v-model:filter="pagination.filter" :list_filter="props.list_filter"
-            :item_use="item_use" @search="reSearch" :placeholder_search="props.placeholder_search"/>
+            :item_use="item_use" @search="reSearch" 
+            :deactivate_search_on_clear="props.deactivate_search_on_clear"
+            :placeholder_search="props.placeholder_search"/>
         </div>
         <slot name="item-selected-info" :selected_items="selected_items" :clearSelection="() => selected_items = []">
           <div v-if="(props.use_checkbox && selected_items.length > 0) && !props.deactivate_selected_info"
@@ -397,6 +399,7 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   class_container: '',
   class_pagination: '',
   class_filters: '',
+  class_page_size: '',
   min_loading_delay: 600,
   retry_attempts: 3,
   retry_delay: 2000,
@@ -409,6 +412,7 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   deactivate_selected_info: false,
   immediate: true,
   placeholder_search: "Buscar...",
+  deactivate_search_on_clear: false,
 });
 
 

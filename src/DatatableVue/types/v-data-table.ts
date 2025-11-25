@@ -37,6 +37,7 @@ export interface VDataTableProps {
   class_container?: string;
   class_pagination?: string;
   class_filters?: string;
+  class_page_size?: string;
 
   /*
   * tempo mínimo em ms para mostrar o loading para evitar telas piscando
@@ -61,6 +62,7 @@ export interface VDataTableProps {
   deactivate_selected_info?: boolean;
   immediate?: boolean;
   placeholder_search?: string;
+  deactivate_search_on_clear?: boolean;
 }
 
 export interface ExposedFunctions<T extends Record<string, any>> {

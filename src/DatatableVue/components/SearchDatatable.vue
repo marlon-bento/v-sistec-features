@@ -62,6 +62,7 @@ interface SearchProps {
     list_filter?: any[];
     item_use?: number[];
     placeholder_search?: string;
+    deactivate_search_on_clear?: boolean;
 }
 const props = withDefaults(defineProps<SearchProps>(), {
     filter: "",
@@ -96,6 +97,7 @@ const props = withDefaults(defineProps<SearchProps>(), {
     // até o momento existem 2 items: 1 (search) e 2 (filter)
     placeholder_search: "Buscar...",
     click: null,
+    deactivate_search_on_clear: false,
 });
 
 const emit = defineEmits(['update:search', 'update:filter', "search"])
@@ -144,7 +146,9 @@ function tradeFilter(newFilter: string): void {
 
 function cleanSearch(): void {
     modelSearch.value = ""
-    emit('search'); // emite o evento de busca para atualizar a lista
+    if (!props.deactivate_search_on_clear){
+        emit('search'); // emite o evento de busca para atualizar a lista
+    }
 }
 
 function clickItem(filter: any): void {
