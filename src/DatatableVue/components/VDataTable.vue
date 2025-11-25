@@ -22,7 +22,9 @@
 
           <Search v-model:search="pagination.search" v-model:filter="pagination.filter" :list_filter="props.list_filter"
             :item_use="item_use" @search="reSearch" :deactivate_search_on_clear="props.deactivate_search_on_clear"
-            :placeholder_search="props.placeholder_search" />
+            :placeholder_search="props.placeholder_search"
+            :deactivate_search_empty="props.deactivate_search_empty"
+            />
         </div>
         <slot name="item-selected-info" :selected_items="selected_items" :clearSelection="() => selected_items = []">
           <div v-if="(props.use_checkbox && selected_items.length > 0) && !props.deactivate_selected_info"
@@ -465,7 +467,8 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   use_expandable_items: false,
   type_animation_expand: 'expand',
   deactivate_animation_expand: false,
-  type_button_expand: 'arrow'
+  type_button_expand: 'arrow',
+  deactivate_search_empty: false,
 });
 
 
