@@ -13,7 +13,7 @@
         </a>
         <div class="input-icon">
             <input type="text" class="form-control ms-1" id="inputSearchVDataTable" v-model="modelSearch"
-                @keyup.enter="$emit('search')" :placeholder="placeholder_search">
+                @keyup.enter="searchEnter" :placeholder="placeholder_search">
 
             <span v-if="modelSearch" @click="cleanSearch()" class=" inputClose" title="Limpar pesquisa">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -63,6 +63,7 @@ interface SearchProps {
     item_use?: number[];
     placeholder_search?: string;
     deactivate_search_on_clear?: boolean;
+    deactivate_search_empty?: boolean;
 }
 const props = withDefaults(defineProps<SearchProps>(), {
     filter: "",
@@ -98,6 +99,7 @@ const props = withDefaults(defineProps<SearchProps>(), {
     placeholder_search: "Buscar...",
     click: null,
     deactivate_search_on_clear: false,
+    deactivate_search_empty: false,
 });
 
 const emit = defineEmits(['update:search', 'update:filter', "search"])
@@ -158,7 +160,13 @@ function clickItem(filter: any): void {
         console.error("O filtro selecionado não possui uma função de clique válida.");
     }
 }
-
+function searchEnter(): void {
+    // emite o evento de busca quando o enter é pressionado
+    if (props.deactivate_search_empty && modelSearch.value.trim() === "") {
+        return;
+    }
+    emit('search');
+}
 </script>
 <style scoped>
 .inputClose {
