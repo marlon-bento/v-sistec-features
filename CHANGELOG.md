@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.9.3...v1.10.0) (2025-11-25)
+
+
+### Features
+
+* agora é possível adicionar um campo abaixo das linhas da tabela para fazer o que quiser ([2071b76](https://github.com/marlon-bento/v-sistec-features/commit/2071b76390e2b4bf948bc278185595c57bf826af))
+
 ## [1.9.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.9.2...v1.9.3) (2025-11-25)
 
 
