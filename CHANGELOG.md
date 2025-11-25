@@ -1,3 +1,10 @@
+## [1.9.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.9.2...v1.9.3) (2025-11-25)
+
+
+### Bug Fixes
+
+* agora é possivel desativar a busca automatica quando limpa o input de texto do v-data-table usando a prop deactivate_search_on_clear ([ba0fbca](https://github.com/marlon-bento/v-sistec-features/commit/ba0fbca85c3cea37d7e96c703d55e87cce1f8fd5))
+
 ## [1.9.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.9.1...v1.9.2) (2025-11-25)
 
 
