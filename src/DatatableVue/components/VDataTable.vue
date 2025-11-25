@@ -1093,6 +1093,11 @@ $max-width-preview: 250px;
   padding: 4px;
   border-radius: 4px;
   transition: background-color 0.2s ease;
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+
 
   &:hover {
     background-color: rgba(0, 0, 0, 0.05);
