@@ -12,8 +12,8 @@
             </svg>
         </a>
         <div class="input-icon">
-            <input type="text" class="form-control ms-1" id="inputSearchLaudos" v-model="modelSearch"
-                @keyup.enter="$emit('search')" placeholder="Buscar...">
+            <input type="text" class="form-control ms-1" id="inputSearchVDataTable" v-model="modelSearch"
+                @keyup.enter="$emit('search')" :placeholder="placeholder_search">
 
             <span v-if="modelSearch" @click="cleanSearch()" class=" inputClose" title="Limpar pesquisa">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -61,6 +61,7 @@ interface SearchProps {
     filter?: string;
     list_filter?: any[];
     item_use?: number[];
+    placeholder_search?: string;
 }
 const props = withDefaults(defineProps<SearchProps>(), {
     filter: "",
@@ -93,7 +94,7 @@ const props = withDefaults(defineProps<SearchProps>(), {
     // até o momento existem 2 items: 1 (search) e 2 (filter)
     item_use: () => [1, 2], // se não for passado, assume que é para todos os itens
     // até o momento existem 2 items: 1 (search) e 2 (filter)
-
+    placeholder_search: "Buscar...",
     click: null,
 });
 

@@ -60,6 +60,7 @@ export interface VDataTableProps {
   page_starts_at?: number;
   deactivate_selected_info?: boolean;
   immediate?: boolean;
+  placeholder_search?: string;
 }
 
 export interface ExposedFunctions<T extends Record<string, any>> {

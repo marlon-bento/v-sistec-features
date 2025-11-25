@@ -21,7 +21,7 @@
           </slot>
 
           <Search v-model:search="pagination.search" v-model:filter="pagination.filter" :list_filter="props.list_filter"
-            :item_use="item_use" @search="reSearch" />
+            :item_use="item_use" @search="reSearch" :placeholder_search="props.placeholder_search"/>
         </div>
         <slot name="item-selected-info" :selected_items="selected_items" :clearSelection="() => selected_items = []">
           <div v-if="(props.use_checkbox && selected_items.length > 0) && !props.deactivate_selected_info"
@@ -408,6 +408,7 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   page_starts_at: 0,
   deactivate_selected_info: false,
   immediate: true,
+  placeholder_search: "Buscar...",
 });
 
 
