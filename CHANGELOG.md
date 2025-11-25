@@ -1,3 +1,10 @@
+## [1.10.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.10.0...v1.10.1) (2025-11-25)
+
+
+### Bug Fixes
+
+* estilos do btn de mostrar a linha de baixo melhorados ([2ae0eca](https://github.com/marlon-bento/v-sistec-features/commit/2ae0ecabfa3086c968b31bb94780bc4a15fb4381))
+
 # [1.10.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.9.3...v1.10.0) (2025-11-25)
 
 
