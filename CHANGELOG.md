@@ -1,3 +1,10 @@
+## [1.9.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.9.1...v1.9.2) (2025-11-25)
+
+
+### Bug Fixes
+
+* agora é possível trocar o placeholder do input search do v-data-table passado pela prop placeholder_search ([e3059c8](https://github.com/marlon-bento/v-sistec-features/commit/e3059c81ac9a38ea008fe845d0a39fa23421103a))
+
 ## [1.9.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.9.0...v1.9.1) (2025-11-24)
 
 
