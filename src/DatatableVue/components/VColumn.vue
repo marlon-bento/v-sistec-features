@@ -7,7 +7,7 @@ import { inject, onMounted, useSlots, defineSlots } from 'vue';
 import { dataTableApiKey } from '../keys';
 
 defineSlots<{
-  body?: () => any 
+  body?: () => any, 
 }>();
 interface VColumnProps {
   field?: string | null;

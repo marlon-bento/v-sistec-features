@@ -21,9 +21,8 @@
           </slot>
 
           <Search v-model:search="pagination.search" v-model:filter="pagination.filter" :list_filter="props.list_filter"
-            :item_use="item_use" @search="reSearch" 
-            :deactivate_search_on_clear="props.deactivate_search_on_clear"
-            :placeholder_search="props.placeholder_search"/>
+            :item_use="item_use" @search="reSearch" :deactivate_search_on_clear="props.deactivate_search_on_clear"
+            :placeholder_search="props.placeholder_search" />
         </div>
         <slot name="item-selected-info" :selected_items="selected_items" :clearSelection="() => selected_items = []">
           <div v-if="(props.use_checkbox && selected_items.length > 0) && !props.deactivate_selected_info"
@@ -165,6 +164,7 @@
                 <draggable v-model="draggableColumns" tag="tr" item-key="header" :animation="400"
                   ghost-class="ghost-item" drag-class="dragging-item">
                   <template #header>
+                    <th v-if="props.use_expandable_items"></th>
                     <th v-if="props.use_checkbox" class="w-1">
                       <input class="form-check-input m-0" type="checkbox" ref="selectAllCheckbox"
                         @change="toggleSelectAll" aria-label="Selecionar todos os itens na página" />
@@ -282,60 +282,109 @@
 
               </thead>
               <tbody>
-                <TransitionGroup tag="tr" v-for="item in items" :key="item[props.item_key]" name="column-move">
-                  <td v-if="props.use_checkbox" class="w-1">
-                    <input class="form-check-input m-0" type="checkbox" :checked="isSelected(item)"
-                      @change="toggleItemSelection(item)" aria-label="Selecionar este item" />
-                  </td>
-                  <td v-for="col in renderedColumns" :key="col.field || col.header" :class="col.class_row">
-                    <component v-if="col.bodySlot" :is="col.bodySlot" :item="item" :is-selected="isSelected(item)" />
-                    <span @click="col.click ? col.click(item) : null"
-                      :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'text'">
-                      {{
-                        limiteText(getSubItem(col.field, item, col.transform_function), col.limite_text ?? null)
-                      }}</span>
+                <template v-for="item in items" :key="item[props.item_key]">
+                  <TransitionGroup tag="tr" name="column-move">
+                    <td v-if="props.use_expandable_items" class="w-1">
+                      <slot name="expand-button" :item="item" :is-expanded="is_item_expanded(item)"
+                        :expand_item_toggle="expand_item_toggle">
+                        <button type="button" class="btn-clean btn-icon-anim"
+                          :class="{ 'is-expanded': is_item_expanded(item) }" @click="expand_item_toggle(item)">
 
-                    <span @click="col.click ? col.click(item) : null" v-else-if="col.type === 'date'"
-                      :class="col.class_item + (col.click ? ' cursor-pointer' : '')">
-                      <span v-if="col.format === 'complete'">{{ new Date(getSubItem(col.field, item)).toLocaleString()
-                      }}</span>
-                      <span v-if="col.format === 'simple'"> {{ new Date(getSubItem(col.field,
-                        item)).toLocaleDateString()
+                          <template v-if="props.type_button_expand === 'arrow'">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                              stroke-linejoin="round"
+                              class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right icon-transition-arrow">
+                              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                              <path d="M9 6l6 6l-6 6" />
+                            </svg>
+
+                          </template>
+
+                          <template v-else>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                              stroke-linejoin="round" class="icon icon-transition-plus">
+                              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                              <path d="M12 5l0 14" class="vertical-line" />
+                              <path d="M5 12l14 0" />
+                            </svg>
+                          </template>
+
+                        </button>
+                      </slot>
+                    </td>
+                    <td v-if="props.use_checkbox" class="w-1">
+                      <input class="form-check-input m-0" type="checkbox" :checked="isSelected(item)"
+                        @change="toggleItemSelection(item)" aria-label="Selecionar este item" />
+                    </td>
+
+                    <td v-for="col in renderedColumns" :key="col.field || col.header" :class="col.class_row">
+                      <component v-if="col.bodySlot" :is="col.bodySlot" :item="item" :is-selected="isSelected(item)" />
+                      <span @click="col.click ? col.click(item) : null"
+                        :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'text'">
+                        {{
+                          limiteText(getSubItem(col.field, item, col.transform_function), col.limite_text ?? null)
+                        }}</span>
+
+                      <span @click="col.click ? col.click(item) : null" v-else-if="col.type === 'date'"
+                        :class="col.class_item + (col.click ? ' cursor-pointer' : '')">
+                        <span v-if="col.format === 'complete'">{{ new Date(getSubItem(col.field, item)).toLocaleString()
+                        }}</span>
+                        <span v-if="col.format === 'simple'"> {{ new Date(getSubItem(col.field,
+                          item)).toLocaleDateString()
                         }} </span>
-                    </span>
-                    <div @click="col.click ? col.click(item) : null"
-                      :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'html'"
-                      v-html="getSubItem(col.field, item)">
-                    </div>
-
-                    <div @click="col.click ? col.click(item) : null"
-                      :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'img'">
-
-                      <div v-if="getSubItem(col.field, item)" v-bind="col.deactivate_img_preview ? {
-                        class: 'container-img'
-                      } :
-                        {
-                          onMouseover: (event) => handleMouseOver(event, getSubItem(col.field, item)),
-                          onMousemove: handleMouseMove,
-                          onMouseleave: handleMouseLeave,
-                          class: 'container-img container-img-preview'
-                        }">
-
-                        <img class="img-tamanho" :src="getSubItem(col.field, item)" />
-                        <img class="img-tamanho-cover" :src="getSubItem(col.field, item)" />
-                        <div class="bg-img"></div>
+                      </span>
+                      <div @click="col.click ? col.click(item) : null"
+                        :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'html'"
+                        v-html="getSubItem(col.field, item)">
                       </div>
 
-                    </div>
-                    <span class="text-danger erro-custom-container" v-else>tipo <span
-                        class="badge bg-orange text-white erro-custom-text">{{ col.type }}</span> não suportado</span>
-                  </td>
-                </TransitionGroup>
+                      <div @click="col.click ? col.click(item) : null"
+                        :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'img'">
+
+                        <div v-if="getSubItem(col.field, item)" v-bind="col.deactivate_img_preview ? {
+                          class: 'container-img'
+                        } :
+                          {
+                            onMouseover: (event) => handleMouseOver(event, getSubItem(col.field, item)),
+                            onMousemove: handleMouseMove,
+                            onMouseleave: handleMouseLeave,
+                            class: 'container-img container-img-preview'
+                          }">
+
+                          <img class="img-tamanho" :src="getSubItem(col.field, item)" />
+                          <img class="img-tamanho-cover" :src="getSubItem(col.field, item)" />
+                          <div class="bg-img"></div>
+                        </div>
+
+                      </div>
+                      <span class="text-danger erro-custom-container" v-else>tipo <span
+                          class="badge bg-orange text-white erro-custom-text">{{ col.type }}</span> não suportado</span>
+                    </td>
+                  </TransitionGroup>
+                  <Transition :name="'expand-item-' + props.type_animation_expand"
+                    :css="!props.deactivate_animation_expand">
+                    <!-- mostra uma linha após cada item -->
+                    <tr v-if="is_item_expanded(item)" class="">
+                      <!-- se estiver usando checkbox existe uma coluna a mais -->
+                      <td :colspan="colspanExpandItems()">
+                        <slot name="after-row" :item="item">
+
+                        </slot>
+
+                      </td>
+                    </tr>
+                  </Transition>
+
+
+                </template>
+
               </tbody>
             </table>
           </div>
-          <div v-else-if="first_fetch === false" >
-            
+          <div v-else-if="first_fetch === false">
+
           </div>
           <div v-else class="text-center p-4 text-secondary">
             <p class="m-0">Nenhum item encontrado.</p>
@@ -413,6 +462,10 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   immediate: true,
   placeholder_search: "Buscar...",
   deactivate_search_on_clear: false,
+  use_expandable_items: false,
+  type_animation_expand: 'expand',
+  deactivate_animation_expand: false,
+  type_button_expand: 'arrow'
 });
 
 
@@ -427,6 +480,7 @@ const columns = ref<ColumnConfiguration[]>([]);
 const items = ref<T[]>([]) as Ref<T[]>;
 const totalItems = ref<number>(0);
 const selected_items = ref<T[]>([]) as Ref<T[]>;
+const expanded_items = ref<any[]>([]);
 const selectAllCheckbox = ref<HTMLInputElement | null>(null);
 const isDelaying = ref<boolean>(false);
 const delayTimer = ref<ReturnType<typeof setTimeout> | null>(null);
@@ -749,6 +803,28 @@ function set_page(newPage: number): void {
     console.warn("Número de página inválido.");
   }
 }
+function expand_item_toggle(item: any): void {
+  const identifier_item = item[props.item_key];
+  const index = expanded_items.value.findIndex(expandedItem => expandedItem === identifier_item);
+  if (index > -1) {
+    expanded_items.value.splice(index, 1); // Remove se já existe
+  } else {
+    expanded_items.value.push(identifier_item); // Adiciona se não existe  
+  }
+}
+function is_item_expanded(item: any): boolean {
+  const identifier_item = item[props.item_key];
+  return expanded_items.value.some(expandedItem => expandedItem === identifier_item);
+}
+function close_all_expanded_items(): void {
+  expanded_items.value = [];
+}
+function colspanExpandItems(): number {
+  let colspan = columns.value.length;
+  if (props.use_checkbox) colspan += 1;
+  if (props.use_expandable_items) colspan += 1;
+  return colspan;
+}
 
 defineExpose<ExposedFunctions<T>>({
   execute: fetchDataWithDelay,
@@ -761,6 +837,8 @@ defineExpose<ExposedFunctions<T>>({
   default_params,
   selected_items,
   atLeastOneSelected,
+  expand_item_toggle,
+  close_all_expanded_items
 });
 const on_mounted_called = ref<boolean>(false);
 watch(
@@ -953,5 +1031,102 @@ $max-width-preview: 250px;
 .header-ordering {
   display: flex;
   justify-content: space-between;
+}
+
+
+
+
+
+
+
+
+
+
+/* 1. Animação de entrada para novos itens */
+.expand-item-expand-enter-active {
+  transition: all 0.5s ease;
+}
+
+.expand-item-expand-enter-from {
+  opacity: 0;
+  transform: scaleY(0.3) translateY(-30px);
+  /* Começa em cima e desce */
+}
+
+.expand-item-expand-enter-to {
+  opacity: 1;
+  transform: scaleY(1);
+  transform: translateY(0);
+}
+
+/* 2. Animação de saída para itens removidos*/
+.expand-item-expand-leave-active {
+  transition: all 0.4s ease;
+}
+
+.expand-item-expand-leave-to {
+  opacity: 0;
+  transform: scaleY(0.3) translateY(-30px);
+  /* Desliza para  cima e desaparece */
+}
+
+
+
+.expand-item-fade-enter-active,
+.expand-item-fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.expand-item-fade-enter-from,
+.expand-item-fade-leave-to {
+  opacity: 0;
+}
+
+
+
+
+
+.btn-clean {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+}
+
+
+.icon-transition-arrow {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
+  color: var(--tblr-primary, #206bc4);
+}
+
+
+.is-expanded .icon-transition-arrow {
+  transform: rotate(90deg);
+}
+
+
+.icon-transition-plus {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
+  color: var(--tblr-primary, #206bc4);
+}
+
+.icon-transition-plus .vertical-line {
+  transform-origin: center;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+}
+
+.is-expanded .icon-transition-plus {
+  transform: rotate(180deg);
+}
+
+.is-expanded .icon-transition-plus .vertical-line {
+  transform: scaleY(0);
+  opacity: 0;
 }
 </style>

@@ -78,6 +78,4 @@ export interface ExposedFunctions {
     set_filter: (newFilter: string) => void;
     set_page: (newPage: number) => void;
     reSearch: () => void;
-
-
 }

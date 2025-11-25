@@ -54,6 +54,11 @@ export interface VDataTableProps {
 
   // Ativa a funcionalidade de seleção com checkboxes
   use_checkbox?: boolean;
+  use_expandable_items?: boolean;
+  type_animation_expand?: 'fade' | 'expand' | 'none';
+  deactivate_animation_expand?: boolean;
+  type_button_expand?: 'arrow' | 'plus';
+
   // Define qual propriedade do item será usada como chave única para a seleção.
   item_key?: string;
 
@@ -76,4 +81,6 @@ export interface ExposedFunctions<T extends Record<string, any>> {
   set_search: (newSearch: string) => void;
   set_filter: (newFilter: string) => void;
   set_page: (newPage: number) => void;
+  expand_item_toggle: (item: any) => void;
+  close_all_expanded_items: () => void;
 }
