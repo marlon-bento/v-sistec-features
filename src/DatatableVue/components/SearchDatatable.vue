@@ -102,7 +102,7 @@ const props = withDefaults(defineProps<SearchProps>(), {
     deactivate_search_empty: false,
 });
 
-const emit = defineEmits(['update:search', 'update:filter', "search"])
+const emit = defineEmits(['update:search', 'update:filter', "search", "clickedClearSearch"]);
 
 const modelSearch = computed({
     get: () => props.search,
@@ -151,6 +151,7 @@ function cleanSearch(): void {
     if (!props.deactivate_search_on_clear){
         emit('search'); // emite o evento de busca para atualizar a lista
     }
+    emit('clickedClearSearch');
 }
 
 function clickItem(filter: any): void {
