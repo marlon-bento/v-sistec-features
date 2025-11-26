@@ -24,6 +24,7 @@
             :item_use="item_use" @search="reSearch" :deactivate_search_on_clear="props.deactivate_search_on_clear"
             :placeholder_search="props.placeholder_search"
             :deactivate_search_empty="props.deactivate_search_empty"
+            @clicked-clear-search="$emit('clickedClearSearch')"
             />
         </div>
         <slot name="item-selected-info" :selected_items="selected_items" :clearSelection="() => selected_items = []">
