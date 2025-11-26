@@ -1,3 +1,10 @@
+## [1.10.4](https://github.com/marlon-bento/v-sistec-features/compare/v1.10.3...v1.10.4) (2025-11-26)
+
+
+### Bug Fixes
+
+* agora é possível utilizar o evento de click no botão x do input de search, é só usar o emit clickedClearSearch para ter acesso ao evento ([471280d](https://github.com/marlon-bento/v-sistec-features/commit/471280db02d6d7ab7943b333c7d0e0cea8364779))
+
 ## [1.10.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.10.2...v1.10.3) (2025-11-26)
 
 
