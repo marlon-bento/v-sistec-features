@@ -1,3 +1,10 @@
+## [1.10.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.10.2...v1.10.3) (2025-11-26)
+
+
+### Bug Fixes
+
+* agora é possível definir como ficará o v-data-table quando ele estiver em estado parado usando o slot idle-state ([fe64f63](https://github.com/marlon-bento/v-sistec-features/commit/fe64f63f6add730d777f6b436d6a951f201a58d3))
+
 ## [1.10.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.10.1...v1.10.2) (2025-11-25)
 
 
