@@ -1,3 +1,10 @@
+## [1.10.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.10.1...v1.10.2) (2025-11-25)
+
+
+### Bug Fixes
+
+* agora é possível desativar a pesquisa automatica quando clicar em enter no search e o search estiver vazio ([93e17a2](https://github.com/marlon-bento/v-sistec-features/commit/93e17a28565d306eab2a42ee919ccefebdc2eda5))
+
 ## [1.10.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.10.0...v1.10.1) (2025-11-25)
 
 

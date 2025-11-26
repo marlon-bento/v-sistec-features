@@ -58,6 +58,7 @@ export interface VDataTableProps {
   type_animation_expand?: 'fade' | 'expand' | 'none';
   deactivate_animation_expand?: boolean;
   type_button_expand?: 'arrow' | 'plus';
+  deactivate_search_empty?: boolean;
 
   // Define qual propriedade do item será usada como chave única para a seleção.
   item_key?: string;
