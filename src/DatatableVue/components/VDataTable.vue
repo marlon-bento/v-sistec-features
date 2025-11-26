@@ -384,7 +384,9 @@
             </table>
           </div>
           <div v-else-if="first_fetch === false">
+            <slot name="idle-state">
 
+            </slot>
           </div>
           <div v-else class="text-center p-4 text-secondary">
             <p class="m-0">Nenhum item encontrado.</p>
