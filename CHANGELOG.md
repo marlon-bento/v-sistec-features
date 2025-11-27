@@ -1,3 +1,11 @@
+## [1.10.5](https://github.com/marlon-bento/v-sistec-features/compare/v1.10.4...v1.10.5) (2025-11-27)
+
+
+### Bug Fixes
+
+* bug de continuar aberto a linha adicional quando acontece novas buscas corrigido ([c4a7148](https://github.com/marlon-bento/v-sistec-features/commit/c4a71487b6f29a801c87744af3463abb588a11fb))
+* faltou o clickedClearSearch na lista de emits, bug resolvido ([717239b](https://github.com/marlon-bento/v-sistec-features/commit/717239bc15f0c767d153b19c512536e805381d0e))
+
 ## [1.10.4](https://github.com/marlon-bento/v-sistec-features/compare/v1.10.3...v1.10.4) (2025-11-26)
 
 
