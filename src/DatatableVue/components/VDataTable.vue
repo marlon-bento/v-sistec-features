@@ -474,7 +474,7 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   deactivate_search_empty: false,
 });
 
-const emit = defineEmits(['tradePage', 'beforeFetch', 'afterFetch']);
+const emit = defineEmits(['tradePage', 'beforeFetch', 'afterFetch', 'clickedClearSearch']);
 
 // =======================================================
 // 2. ESTADO REATIVO PRINCIPAL
