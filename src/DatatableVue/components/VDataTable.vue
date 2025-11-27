@@ -400,7 +400,7 @@
     <slot name="pagination" :pagination="pagination" :tradePage="fetchDataWithDelay" :error="error">
       <div v-if="!error && pagination.count > 0" class="px-3" :class="props.class_pagination">
         <PaginationDatatable :page_starts_at="props.page_starts_at" :filtering="true" :pagination="pagination"
-          @tradePage="fetchDataWithDelay" />
+          @tradePage="tradePageEmit" />
       </div>
     </slot>
 
@@ -474,6 +474,7 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   deactivate_search_empty: false,
 });
 
+const emit = defineEmits(['tradePage', 'beforeFetch', 'afterFetch']);
 
 // =======================================================
 // 2. ESTADO REATIVO PRINCIPAL
@@ -490,7 +491,6 @@ const expanded_items = ref<any[]>([]);
 const selectAllCheckbox = ref<HTMLInputElement | null>(null);
 const isDelaying = ref<boolean>(false);
 const delayTimer = ref<ReturnType<typeof setTimeout> | null>(null);
-
 
 /*--------- definição de páginação ---------------*/
 const pagination = ref<PaginationObject>({
@@ -702,7 +702,7 @@ function addColumn(colConfig: ColumnConfiguration): void {
 provide(dataTableApiKey, { addColumn });
 
 // Função que gerencia o delay e a chamada da API
-function fetchDataWithDelay(): void {
+async function fetchDataWithDelay(): Promise<void> {
   // agora já fez pelo menos a primeira busca então marca como true
   if (!first_fetch.value) first_fetch.value = true;
   // Limpa timer anterior, se houver
@@ -713,8 +713,9 @@ function fetchDataWithDelay(): void {
   delayTimer.value = setTimeout(() => {
     isDelaying.value = false;
   }, props.min_loading_delay);
-
-  execute(); // Executa a busca de dados original do useApiFetch
+  emit('beforeFetch');
+  await execute(); // Executa a busca de dados original do useApiFetch
+  emit('afterFetch');
 }
 
 function reSearch(): void {
@@ -830,6 +831,11 @@ function colspanExpandItems(): number {
   if (props.use_checkbox) colspan += 1;
   if (props.use_expandable_items) colspan += 1;
   return colspan;
+}
+function tradePageEmit(): void {
+  emit('tradePage');
+  fetchDataWithDelay();
+
 }
 
 defineExpose<ExposedFunctions<T>>({
