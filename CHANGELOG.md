@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.10.5...v1.11.0) (2025-12-04)
+
+
+### Features
+
+* prop close_expanded_item_on_expand_new adicionada para caso queira mudar o comportamento das expansões das linhas da tabela para fechar as antigas sempre que abrir uma nova e também dar a opção de poder scrollar automaticamente até o item que foi expandido usando a prop scroll_to_expanded_item ([45a8692](https://github.com/marlon-bento/v-sistec-features/commit/45a8692c60c36a95a1c3829cca50f0c33ebed143))
+
 ## [1.10.5](https://github.com/marlon-bento/v-sistec-features/compare/v1.10.4...v1.10.5) (2025-11-27)
 
 
