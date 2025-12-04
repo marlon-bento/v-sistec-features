@@ -56,6 +56,8 @@ export interface VDataTableProps {
   use_checkbox?: boolean;
   use_expandable_items?: boolean;
   close_expanded_item_on_expand_new?: boolean;
+  scroll_to_expanded_item?: boolean;
+
   type_animation_expand?: 'fade' | 'expand' | 'none';
   deactivate_animation_expand?: boolean;
   type_button_expand?: 'arrow' | 'plus';

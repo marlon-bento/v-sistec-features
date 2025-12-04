@@ -22,10 +22,8 @@
 
           <Search v-model:search="pagination.search" v-model:filter="pagination.filter" :list_filter="props.list_filter"
             :item_use="item_use" @search="reSearch" :deactivate_search_on_clear="props.deactivate_search_on_clear"
-            :placeholder_search="props.placeholder_search"
-            :deactivate_search_empty="props.deactivate_search_empty"
-            @clicked-clear-search="$emit('clickedClearSearch')"
-            />
+            :placeholder_search="props.placeholder_search" :deactivate_search_empty="props.deactivate_search_empty"
+            @clicked-clear-search="$emit('clickedClearSearch')" />
         </div>
         <slot name="item-selected-info" :selected_items="selected_items" :clearSelection="() => selected_items = []">
           <div v-if="(props.use_checkbox && selected_items.length > 0) && !props.deactivate_selected_info"
@@ -165,7 +163,10 @@
                 </tr> -->
 
                 <draggable v-model="draggableColumns" tag="tr" item-key="header" :animation="400"
-                  ghost-class="ghost-item" drag-class="dragging-item">
+                  ghost-class="ghost-item" drag-class="dragging-item"
+                  @start="isDraggingColumns = true"
+                  @end="() => onDragEnd()"
+                  >
                   <template #header>
                     <th v-if="props.use_expandable_items"></th>
                     <th v-if="props.use_checkbox" class="w-1">
@@ -286,7 +287,7 @@
               </thead>
               <tbody>
                 <template v-for="item in items" :key="item[props.item_key]">
-                  <TransitionGroup tag="tr" name="column-move">
+                  <TransitionGroup tag="tr" :name="isDraggingColumns ? 'column-move' : ''" >
                     <td v-if="props.use_expandable_items" class="w-1">
                       <slot name="expand-button" :item="item" :is-expanded="is_item_expanded(item)"
                         :expand_item_toggle="expand_item_toggle">
@@ -369,7 +370,7 @@
                   <Transition :name="'expand-item-' + props.type_animation_expand"
                     :css="!props.deactivate_animation_expand">
                     <!-- mostra uma linha após cada item -->
-                    <tr v-if="is_item_expanded(item)" class="">
+                    <tr :id="'expand-item-' + item[props.item_key]" v-if="is_item_expanded(item)" class="">
                       <!-- se estiver usando checkbox existe uma coluna a mais -->
                       <td :colspan="colspanExpandItems()">
                         <slot name="after-row" :item="item">
@@ -421,6 +422,7 @@ import Search from './SearchDatatable.vue';
 import { useImagePreview } from '../composables/useImagePreview';
 import { dataTableApiKey, type ColumnConfiguration } from '../keys';
 import draggable from 'vuedraggable';
+import { useExpandedItem } from '../composables/useExpandedItem';
 
 const {
   isHovering,
@@ -469,6 +471,7 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   deactivate_search_on_clear: false,
   use_expandable_items: false,
   close_expanded_item_on_expand_new: false,
+  scroll_to_expanded_item: false,
   type_animation_expand: 'expand',
   deactivate_animation_expand: false,
   type_button_expand: 'arrow',
@@ -488,10 +491,11 @@ const columns = ref<ColumnConfiguration[]>([]);
 const items = ref<T[]>([]) as Ref<T[]>;
 const totalItems = ref<number>(0);
 const selected_items = ref<T[]>([]) as Ref<T[]>;
-const expanded_items = ref<any[]>([]);
 const selectAllCheckbox = ref<HTMLInputElement | null>(null);
 const isDelaying = ref<boolean>(false);
 const delayTimer = ref<ReturnType<typeof setTimeout> | null>(null);
+// só ativa animação de arrastar colunas quando estiver arrastando
+const isDraggingColumns = ref(false);
 
 /*--------- definição de páginação ---------------*/
 const pagination = ref<PaginationObject>({
@@ -506,6 +510,18 @@ const urlReativa = computed(() => {
   pagination.value.current_page = props.page_starts_at;
   return props.endpoint;
 });
+
+const { 
+  expanded_items, 
+  expand_item_toggle,
+  is_item_expanded 
+} = useExpandedItem(
+  props.close_expanded_item_on_expand_new, 
+  props.item_key,
+  props.deactivate_animation_expand,
+  props.scroll_to_expanded_item
+);
+
 // =======================================================
 // 3. LÓGICA DA API (useFetch)
 // =======================================================
@@ -659,7 +675,11 @@ watch(response, (newResponse: any) => {
 // =======================================================
 // 6. MÉTODOS
 // =======================================================
-
+function onDragEnd() {
+  setTimeout(() => {
+    isDraggingColumns.value = false;
+  }, 500);
+}
 // Função para marcar ou desmarcar todos os itens da página atual
 function toggleSelectAll(): void {
   const pageItems = items.value;
@@ -812,35 +832,9 @@ function set_page(newPage: number): void {
     console.warn("Número de página inválido.");
   }
 }
-function expand_item_toggle(item: any): void {
-  const identifier_item = item[props.item_key];
-  
-  // verifica se o item JÁ está expandido antes de fazer qualquer limpeza
-  const index = expanded_items.value.findIndex(expandedItem => expandedItem === identifier_item);
-  const is_already_expanded = index > -1;
-  // Se o modo de fechar os outros estiver ativo
-  if (props.close_expanded_item_on_expand_new) {
-    close_all_expanded_items(); // Limpa tudo
 
-    // Se o item NÃO estava expandido, nós o abrimos.
-    // Se ele JÁ estava expandido, não fazemos nada, já que o close_all() já o fechou.
-    if (!is_already_expanded) {
-      expanded_items.value.push(identifier_item);
-    }
-  } 
-  // Comportamento padrão (múltiplos abertos)
-  else {
-    if (is_already_expanded) {
-      expanded_items.value.splice(index, 1); // Fecha
-    } else {
-      expanded_items.value.push(identifier_item); // Abre
-    }
-  }
-}
-function is_item_expanded(item: any): boolean {
-  const identifier_item = item[props.item_key];
-  return expanded_items.value.some(expandedItem => expandedItem === identifier_item);
-}
+
+
 function close_all_expanded_items(): void {
   expanded_items.value = [];
 }
