@@ -468,6 +468,7 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   placeholder_search: "Buscar...",
   deactivate_search_on_clear: false,
   use_expandable_items: false,
+  close_expanded_item_on_expand_new: false,
   type_animation_expand: 'expand',
   deactivate_animation_expand: false,
   type_button_expand: 'arrow',
@@ -813,11 +814,27 @@ function set_page(newPage: number): void {
 }
 function expand_item_toggle(item: any): void {
   const identifier_item = item[props.item_key];
+  
+  // verifica se o item JÁ está expandido antes de fazer qualquer limpeza
   const index = expanded_items.value.findIndex(expandedItem => expandedItem === identifier_item);
-  if (index > -1) {
-    expanded_items.value.splice(index, 1); // Remove se já existe
-  } else {
-    expanded_items.value.push(identifier_item); // Adiciona se não existe  
+  const is_already_expanded = index > -1;
+  // Se o modo de fechar os outros estiver ativo
+  if (props.close_expanded_item_on_expand_new) {
+    close_all_expanded_items(); // Limpa tudo
+
+    // Se o item NÃO estava expandido, nós o abrimos.
+    // Se ele JÁ estava expandido, não fazemos nada, já que o close_all() já o fechou.
+    if (!is_already_expanded) {
+      expanded_items.value.push(identifier_item);
+    }
+  } 
+  // Comportamento padrão (múltiplos abertos)
+  else {
+    if (is_already_expanded) {
+      expanded_items.value.splice(index, 1); // Fecha
+    } else {
+      expanded_items.value.push(identifier_item); // Abre
+    }
   }
 }
 function is_item_expanded(item: any): boolean {

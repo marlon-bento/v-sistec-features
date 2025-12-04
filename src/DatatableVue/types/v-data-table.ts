@@ -55,6 +55,7 @@ export interface VDataTableProps {
   // Ativa a funcionalidade de seleção com checkboxes
   use_checkbox?: boolean;
   use_expandable_items?: boolean;
+  close_expanded_item_on_expand_new?: boolean;
   type_animation_expand?: 'fade' | 'expand' | 'none';
   deactivate_animation_expand?: boolean;
   type_button_expand?: 'arrow' | 'plus';
