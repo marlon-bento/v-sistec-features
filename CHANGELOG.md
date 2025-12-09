@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.11.0...v1.12.0) (2025-12-09)
+
+
+### Features
+
+* a partir de agora é possível estilizar a linha em baixo do item que pode ser expandida por botão utilizando a classe expanded-item-row ([85056db](https://github.com/marlon-bento/v-sistec-features/commit/85056dbf51c457394fc7d404ed86a00df4290963))
+
 # [1.11.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.10.5...v1.11.0) (2025-12-04)
 
 
