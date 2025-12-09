@@ -370,7 +370,7 @@
                   <Transition :name="'expand-item-' + props.type_animation_expand"
                     :css="!props.deactivate_animation_expand">
                     <!-- mostra uma linha após cada item -->
-                    <tr :id="'expand-item-' + item[props.item_key]" v-if="is_item_expanded(item)" class="">
+                    <tr :id="'expand-item-' + item[props.item_key]" v-if="is_item_expanded(item)" class="expanded-item-row">
                       <!-- se estiver usando checkbox existe uma coluna a mais -->
                       <td :colspan="colspanExpandItems()">
                         <slot name="after-row" :item="item">
