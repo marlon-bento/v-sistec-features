@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.13.0...v1.14.0) (2025-12-11)
+
+
+### Features
+
+* update v-api-fetch dependency to version 1.6.0 and bump package version to 1.13.0 ([a95d2b3](https://github.com/marlon-bento/v-sistec-features/commit/a95d2b36024aeada2de6ae55264396d9514c4ee2))
+
 # [1.13.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.12.0...v1.13.0) (2025-12-11)
 
 
