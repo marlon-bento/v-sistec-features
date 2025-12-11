@@ -424,6 +424,7 @@ import { dataTableApiKey, type ColumnConfiguration } from '../keys';
 import draggable from 'vuedraggable';
 import { useExpandedItem } from '../composables/useExpandedItem';
 
+
 const {
   isHovering,
   previewSrc,
@@ -476,6 +477,7 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   deactivate_animation_expand: false,
   type_button_expand: 'arrow',
   deactivate_search_empty: false,
+  disable_request: false,
 });
 
 const emit = defineEmits(['tradePage', 'beforeFetch', 'afterFetch', 'clickedClearSearch']);
@@ -526,6 +528,7 @@ const {
 // 3. LÓGICA DA API (useFetch)
 // =======================================================
 const { data: response, pending, error, execute, attempt } = props.fetch(urlReativa, {
+  disable_request: () => props.disable_request,
   params: () => {
     if (props.deactivate_default_params) {
       if (props.add_params && typeof props.add_params === 'function') {
