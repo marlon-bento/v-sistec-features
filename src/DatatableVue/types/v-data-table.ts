@@ -1,4 +1,4 @@
-import type { Ref, ComputedRef, Component } from 'vue';
+import type { Ref, ComputedRef, Component, MaybeRefOrGetter } from 'vue';
 import type { PaginationObject } from '../keys';
 
 export type { PaginationObject } from '../keys';
@@ -72,6 +72,8 @@ export interface VDataTableProps {
   immediate?: boolean;
   placeholder_search?: string;
   deactivate_search_on_clear?: boolean;
+
+  disable_request?: MaybeRefOrGetter<boolean>;
 }
 
 export interface ExposedFunctions<T extends Record<string, any>> {
