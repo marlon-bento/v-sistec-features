@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.12.0...v1.13.0) (2025-12-11)
+
+
+### Features
+
+* update version to 1.12.0 and add disable_request prop to VDataTable ([5b3c1f5](https://github.com/marlon-bento/v-sistec-features/commit/5b3c1f5968d70aac791fd6b9e625535535403cf0))
+
 # [1.12.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.11.0...v1.12.0) (2025-12-09)
 
 
