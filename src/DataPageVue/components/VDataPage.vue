@@ -110,7 +110,8 @@ const props = withDefaults(defineProps<VDataPageProps>(), {
     page_starts_at: 0,
     element_id: '',
     class_loading_container: '',
-    watch: () => []
+    watch: () => [],
+    disable_request: false,
 });
 
 
@@ -145,8 +146,9 @@ const pagination = ref<PaginationObject>({
 // 3. LÓGICA DA API (useFetch)
 // =======================================================
 const { data: response, pending: pending, error, execute, attempt: _attempt } = props.fetch(props.endpoint, {
+    disable_request: () => props.disable_request,
     params: () => {
-
+        
         if (props.deactivate_default_params) {
             if (props.add_params && typeof props.add_params === 'function') {
                 return props.add_params();

@@ -1,4 +1,4 @@
-import type { Ref, Component, WatchSource } from 'vue';
+import type { Ref, Component, WatchSource, MaybeRefOrGetter } from 'vue';
 
 export interface VDataPageProps {
     /* configuração do useApiFetch */
@@ -61,6 +61,7 @@ export interface VDataPageProps {
     page_starts_at?: number;
     element_id?: string;
     watch?: WatchSource[];
+    disable_request?: MaybeRefOrGetter<boolean>;
 }
 export interface PaginationObject {
     current_page: number;
@@ -78,4 +79,6 @@ export interface ExposedFunctions {
     set_filter: (newFilter: string) => void;
     set_page: (newPage: number) => void;
     reSearch: () => void;
+
+    
 }
