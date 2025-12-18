@@ -1,3 +1,10 @@
+# [1.16.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.15.0...v1.16.0) (2025-12-18)
+
+
+### Features
+
+* agora é possível criar classes customizadas utilizando funções que recebem o item como parâmetro ([a617356](https://github.com/marlon-bento/v-sistec-features/commit/a617356e7153db88e0c3738307ba8cf6cec1aa50))
+
 # [1.15.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.14.0...v1.15.0) (2025-12-11)
 
 
