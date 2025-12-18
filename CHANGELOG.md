@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.14.0...v1.15.0) (2025-12-11)
+
+
+### Features
+
+* add disable_request prop to VDataPage and update type definition ([412d55c](https://github.com/marlon-bento/v-sistec-features/commit/412d55c804e8dbee13df754fc294673a0cf0b664))
+
 # [1.14.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.13.0...v1.14.0) (2025-12-11)
 
 
