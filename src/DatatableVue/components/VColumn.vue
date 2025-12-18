@@ -7,7 +7,8 @@ import { inject, onMounted, useSlots, defineSlots } from 'vue';
 import { dataTableApiKey } from '../keys';
 
 defineSlots<{
-  body?: () => any, 
+  // props para o slot body 
+  body?: (props: { item: any }) => any,
 }>();
 interface VColumnProps {
   field?: string | null;
@@ -27,6 +28,7 @@ interface VColumnProps {
   param_ordering?: string;
   decreasing_value?: string;
   increasing_value?: string;
+  class_rules?: Record<string, (item: any) => boolean>;
 }
 const props = withDefaults(defineProps<VColumnProps>(), {
   field: null,
@@ -58,6 +60,7 @@ const props = withDefaults(defineProps<VColumnProps>(), {
   param_ordering: '',
   decreasing_value: '',
   increasing_value: '',
+  class_rules: () => ({}),
 });
 
 const slots = useSlots();
@@ -107,6 +110,7 @@ onMounted(() => {
     param_ordering: props.param_ordering,
     decreasing_value: props.decreasing_value,
     increasing_value: props.increasing_value,
+    class_rules: props.class_rules,
 
     bodySlot: slots.body,
     ...(props.type === 'text' && { limite_text: Number(props.limite_text) }),

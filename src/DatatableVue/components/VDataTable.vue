@@ -326,13 +326,13 @@
                     <td v-for="col in renderedColumns" :key="col.field || col.header" :class="col.class_row">
                       <component v-if="col.bodySlot" :is="col.bodySlot" :item="item" :is-selected="isSelected(item)" />
                       <span @click="col.click ? col.click(item) : null"
-                        :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'text'">
+                        :class="computeClasses(col, item)" v-else-if="col.type === 'text'">
                         {{
                           limiteText(getSubItem(col.field, item, col.transform_function), col.limite_text ?? null)
                         }}</span>
 
                       <span @click="col.click ? col.click(item) : null" v-else-if="col.type === 'date'"
-                        :class="col.class_item + (col.click ? ' cursor-pointer' : '')">
+                        :class="computeClasses(col, item)">
                         <span v-if="col.format === 'complete'">{{ new Date(getSubItem(col.field, item)).toLocaleString()
                         }}</span>
                         <span v-if="col.format === 'simple'"> {{ new Date(getSubItem(col.field,
@@ -340,12 +340,12 @@
                         }} </span>
                       </span>
                       <div @click="col.click ? col.click(item) : null"
-                        :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'html'"
+                        :class="computeClasses(col, item)" v-else-if="col.type === 'html'"
                         v-html="getSubItem(col.field, item)">
                       </div>
 
                       <div @click="col.click ? col.click(item) : null"
-                        :class="col.class_item + (col.click ? ' cursor-pointer' : '')" v-else-if="col.type === 'img'">
+                        :class="computeClasses(col, item)" v-else-if="col.type === 'img'">
 
                         <div v-if="getSubItem(col.field, item)" v-bind="col.deactivate_img_preview ? {
                           class: 'container-img'
@@ -852,6 +852,26 @@ function tradePageEmit(): void {
   fetchDataWithDelay();
 
 }
+const computeClasses = (col: ColumnConfiguration, item: T) => {
+  // Pega a classe estática padrão
+  const classes = [col.class_item || ''];
+
+  // Se a coluna for clicável, adiciona cursor-pointer automaticamente
+  if (col.click) {
+    classes.push('cursor-pointer');
+  }
+
+  // Processa as regras dinâmicas (class_rules)
+  if (col.class_rules) {
+    for (const [className, ruleValidator] of Object.entries(col.class_rules)) {
+      if (typeof ruleValidator === 'function' && ruleValidator(item)) {
+        classes.push(className);
+      }
+    }
+  }
+
+  return classes.join(' ').trim();
+};
 
 defineExpose<ExposedFunctions<T>>({
   execute: fetchDataWithDelay,

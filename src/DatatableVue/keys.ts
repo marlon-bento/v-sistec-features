@@ -19,7 +19,7 @@ export interface ColumnConfiguration {
   param_ordering: string;
   decreasing_value: string;
   increasing_value: string;
-
+  class_rules?: Record<string, (item: any) => boolean>;
 }
 
 // A API que o VDataTable "fornece" para os filhos
