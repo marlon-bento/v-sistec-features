@@ -1,5 +1,5 @@
 import { useIframeCommunicator } from './useIframeCommunicator';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, readonly } from 'vue';
 
 
 /**
@@ -45,4 +45,9 @@ export function useTheme() {
     onMounted(() => {
         sendMessage({ type: 'iframeReady' });
     });
+    return { 
+        theme: readonly(theme), 
+        themePalette: readonly(themePalette), 
+        themePrimary: readonly(themePrimary) 
+    };
 }
