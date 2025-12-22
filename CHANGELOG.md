@@ -1,3 +1,10 @@
+## [1.17.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.17.1...v1.17.2) (2025-12-22)
+
+
+### Bug Fixes
+
+* teste se os provides vão ter desempenho bom ([209158b](https://github.com/marlon-bento/v-sistec-features/commit/209158b2c4d42f0f9cd44cc01c307993351ee088))
+
 ## [1.17.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.17.0...v1.17.1) (2025-12-22)
 
 
