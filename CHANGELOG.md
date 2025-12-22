@@ -1,3 +1,10 @@
+## [1.17.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.17.0...v1.17.1) (2025-12-22)
+
+
+### Bug Fixes
+
+* faltou os returns para acessar os valores que agora são salvos ([7ac7c9c](https://github.com/marlon-bento/v-sistec-features/commit/7ac7c9c03c0f38d4a756efd0ce986c450aeb74d6))
+
 # [1.17.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.16.0...v1.17.0) (2025-12-22)
 
 
