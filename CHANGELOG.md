@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.16.0...v1.17.0) (2025-12-22)
+
+
+### Features
+
+* adicionada forma de ver o tema que está sendo usado pelo useTheme() ([b3b565f](https://github.com/marlon-bento/v-sistec-features/commit/b3b565ff22bd901ff9abb31a4c55ab24da1de197))
+
 # [1.16.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.15.0...v1.16.0) (2025-12-18)
 
 
