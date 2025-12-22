@@ -1,5 +1,5 @@
 import { useIframeCommunicator } from './useIframeCommunicator';
-import { onMounted, ref, readonly } from 'vue';
+import { onMounted, ref, readonly, provide } from 'vue';
 
 
 /**
@@ -45,6 +45,9 @@ export function useTheme() {
     onMounted(() => {
         sendMessage({ type: 'iframeReady' });
     });
+    provide('theme-v-sistec', readonly(theme));
+    provide('theme-palette-v-sistec', readonly(themePalette));
+    provide('theme-primary-v-sistec', readonly(themePrimary));
     return { 
         theme: readonly(theme), 
         themePalette: readonly(themePalette), 
