@@ -1,3 +1,10 @@
+## [1.17.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.17.2...v1.17.3) (2026-01-06)
+
+
+### Bug Fixes
+
+* update package version to 1.17.1 and enhance error styling in v-required-style ([c98c3f6](https://github.com/marlon-bento/v-sistec-features/commit/c98c3f665d6846438b685dfe579a562c1b7772da))
+
 ## [1.17.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.17.1...v1.17.2) (2025-12-22)
 
 
