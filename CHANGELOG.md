@@ -1,3 +1,10 @@
+## [1.17.7](https://github.com/marlon-bento/v-sistec-features/compare/v1.17.6...v1.17.7) (2026-01-06)
+
+
+### Bug Fixes
+
+* adjust color and border styles for v-bentri-editor upload-placeholder ([49e6ca2](https://github.com/marlon-bento/v-sistec-features/commit/49e6ca21b327fe7c5ed86aaf51eaccbfd56223d4))
+
 ## [1.17.6](https://github.com/marlon-bento/v-sistec-features/compare/v1.17.5...v1.17.6) (2026-01-06)
 
 
