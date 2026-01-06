@@ -1,5 +1,5 @@
 :root {
-    --color-error-inputs: red;
+  --color-error-inputs: red;
 }
 [data-bs-theme="dark"] {
   --color-error-inputs: oklch(0.666 0.179 58.318);
@@ -74,7 +74,8 @@
   border: 2px solid  var(--color-error-inputs) !important;
 }
 .style-custom-v-required-error .v-bentri-editor .upload-placeholder {
-   border: 2px dashed var(--color-error-inputs) !important;
+  border: 2px dashed var(--color-error-inputs) !important;
+  color: var(--color-error-inputs) !important;
 }
 .style-custom-v-required-error .v-bentri-editor p.is-empty::before{
   color: var(--color-error-inputs) !important;
