@@ -70,8 +70,11 @@
 }
 
 /*estilo do editor (marlon)*/
-.style-custom-v-required-error .v-bentri-editor, .style-custom-v-required-error .upload-placeholder {
+.style-custom-v-required-error .v-bentri-editor{
   border: 2px solid  var(--color-error-inputs) !important;
+}
+.style-custom-v-required-error  .upload-placeholder {
+   border: 2px dashed  var(--color-error-inputs) !important;
 }
 .style-custom-v-required-error .v-bentri-editor p.is-empty::before{
   color: var(--color-error-inputs) !important;
