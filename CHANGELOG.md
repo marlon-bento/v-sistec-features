@@ -1,3 +1,10 @@
+## [1.17.6](https://github.com/marlon-bento/v-sistec-features/compare/v1.17.5...v1.17.6) (2026-01-06)
+
+
+### Bug Fixes
+
+* update upload-placeholder styling to be nested within v-bentri-editor ([eb58024](https://github.com/marlon-bento/v-sistec-features/commit/eb5802461ab8f606c20f45305353cb5858229d18))
+
 ## [1.17.5](https://github.com/marlon-bento/v-sistec-features/compare/v1.17.4...v1.17.5) (2026-01-06)
 
 
