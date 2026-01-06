@@ -1,3 +1,10 @@
+## [1.17.4](https://github.com/marlon-bento/v-sistec-features/compare/v1.17.3...v1.17.4) (2026-01-06)
+
+
+### Bug Fixes
+
+* add upload-placeholder styling to v-bentri-editor error state ([1791d12](https://github.com/marlon-bento/v-sistec-features/commit/1791d1291c2428f277a9f49061109879e36b788f))
+
 ## [1.17.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.17.2...v1.17.3) (2026-01-06)
 
 
