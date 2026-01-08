@@ -75,7 +75,56 @@ export interface VDataTableProps {
 
   disable_request?: MaybeRefOrGetter<boolean>;
 }
+export type DataTablePropsWithDefaults = VDataTableProps & {
+    // Strings
+    fetch_name: string;
+    type_loading: string;
+    filter_param_name: string;
+    search_param_name: string;
+    page_param_name: string;
+    page_size_param_name: string;
+    data_key: string;
+    total_key: string;
+    item_key: string;
+    first_text_page_size: string;
+    second_text_page_size: string;
+    placeholder_search: string;
+    type_animation_expand: string;
+    type_button_expand: string;
 
+    // Classes CSS (Strings)
+    class_table: string;
+    class_content: string;
+    class_container: string;
+    class_pagination: string;
+    class_filters: string;
+    class_page_size: string;
+
+    // Numbers
+    min_loading_delay: number;
+    retry_attempts: number;
+    retry_delay: number;
+    limit_per_page: number;
+    page_starts_at: number;
+
+    // Booleans
+    deactivate_default_params: boolean;
+    use_checkbox: boolean;
+    deactivate_selected_info: boolean;
+    immediate: boolean;
+    deactivate_search_on_clear: boolean;
+    use_expandable_items: boolean;
+    close_expanded_item_on_expand_new: boolean;
+    scroll_to_expanded_item: boolean;
+    deactivate_animation_expand: boolean;
+    deactivate_search_empty: boolean;
+    disable_request: MaybeRefOrGetter<boolean>;
+
+    // Complex Types (Arrays/Objects/Functions) 
+    add_params: Record<string, any> | (() => Record<string, any>);
+    list_filter: any[]; 
+    custom_loading: any | null; 
+};
 export interface ExposedFunctions<T extends Record<string, any>> {
   execute: () => void;
   reSearch: () => void;
@@ -89,4 +138,5 @@ export interface ExposedFunctions<T extends Record<string, any>> {
   set_page: (newPage: number) => void;
   expand_item_toggle: (item: any) => void;
   close_all_expanded_items: () => void;
+  selectAllCheckbox: Ref<HTMLInputElement | null>;
 }

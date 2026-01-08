@@ -1,18 +1,18 @@
 <template>
   <div>
-    <div class="" :class="props.class_container">
+    <div class="" :class="options.class_container">
       <slot></slot>
-      <div class="" :class="props.class_content">
-        <div :class="props.class_filters" class="d-flex justify-content-between align-items-start ">
+      <div class="" :class="options.class_content">
+        <div :class="options.class_filters" class="d-flex justify-content-between align-items-start ">
           <slot name="pageSize" :changePageSize="changePageSize" :limit_per_page="pagination.limit_per_page">
-            <div class="text-secondary" :class="props.class_page_size">
-              {{ props.first_text_page_size }}
+            <div class="text-secondary" :class="options.class_page_size">
+              {{ options.first_text_page_size }}
               <div class="mx-2 d-inline-block">
                 <input class="form-control form-control-sm" @change="changePageSize"
                   v-model.lazy="pagination.limit_per_page" min="1" size="3" aria-label="Número de registros por página"
                   type="number" />
               </div>
-              {{ props.second_text_page_size }}
+              {{ options.second_text_page_size }} 
             </div>
           </slot>
 
@@ -20,15 +20,15 @@
 
           </slot>
 
-          <Search v-model:search="pagination.search" v-model:filter="pagination.filter" :list_filter="props.list_filter"
-            :item_use="item_use" @search="reSearch" :deactivate_search_on_clear="props.deactivate_search_on_clear"
-            :placeholder_search="props.placeholder_search" :deactivate_search_empty="props.deactivate_search_empty"
+          <Search v-model:search="pagination.search" v-model:filter="pagination.filter" :list_filter="options.list_filter"
+            :item_use="item_use" @search="reSearch" :deactivate_search_on_clear="options.deactivate_search_on_clear"
+            :placeholder_search="options.placeholder_search" :deactivate_search_empty="options.deactivate_search_empty"
             @clicked-clear-search="$emit('clickedClearSearch')" />
         </div>
         <slot name="item-selected-info" :selected_items="selected_items" :clearSelection="() => selected_items = []">
-          <div v-if="(props.use_checkbox && selected_items.length > 0) && !props.deactivate_selected_info"
+          <div v-if="(options.use_checkbox && selected_items.length > 0) && !options.deactivate_selected_info"
             class="alert alert-cyan d-flex justify-content-center align-items-center py-2" role="alert">
-            <h4 class="alert-title m-0"> <strong>Itens Selecionados:</strong> <span
+            <h4 class="alert-title m-0"> <strong>oi Itens Selecionados:</strong> <span
                 class="badge bg-azure text-azure-fg">{{ selected_items.length }}</span></h4>
             <a class=" cursor-pointer " @click="selected_items = []">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -45,97 +45,10 @@
           </div>
         </slot>
 
-        <template v-if="showLoadingState">
-          <template v-if="props.custom_loading">
-            <component :is="props.custom_loading" />
-          </template>
-          <template v-else>
-            <table class="table table-vcenter table-selectable" :class="props.class_table">
-              <thead>
-                <tr>
-                  <th v-for="col in columns" :key="col.field || col.header" :class="col.class_column">
-                    {{ col.header }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <template v-if="props.type_loading === 'placeholder'">
-                  <tr v-for="n in pagination.limit_per_page" :key="'placeholder-' + n" class="placeholder-glow">
-                    <td v-for="col in columns" :key="col.field || col.header" :class="col.class_row">
-                      <span v-if="col.bodySlot">
-                        <span class="placeholder col-8"></span>
-                      </span>
-                      <span :class="col.class_item" v-else-if="col.type === 'text'">
-                        <span class="placeholder col-8"></span>
-                      </span>
-                      <span v-else-if="col.type === 'date'">
-                        <span class="placeholder col-9"></span>
-                      </span>
-                      <div :class="col.class_item" v-else-if="col.type === 'html'">
-                        <div class="placeholder col-12"></div>
-                      </div>
 
-                      <div :class="col.class_item" v-else-if="col.type === 'img'">
-                        <div class="placeholder placeholder-img"></div>
-                      </div>
-
-                      <span class="text-danger erro-custom-container" v-else>tipo <span
-                          class="badge bg-orange text-white erro-custom-text">{{ col.type }}</span> não suportado
-                      </span>
-                    </td>
-                  </tr>
-                </template>
-                <template v-else-if="props.type_loading === 'spiner-table'">
-                  <tr v-for="n in pagination.limit_per_page" :key="'placeholder-' + n">
-                    <td v-for="col in columns" :key="col.field || col.header" :class="col.class_row">
-                      <span v-if="col.bodySlot">
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                      </span>
-                      <span :class="col.class_item" v-else-if="col.type === 'text'">
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                      </span>
-                      <span v-else-if="col.type === 'date'">
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                      </span>
-                      <div :class="col.class_item" v-else-if="col.type === 'html'">
-                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                      </div>
-
-                      <div class="" :class="col.class_item" v-else-if="col.type === 'img'">
-                        <span class="placeholder-img d-flex justify-content-center align-items-center">
-                          <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                        </span>
-                      </div>
-
-                      <span class="text-danger erro-custom-container" v-else>tipo <span
-                          class="badge bg-orange text-white erro-custom-text">{{ col.type }}</span> não suportado
-                      </span>
-                    </td>
-                  </tr>
-
-                </template>
-                <template v-else-if="props.type_loading === 'spiner'">
-                  <tr v-for="n in pagination.limit_per_page" :key="n">
-                    <td :colspan="columns.length" class="text-center p-0" style="border-bottom: none;">
-                      <div v-if="n === Math.floor(pagination.limit_per_page / 2) + 1"
-                        class="d-flex flex-column justify-content-center align-items-center" style="height: 6rem;">
-                        <div class="spinner-border" style="width: 3rem; height: 3rem;" role="status">
-                        </div>
-                        <span class="mt-2">Carregando...</span>
-                      </div>
-                      <div v-else style="height: 3rem;"></div>
-                    </td>
-                  </tr>
-                </template>
-
-              </tbody>
-            </table>
-          </template>
-
-          <div v-if="attempt && attempt.current > 1" class="p-3 text-center text-secondary">
-            A conexão falhou. Tentando novamente... (Tentativa {{ attempt.current }} de {{ attempt.total }})
-          </div>
-        </template>
+        <VDataTableLoading v-if="showLoadingState" :columns="columns" :limit="pagination.limit_per_page"
+          :type_loading="options.type_loading" :custom_loading="options.custom_loading" :class_table="options.class_table"
+          :attempt="attempt" :pagination="pagination" />
         <div v-else-if="error" class="feedback-container text-center">
           <h4 class="text-danger">Ocorreu um Erro</h4>
           <p class="text-secondary" v-if="attempt">
@@ -150,26 +63,15 @@
         </div>
         <div class="table-responsive" v-else-if="items">
           <div v-if="items.length > 0">
-            <table class="table table-vcenter table-selectable" :class="props.class_table">
+            <table class="table table-vcenter table-selectable" :class="options.class_table">
               <thead>
-                <!-- <tr>
-                  <th v-if="props.use_checkbox" class="w-1">
-                    <input class="form-check-input m-0" type="checkbox" ref="selectAllCheckbox"
-                      @change="toggleSelectAll" aria-label="Selecionar todos os itens na página" />
-                  </th>
-                  <th v-for="col in columns" :key="col.field || col.header" :class="col.class_column">
-                    {{ col.header }}
-                  </th>
-                </tr> -->
 
                 <draggable v-model="draggableColumns" tag="tr" item-key="header" :animation="400"
-                  ghost-class="ghost-item" drag-class="dragging-item"
-                  @start="isDraggingColumns = true"
-                  @end="() => onDragEnd()"
-                  >
+                  ghost-class="ghost-item" drag-class="dragging-item" @start="isDraggingColumns = true"
+                  @end="() => onDragEnd()">
                   <template #header>
-                    <th v-if="props.use_expandable_items"></th>
-                    <th v-if="props.use_checkbox" class="w-1">
+                    <th v-if="options.use_expandable_items"></th>
+                    <th v-if="options.use_checkbox" class="w-1">
                       <input class="form-check-input m-0" type="checkbox" ref="selectAllCheckbox"
                         @change="toggleSelectAll" aria-label="Selecionar todos os itens na página" />
                     </th>
@@ -286,15 +188,15 @@
 
               </thead>
               <tbody>
-                <template v-for="item in items" :key="item[props.item_key]">
-                  <TransitionGroup tag="tr" :name="isDraggingColumns ? 'column-move' : ''" >
-                    <td v-if="props.use_expandable_items" class="w-1">
+                <template v-for="item in items" :key="item[options.item_key]">
+                  <TransitionGroup tag="tr" :name="isDraggingColumns ? 'column-move' : ''">
+                    <td v-if="options.use_expandable_items" class="w-1">
                       <slot name="expand-button" :item="item" :is-expanded="is_item_expanded(item)"
                         :expand_item_toggle="expand_item_toggle">
                         <button type="button" class="btn-clean btn-icon-anim"
                           :class="{ 'is-expanded': is_item_expanded(item) }" @click="expand_item_toggle(item)">
 
-                          <template v-if="props.type_button_expand === 'arrow'">
+                          <template v-if="options.type_button_expand === 'arrow'">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                               stroke-linejoin="round"
@@ -318,15 +220,15 @@
                         </button>
                       </slot>
                     </td>
-                    <td v-if="props.use_checkbox" class="w-1">
+                    <td v-if="options.use_checkbox" class="w-1">
                       <input class="form-check-input m-0" type="checkbox" :checked="isSelected(item)"
                         @change="toggleItemSelection(item)" aria-label="Selecionar este item" />
                     </td>
 
                     <td v-for="col in renderedColumns" :key="col.field || col.header" :class="col.class_row">
                       <component v-if="col.bodySlot" :is="col.bodySlot" :item="item" :is-selected="isSelected(item)" />
-                      <span @click="col.click ? col.click(item) : null"
-                        :class="computeClasses(col, item)" v-else-if="col.type === 'text'">
+                      <span @click="col.click ? col.click(item) : null" :class="computeClasses(col, item)"
+                        v-else-if="col.type === 'text'">
                         {{
                           limiteText(getSubItem(col.field, item, col.transform_function), col.limite_text ?? null)
                         }}</span>
@@ -334,18 +236,17 @@
                       <span @click="col.click ? col.click(item) : null" v-else-if="col.type === 'date'"
                         :class="computeClasses(col, item)">
                         <span v-if="col.format === 'complete'">{{ new Date(getSubItem(col.field, item)).toLocaleString()
-                        }}</span>
+                          }}</span>
                         <span v-if="col.format === 'simple'"> {{ new Date(getSubItem(col.field,
                           item)).toLocaleDateString()
-                        }} </span>
+                          }} </span>
                       </span>
-                      <div @click="col.click ? col.click(item) : null"
-                        :class="computeClasses(col, item)" v-else-if="col.type === 'html'"
-                        v-html="getSubItem(col.field, item)">
+                      <div @click="col.click ? col.click(item) : null" :class="computeClasses(col, item)"
+                        v-else-if="col.type === 'html'" v-html="getSubItem(col.field, item)">
                       </div>
 
-                      <div @click="col.click ? col.click(item) : null"
-                        :class="computeClasses(col, item)" v-else-if="col.type === 'img'">
+                      <div @click="col.click ? col.click(item) : null" :class="computeClasses(col, item)"
+                        v-else-if="col.type === 'img'">
 
                         <div v-if="getSubItem(col.field, item)" v-bind="col.deactivate_img_preview ? {
                           class: 'container-img'
@@ -367,10 +268,11 @@
                           class="badge bg-orange text-white erro-custom-text">{{ col.type }}</span> não suportado</span>
                     </td>
                   </TransitionGroup>
-                  <Transition :name="'expand-item-' + props.type_animation_expand"
-                    :css="!props.deactivate_animation_expand">
+                  <Transition :name="'expand-item-' + options.type_animation_expand"
+                    :css="!options.deactivate_animation_expand">
                     <!-- mostra uma linha após cada item -->
-                    <tr :id="'expand-item-' + item[props.item_key]" v-if="is_item_expanded(item)" class="expanded-item-row">
+                    <tr :id="'expand-item-' + item[options.item_key]" v-if="is_item_expanded(item)"
+                      class="expanded-item-row">
                       <!-- se estiver usando checkbox existe uma coluna a mais -->
                       <td :colspan="colspanExpandItems()">
                         <slot name="after-row" :item="item">
@@ -399,8 +301,8 @@
       </div>
     </div>
     <slot name="pagination" :pagination="pagination" :tradePage="fetchDataWithDelay" :error="error">
-      <div v-if="!error && pagination.count > 0" class="px-3" :class="props.class_pagination">
-        <PaginationDatatable :page_starts_at="props.page_starts_at" :filtering="true" :pagination="pagination"
+      <div v-if="!error && pagination.count > 0" class="px-3" :class="options.class_pagination">
+        <PaginationDatatable :page_starts_at="options.page_starts_at" :filtering="true" :pagination="pagination"
           @tradePage="tradePageEmit" />
       </div>
     </slot>
@@ -414,17 +316,18 @@
 
 <script setup lang="ts" generic="T extends Record<string, any>">
 import type { VDataTableProps, ExposedFunctions, PaginationObject } from '../types/v-data-table.ts';
-import type { Ref } from 'vue';
-import { readonly, ref, provide, computed, watch, nextTick } from 'vue';
-
+import { readonly, ref, provide, computed, watch, nextTick, inject } from 'vue';
+import { DATA_TABLE_CONFIG } from '@/config/datatableConfig'
 import PaginationDatatable from '@/Pagination/Pagination.vue';
 import Search from './SearchDatatable.vue';
 import { useImagePreview } from '../composables/useImagePreview';
 import { dataTableApiKey, type ColumnConfiguration } from '../keys';
 import draggable from 'vuedraggable';
 import { useExpandedItem } from '../composables/useExpandedItem';
-
-
+import { useDataTableFetch } from '../composables/useDataTableFetch';
+import { useCheckBox } from '../composables/useCheckBox.ts';
+import VDataTableLoading from './VDataTableLoading.vue';
+const globalConfig = inject(DATA_TABLE_CONFIG, {});
 const {
   isHovering,
   previewSrc,
@@ -440,35 +343,16 @@ const {
 // =======================================================
 const props = withDefaults(defineProps<VDataTableProps>(), {
   fetch_name: '',
-  type_loading: 'placeholder',
   custom_loading: null,
   deactivate_default_params: false,
-  filter_param_name: 'filter',
-  search_param_name: 'search',
-  page_param_name: 'page',
-  page_size_param_name: 'page_size',
+
   add_params: () => ({}),
-  data_key: 'results',
-  total_key: 'count',
   list_filter: () => [],
-  class_table: '',
-  class_content: '',
-  class_container: '',
-  class_pagination: '',
-  class_filters: '',
-  class_page_size: '',
-  min_loading_delay: 600,
-  retry_attempts: 3,
-  retry_delay: 2000,
+
   use_checkbox: false,
-  item_key: 'id',
-  first_text_page_size: 'Mostrar',
-  second_text_page_size: 'registros',
-  limit_per_page: 5,
-  page_starts_at: 0,
+
   deactivate_selected_info: false,
   immediate: true,
-  placeholder_search: "Buscar...",
   deactivate_search_on_clear: false,
   use_expandable_items: false,
   close_expanded_item_on_expand_new: false,
@@ -479,7 +363,45 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   deactivate_search_empty: false,
   disable_request: false,
 });
+const options = computed(() => {
+  return {
+    // Primeiro, espelha todas as props originais.
+    ...props,
 
+    // Agora SOBRESCREVEMOS as propriedades que precisam de lógica Global/Default
+    // (Prioridade para Prop, mas aceita Global)
+    
+    // === TEXTOS ===
+    first_text_page_size: props.first_text_page_size ?? globalConfig.first_text_page_size ?? 'Mostrar',
+    second_text_page_size: props.second_text_page_size ?? globalConfig.second_text_page_size ?? 'registros',
+    placeholder_search: props.placeholder_search ?? globalConfig.placeholder_search ?? 'Buscar...',
+    
+    // === CLASSES  ===
+    class_table: props.class_table || globalConfig.class_table || '',
+    class_pagination: props.class_pagination || globalConfig.class_pagination || '',
+    class_container: props.class_container || globalConfig.class_container || '',
+    class_content: props.class_content || globalConfig.class_content || '',
+    class_filters: props.class_filters || globalConfig.class_filters || '',
+    class_page_size: props.class_page_size || globalConfig.class_page_size || '',
+
+    // === CONFIGURAÇÃO DE API ===
+    filter_param_name: props.filter_param_name ?? globalConfig.filter_param_name ?? 'filter',
+    search_param_name: props.search_param_name ?? globalConfig.search_param_name ?? 'search',
+    page_param_name: props.page_param_name ?? globalConfig.page_param_name ?? 'page',
+    page_size_param_name: props.page_size_param_name ?? globalConfig.page_size_param_name ?? 'page_size',
+    page_starts_at: props.page_starts_at ?? globalConfig.page_starts_at ?? 0,
+    item_key: props.item_key ?? globalConfig.item_key ?? 'id',
+    data_key: props.data_key ?? globalConfig.data_key ?? 'results',
+    total_key: props.total_key ?? globalConfig.total_key ?? 'count',
+
+    // === COMPORTAMENTO ===
+    limit_per_page: props.limit_per_page ?? globalConfig.limit_per_page ?? 5,
+    type_loading: props.type_loading ?? globalConfig.type_loading ?? 'placeholder',
+    min_loading_delay: props.min_loading_delay ?? globalConfig.min_loading_delay ?? 600,
+    retry_attempts: props.retry_attempts ?? globalConfig.retry_attempts ?? 3,
+    retry_delay: props.retry_delay ?? globalConfig.retry_delay ?? 2000,
+  };
+});
 const emit = defineEmits(['tradePage', 'beforeFetch', 'afterFetch', 'clickedClearSearch']);
 
 // =======================================================
@@ -487,79 +409,50 @@ const emit = defineEmits(['tradePage', 'beforeFetch', 'afterFetch', 'clickedClea
 // =======================================================
 
 // variavel para saber quando o datatable já fez alguma busca
-const first_fetch = ref<boolean>(false);
+
 const orderings_state = ref<Record<string, 'none' | 'increasing' | 'decreasing'>>({});
 const columns = ref<ColumnConfiguration[]>([]);
-const items = ref<T[]>([]) as Ref<T[]>;
 const totalItems = ref<number>(0);
-const selected_items = ref<T[]>([]) as Ref<T[]>;
-const selectAllCheckbox = ref<HTMLInputElement | null>(null);
-const isDelaying = ref<boolean>(false);
-const delayTimer = ref<ReturnType<typeof setTimeout> | null>(null);
+
+
+
+
 // só ativa animação de arrastar colunas quando estiver arrastando
 const isDraggingColumns = ref(false);
 
 /*--------- definição de páginação ---------------*/
 const pagination = ref<PaginationObject>({
-  current_page: props.page_starts_at, // pagina atual
+  current_page: options.value.page_starts_at, // pagina atual
   count: 0,  // total de itens
-  limit_per_page: props.limit_per_page, // limite de itens por página
+  limit_per_page: options.value.limit_per_page, // limite de itens por página
   search: '', // termo de busca
   filter: '', // filtro selecionado
 })
 
-const urlReativa = computed(() => {
-  pagination.value.current_page = props.page_starts_at;
-  return props.endpoint;
-});
 
-const { 
-  expanded_items, 
+
+const {
   expand_item_toggle,
-  is_item_expanded 
+  close_all_expanded_items,
+  is_item_expanded
 } = useExpandedItem(
-  props.close_expanded_item_on_expand_new, 
-  props.item_key,
-  props.deactivate_animation_expand,
-  props.scroll_to_expanded_item
+  options.value.close_expanded_item_on_expand_new,
+  options.value.item_key,
+  options.value.deactivate_animation_expand,
+  options.value.scroll_to_expanded_item
 );
 
-// =======================================================
-// 3. LÓGICA DA API (useFetch)
-// =======================================================
-const { data: response, pending, error, execute, attempt } = props.fetch(urlReativa, {
-  disable_request: () => props.disable_request,
-  params: () => {
-    if (props.deactivate_default_params) {
-      if (props.add_params && typeof props.add_params === 'function') {
-        return {
-          ...props.add_params(),
-          ...params_ordering.value
-        };
-      }
-      return {
-        ...props.add_params,
-        ...params_ordering.value
-      };
-    }
-    else if (props.add_params && typeof props.add_params === 'function') {
-      return {
-        ...default_params.value,
-        ...props.add_params(),
-        ...params_ordering.value
-      }
-    }
-    return {
-      ...default_params.value,
-      ...props.add_params,
-      ...params_ordering.value
-    };
-  },
-  retry: props.retry_attempts,
-  retryDelay: props.retry_delay,
-  paramsReactives: false,
-  immediate: false,
-}, props.fetch_name);
+const {
+  items, error, response, attempt, default_params,
+  fetchDataWithDelay, reSearch,
+  showLoadingState, first_fetch
+} = useDataTableFetch<T>(options.value, pagination, columns, orderings_state, emit, close_all_expanded_items);
+
+
+const {
+  selectAllCheckbox, selected_items, isSelected,
+  atLeastOneSelected, toggleSelectAll, toggleItemSelection
+} = useCheckBox(options.value, items);
 
 // =======================================================
 // 4. PROPRIEDADES COMPUTADAS
@@ -586,87 +479,26 @@ const renderedColumns = computed(() => {
 
 const item_use = computed<number[]>(() => {
   let use = [1]
-  if (props.list_filter.length > 0) {
+  if (options.value.list_filter.length > 0) {
     use.push(2)
   }
   return use;
 });
-const params_ordering = computed(() => {
-  const objectOrdering: Record<string, any> = {};
-  for (const col of columns.value) {
-    if (col.use_ordering) {
-      if (orderings_state.value[col.header] === 'increasing') {
-        objectOrdering[col.param_ordering] = col.increasing_value || 'increasing';
-      } else if (orderings_state.value[col.header] === 'decreasing') {
-        objectOrdering[col.param_ordering] = col.decreasing_value || 'decreasing';
-      } else {
-        continue;
-      }
-    } else {
-      continue;
-    }
-  }
-
-  return objectOrdering;
-});
-
-const default_params = computed<Record<string, any>>(() => ({
-  [props.page_param_name]: pagination.value.current_page + 1,
-  [props.page_size_param_name]: pagination.value.limit_per_page,
-  [props.search_param_name]: pagination.value.search || "",
-  [props.filter_param_name]: pagination.value.filter || "",
-}));
-
-// para controlar a exibição do loading
-const showLoadingState = computed<boolean>(() => {
-  return (pending.value || isDelaying.value)
-});
 
 
-// Helper para verificar se um item está selecionado, comparando pela chave única
-const isSelected = (item: T): boolean => {
-  const key = props.item_key;
-  return selected_items.value.some(selectedItem => selectedItem[key] === item[key]);
-};
 
-// Controla o estado do checkbox "selecionar todos"
-const selectAllState = computed<boolean | 'indeterminate'>(() => {
-  if (!items.value.length) return false;
-  const selectedOnPageCount = items.value.filter(item => isSelected(item)).length;
-  if (selectedOnPageCount === 0) return false;
-  if (selectedOnPageCount === items.value.length) return true;
-  return 'indeterminate';
-});
-
-// computed que mostra se pelo menos um item está selecionado
-const atLeastOneSelected = computed<boolean>(() => selected_items.value.length > 0);
 
 
 // =======================================================
 // 5. WATCHERS (Observadores)
 // =======================================================
 
-// observa o estado e atualiza a propriedade 'indeterminate'
-watch([selectAllState, selectAllCheckbox], ([newState]) => {
-  if (selectAllCheckbox.value) {
-    if (newState === 'indeterminate') {
-      // Se o estado for indeterminado:
-      selectAllCheckbox.value.checked = false; // Ele não está "marcado"
-      selectAllCheckbox.value.indeterminate = true; // Ele está com o "traço"
-    } else {
-      selectAllCheckbox.value.checked = newState; // Define o estado marcado/desmarcado
-      selectAllCheckbox.value.indeterminate = false; // Remove o "traço"
-    }
-  }
-}, {
-  immediate: true,
-  flush: 'post'
-});
+
 
 watch(response, (newResponse: any) => {
   if (newResponse) {
-    items.value = newResponse[props.data_key] || [];
-    totalItems.value = newResponse[props.total_key] || 0;
+    items.value = newResponse[options.value.data_key] || [];
+    totalItems.value = newResponse[options.value.total_key] || 0;
     pagination.value.count = totalItems.value;
   } else {
     items.value = [];
@@ -683,70 +515,13 @@ function onDragEnd() {
     isDraggingColumns.value = false;
   }, 500);
 }
-// Função para marcar ou desmarcar todos os itens da página atual
-function toggleSelectAll(): void {
-  const pageItems = items.value;
-  if (!pageItems.length) return;
-
-  // Usa a propriedade computada para saber o estado atual
-  const currentState = selectAllState.value;
-
-  // Se TODOS ou ALGUNS estiverem selecionados, o clique irá LIMPAR a seleção da página.
-  if (currentState === true || currentState === 'indeterminate') {
-    const pageItemKeys = pageItems.map(item => item[props.item_key]);
-    selected_items.value = selected_items.value.filter(
-      selectedItem => !pageItemKeys.includes(selectedItem[props.item_key])
-    );
-  }
-  // Se NENHUM estiver selecionado, o clique irá SELECIONAR TODOS da página.
-  else { // currentState é false
-    pageItems.forEach(item => {
-      if (!isSelected(item)) {
-        selected_items.value.push(item);
-      }
-    });
-  }
-}
-
-// Função para marcar ou desmarcar um item individual
-function toggleItemSelection(item: T): void {
-  const key = props.item_key;
-  const index = selected_items.value.findIndex(selectedItem => selectedItem[key] === item[key]);
-
-  if (index > -1) {
-    selected_items.value.splice(index, 1); // Remove se já existe
-  } else {
-    selected_items.value.push(item); // Adiciona se não existe
-  }
-}
 
 function addColumn(colConfig: ColumnConfiguration): void {
   columns.value.push(colConfig);
 }
 provide(dataTableApiKey, { addColumn });
 
-// Função que gerencia o delay e a chamada da API
-async function fetchDataWithDelay(): Promise<void> {
-  // agora já fez pelo menos a primeira busca então marca como true
-  if (!first_fetch.value) first_fetch.value = true;
-  // Limpa timer anterior, se houver
-  if (delayTimer.value) clearTimeout(delayTimer.value);
 
-  isDelaying.value = true;
-
-  delayTimer.value = setTimeout(() => {
-    isDelaying.value = false;
-  }, props.min_loading_delay);
-  close_all_expanded_items();
-  emit('beforeFetch');
-  await execute(); // Executa a busca de dados original do useApiFetch
-  emit('afterFetch');
-}
-
-function reSearch(): void {
-  pagination.value.current_page = props.page_starts_at;
-  fetchDataWithDelay();
-}
 
 const changePageSize = (event: Event): void => {
   const target = event.target as HTMLInputElement;
@@ -838,13 +613,11 @@ function set_page(newPage: number): void {
 
 
 
-function close_all_expanded_items(): void {
-  expanded_items.value = [];
-}
+
 function colspanExpandItems(): number {
   let colspan = columns.value.length;
-  if (props.use_checkbox) colspan += 1;
-  if (props.use_expandable_items) colspan += 1;
+  if (options.value.use_checkbox) colspan += 1;
+  if (options.value.use_expandable_items) colspan += 1;
   return colspan;
 }
 function tradePageEmit(): void {
@@ -885,11 +658,12 @@ defineExpose<ExposedFunctions<T>>({
   selected_items,
   atLeastOneSelected,
   expand_item_toggle,
-  close_all_expanded_items
+  close_all_expanded_items,
+  selectAllCheckbox
 });
 const on_mounted_called = ref<boolean>(false);
 watch(
-  () => props.add_params,
+  () => options.value.add_params,
   () => {
     if (!on_mounted_called.value) {
       on_mounted_called.value = true;
@@ -901,7 +675,7 @@ watch(
       reSearch();
     }
   },
-  { deep: true, immediate: props.immediate }
+  { deep: true, immediate: options.value.immediate }
 )
 
 </script>
@@ -928,11 +702,6 @@ watch(
 
 $max-width-img: 40px;
 
-.placeholder-img {
-  width: $max-width-img;
-  height: $max-width-img;
-  border-radius: 4px;
-}
 
 .container-img {
   aspect-ratio: 1;
@@ -975,21 +744,6 @@ $max-width-img: 40px;
       }
     }
   }
-}
-
-.erro-custom-container {
-  display: inline-block;
-  padding: 0.2em 0.6em;
-  border-radius: 4px;
-  background-color: #ffffff;
-  font-weight: bold;
-  text-transform: uppercase;
-}
-
-.erro-custom-text {
-  font-size: 0.8em;
-  text-transform: uppercase;
-  font-weight: bold;
 }
 
 .bg-img {
