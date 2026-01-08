@@ -8,7 +8,8 @@ export function useExpandedItem(
 ) {
     const expanded_items = ref<any[]>([]);
 
-    function close_all_expanded_items() {
+
+    function close_all_expanded_items(): void {
         expanded_items.value = [];
     }
 
