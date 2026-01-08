@@ -347,8 +347,6 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   deactivate_default_params: false,
 
   add_params: () => ({}),
-  data_key: 'results',
-  total_key: 'count',
   list_filter: () => [],
 
   use_checkbox: false,
@@ -393,6 +391,8 @@ const options = computed(() => {
     page_size_param_name: props.page_size_param_name ?? globalConfig.page_size_param_name ?? 'page_size',
     page_starts_at: props.page_starts_at ?? globalConfig.page_starts_at ?? 0,
     item_key: props.item_key ?? globalConfig.item_key ?? 'id',
+    data_key: props.data_key ?? globalConfig.data_key ?? 'results',
+    total_key: props.total_key ?? globalConfig.total_key ?? 'count',
 
     // === COMPORTAMENTO ===
     limit_per_page: props.limit_per_page ?? globalConfig.limit_per_page ?? 5,
