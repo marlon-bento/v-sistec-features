@@ -1,3 +1,13 @@
+# [1.18.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.17.7...v1.18.0) (2026-01-08)
+
+
+### Features
+
+* implement global configuration for data table and toast options ([3c8f194](https://github.com/marlon-bento/v-sistec-features/commit/3c8f194740484f5a8c96e82a55f9bede731c54e8))
+* minha nova funcionalidade em beta ([a837d90](https://github.com/marlon-bento/v-sistec-features/commit/a837d90a0d2c6b38cde238293e7c28b42c623a5c))
+* restore data_key and total_key props in VDataTable component ([28ad89b](https://github.com/marlon-bento/v-sistec-features/commit/28ad89b81789e49805ae007b50de863195a1f32b))
+* teste de separação ([1108f07](https://github.com/marlon-bento/v-sistec-features/commit/1108f07b216c32920d1ad76dfb7f9bf0657a183b))
+
 # [1.18.0-beta.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.18.0-beta.2...v1.18.0-beta.3) (2026-01-08)
 
 
