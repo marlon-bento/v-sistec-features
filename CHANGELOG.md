@@ -1,3 +1,10 @@
+# [1.18.0-beta.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.18.0-beta.1...v1.18.0-beta.2) (2026-01-08)
+
+
+### Features
+
+* implement global configuration for data table and toast options ([3c8f194](https://github.com/marlon-bento/v-sistec-features/commit/3c8f194740484f5a8c96e82a55f9bede731c54e8))
+
 # [1.18.0-beta.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.17.7...v1.18.0-beta.1) (2026-01-08)
 
 
