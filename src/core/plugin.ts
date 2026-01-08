@@ -26,10 +26,16 @@ import '@tabler/core/dist/css/tabler-themes.min.css'
 import * as Tabler from '@tabler/core/dist/js/tabler.min.js';
 import vRequired from "v-required"
 import '../assets/v-required-style.css'
-import Toast from "vue-toastification";
+import Toast, { type PluginOptions as ToastPluginOptions } from "vue-toastification";
 import "vue-toastification/dist/index.css";
 
-const options_toast = {
+import { DATA_TABLE_CONFIG, type DataTableGlobalConfig } from '@/config/datatableConfig';
+export interface SistecOptions {
+  dataTable?: DataTableGlobalConfig; // Configurações opcionais da tabela
+  toast?: ToastPluginOptions;        // Configurações opcionais do Toast
+}
+
+const defaultToastOptions: ToastPluginOptions = {
   transition: "Vue-Toastification__bounce",
   maxToasts: 20,
   newestOnTop: true,
@@ -38,14 +44,22 @@ const options_toast = {
 
 const SistecPlugin = {
   // até o momento não usamos opções nem o app, mas deixei aqui caso precise no futuro
-  install: (app: App, _options?: any) => {
+  install: (app: App, options: SistecOptions = {}) => {
     // Disponibiliza o Tabler globalmente
     (window as any).bootstrap = Tabler;
+
+
 
     // futuros upgrades podem ser feitos aqui
     // Ex: app.component('MeuComponente', MeuComponente);
     app.directive('required', vRequired);
-    app.use(Toast, options_toast);
+    // Aqui um merge: Opções do usuário > Padrão do Sistec
+    const finalToastOptions = { ...defaultToastOptions, ...options.toast };
+    app.use(Toast, finalToastOptions);
+    // CONFIGURAÇÃO DO DATATABLE
+    // Se o usuário passou configurações goblais de tabela, fazemos o provide AQUI.
+    const tableConfig = options.dataTable || {}; 
+    app.provide(DATA_TABLE_CONFIG, tableConfig);
   }
 };
 export { SistecPlugin };

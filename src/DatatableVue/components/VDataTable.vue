@@ -1,18 +1,18 @@
 <template>
   <div>
-    <div class="" :class="props.class_container">
+    <div class="" :class="options.class_container">
       <slot></slot>
-      <div class="" :class="props.class_content">
-        <div :class="props.class_filters" class="d-flex justify-content-between align-items-start ">
+      <div class="" :class="options.class_content">
+        <div :class="options.class_filters" class="d-flex justify-content-between align-items-start ">
           <slot name="pageSize" :changePageSize="changePageSize" :limit_per_page="pagination.limit_per_page">
-            <div class="text-secondary" :class="props.class_page_size">
-              {{ props.first_text_page_size }}
+            <div class="text-secondary" :class="options.class_page_size">
+              {{ options.first_text_page_size }}
               <div class="mx-2 d-inline-block">
                 <input class="form-control form-control-sm" @change="changePageSize"
                   v-model.lazy="pagination.limit_per_page" min="1" size="3" aria-label="Número de registros por página"
                   type="number" />
               </div>
-              {{ props.second_text_page_size }}
+              {{ options.second_text_page_size }} 
             </div>
           </slot>
 
@@ -20,13 +20,13 @@
 
           </slot>
 
-          <Search v-model:search="pagination.search" v-model:filter="pagination.filter" :list_filter="props.list_filter"
-            :item_use="item_use" @search="reSearch" :deactivate_search_on_clear="props.deactivate_search_on_clear"
-            :placeholder_search="props.placeholder_search" :deactivate_search_empty="props.deactivate_search_empty"
+          <Search v-model:search="pagination.search" v-model:filter="pagination.filter" :list_filter="options.list_filter"
+            :item_use="item_use" @search="reSearch" :deactivate_search_on_clear="options.deactivate_search_on_clear"
+            :placeholder_search="options.placeholder_search" :deactivate_search_empty="options.deactivate_search_empty"
             @clicked-clear-search="$emit('clickedClearSearch')" />
         </div>
         <slot name="item-selected-info" :selected_items="selected_items" :clearSelection="() => selected_items = []">
-          <div v-if="(props.use_checkbox && selected_items.length > 0) && !props.deactivate_selected_info"
+          <div v-if="(options.use_checkbox && selected_items.length > 0) && !options.deactivate_selected_info"
             class="alert alert-cyan d-flex justify-content-center align-items-center py-2" role="alert">
             <h4 class="alert-title m-0"> <strong>oi Itens Selecionados:</strong> <span
                 class="badge bg-azure text-azure-fg">{{ selected_items.length }}</span></h4>
@@ -47,7 +47,7 @@
 
 
         <VDataTableLoading v-if="showLoadingState" :columns="columns" :limit="pagination.limit_per_page"
-          :type_loading="props.type_loading" :custom_loading="props.custom_loading" :class_table="props.class_table"
+          :type_loading="options.type_loading" :custom_loading="options.custom_loading" :class_table="options.class_table"
           :attempt="attempt" :pagination="pagination" />
         <div v-else-if="error" class="feedback-container text-center">
           <h4 class="text-danger">Ocorreu um Erro</h4>
@@ -63,15 +63,15 @@
         </div>
         <div class="table-responsive" v-else-if="items">
           <div v-if="items.length > 0">
-            <table class="table table-vcenter table-selectable" :class="props.class_table">
+            <table class="table table-vcenter table-selectable" :class="options.class_table">
               <thead>
 
                 <draggable v-model="draggableColumns" tag="tr" item-key="header" :animation="400"
                   ghost-class="ghost-item" drag-class="dragging-item" @start="isDraggingColumns = true"
                   @end="() => onDragEnd()">
                   <template #header>
-                    <th v-if="props.use_expandable_items"></th>
-                    <th v-if="props.use_checkbox" class="w-1">
+                    <th v-if="options.use_expandable_items"></th>
+                    <th v-if="options.use_checkbox" class="w-1">
                       <input class="form-check-input m-0" type="checkbox" ref="selectAllCheckbox"
                         @change="toggleSelectAll" aria-label="Selecionar todos os itens na página" />
                     </th>
@@ -188,15 +188,15 @@
 
               </thead>
               <tbody>
-                <template v-for="item in items" :key="item[props.item_key]">
+                <template v-for="item in items" :key="item[options.item_key]">
                   <TransitionGroup tag="tr" :name="isDraggingColumns ? 'column-move' : ''">
-                    <td v-if="props.use_expandable_items" class="w-1">
+                    <td v-if="options.use_expandable_items" class="w-1">
                       <slot name="expand-button" :item="item" :is-expanded="is_item_expanded(item)"
                         :expand_item_toggle="expand_item_toggle">
                         <button type="button" class="btn-clean btn-icon-anim"
                           :class="{ 'is-expanded': is_item_expanded(item) }" @click="expand_item_toggle(item)">
 
-                          <template v-if="props.type_button_expand === 'arrow'">
+                          <template v-if="options.type_button_expand === 'arrow'">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                               stroke-linejoin="round"
@@ -220,7 +220,7 @@
                         </button>
                       </slot>
                     </td>
-                    <td v-if="props.use_checkbox" class="w-1">
+                    <td v-if="options.use_checkbox" class="w-1">
                       <input class="form-check-input m-0" type="checkbox" :checked="isSelected(item)"
                         @change="toggleItemSelection(item)" aria-label="Selecionar este item" />
                     </td>
@@ -268,10 +268,10 @@
                           class="badge bg-orange text-white erro-custom-text">{{ col.type }}</span> não suportado</span>
                     </td>
                   </TransitionGroup>
-                  <Transition :name="'expand-item-' + props.type_animation_expand"
-                    :css="!props.deactivate_animation_expand">
+                  <Transition :name="'expand-item-' + options.type_animation_expand"
+                    :css="!options.deactivate_animation_expand">
                     <!-- mostra uma linha após cada item -->
-                    <tr :id="'expand-item-' + item[props.item_key]" v-if="is_item_expanded(item)"
+                    <tr :id="'expand-item-' + item[options.item_key]" v-if="is_item_expanded(item)"
                       class="expanded-item-row">
                       <!-- se estiver usando checkbox existe uma coluna a mais -->
                       <td :colspan="colspanExpandItems()">
@@ -301,8 +301,8 @@
       </div>
     </div>
     <slot name="pagination" :pagination="pagination" :tradePage="fetchDataWithDelay" :error="error">
-      <div v-if="!error && pagination.count > 0" class="px-3" :class="props.class_pagination">
-        <PaginationDatatable :page_starts_at="props.page_starts_at" :filtering="true" :pagination="pagination"
+      <div v-if="!error && pagination.count > 0" class="px-3" :class="options.class_pagination">
+        <PaginationDatatable :page_starts_at="options.page_starts_at" :filtering="true" :pagination="pagination"
           @tradePage="tradePageEmit" />
       </div>
     </slot>
@@ -316,8 +316,8 @@
 
 <script setup lang="ts" generic="T extends Record<string, any>">
 import type { VDataTableProps, ExposedFunctions, PaginationObject } from '../types/v-data-table.ts';
-import { readonly, ref, provide, computed, watch, nextTick } from 'vue';
-
+import { readonly, ref, provide, computed, watch, nextTick, inject } from 'vue';
+import { DATA_TABLE_CONFIG } from '@/config/datatableConfig'
 import PaginationDatatable from '@/Pagination/Pagination.vue';
 import Search from './SearchDatatable.vue';
 import { useImagePreview } from '../composables/useImagePreview';
@@ -327,6 +327,7 @@ import { useExpandedItem } from '../composables/useExpandedItem';
 import { useDataTableFetch } from '../composables/useDataTableFetch';
 import { useCheckBox } from '../composables/useCheckBox.ts';
 import VDataTableLoading from './VDataTableLoading.vue';
+const globalConfig = inject(DATA_TABLE_CONFIG, {});
 const {
   isHovering,
   previewSrc,
@@ -342,35 +343,18 @@ const {
 // =======================================================
 const props = withDefaults(defineProps<VDataTableProps>(), {
   fetch_name: '',
-  type_loading: 'placeholder',
   custom_loading: null,
   deactivate_default_params: false,
-  filter_param_name: 'filter',
-  search_param_name: 'search',
-  page_param_name: 'page',
-  page_size_param_name: 'page_size',
+
   add_params: () => ({}),
   data_key: 'results',
   total_key: 'count',
   list_filter: () => [],
-  class_table: '',
-  class_content: '',
-  class_container: '',
-  class_pagination: '',
-  class_filters: '',
-  class_page_size: '',
-  min_loading_delay: 600,
-  retry_attempts: 3,
-  retry_delay: 2000,
+
   use_checkbox: false,
-  item_key: 'id',
-  first_text_page_size: 'Mostrar',
-  second_text_page_size: 'registros',
-  limit_per_page: 5,
-  page_starts_at: 0,
+
   deactivate_selected_info: false,
   immediate: true,
-  placeholder_search: "Buscar...",
   deactivate_search_on_clear: false,
   use_expandable_items: false,
   close_expanded_item_on_expand_new: false,
@@ -381,7 +365,43 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   deactivate_search_empty: false,
   disable_request: false,
 });
+const options = computed(() => {
+  return {
+    // Primeiro, espelha todas as props originais.
+    ...props,
 
+    // Agora SOBRESCREVEMOS as propriedades que precisam de lógica Global/Default
+    // (Prioridade para Prop, mas aceita Global)
+    
+    // === TEXTOS ===
+    first_text_page_size: props.first_text_page_size ?? globalConfig.first_text_page_size ?? 'Mostrar',
+    second_text_page_size: props.second_text_page_size ?? globalConfig.second_text_page_size ?? 'registros',
+    placeholder_search: props.placeholder_search ?? globalConfig.placeholder_search ?? 'Buscar...',
+    
+    // === CLASSES  ===
+    class_table: props.class_table || globalConfig.class_table || '',
+    class_pagination: props.class_pagination || globalConfig.class_pagination || '',
+    class_container: props.class_container || globalConfig.class_container || '',
+    class_content: props.class_content || globalConfig.class_content || '',
+    class_filters: props.class_filters || globalConfig.class_filters || '',
+    class_page_size: props.class_page_size || globalConfig.class_page_size || '',
+
+    // === CONFIGURAÇÃO DE API ===
+    filter_param_name: props.filter_param_name ?? globalConfig.filter_param_name ?? 'filter',
+    search_param_name: props.search_param_name ?? globalConfig.search_param_name ?? 'search',
+    page_param_name: props.page_param_name ?? globalConfig.page_param_name ?? 'page',
+    page_size_param_name: props.page_size_param_name ?? globalConfig.page_size_param_name ?? 'page_size',
+    page_starts_at: props.page_starts_at ?? globalConfig.page_starts_at ?? 0,
+    item_key: props.item_key ?? globalConfig.item_key ?? 'id',
+
+    // === COMPORTAMENTO ===
+    limit_per_page: props.limit_per_page ?? globalConfig.limit_per_page ?? 5,
+    type_loading: props.type_loading ?? globalConfig.type_loading ?? 'placeholder',
+    min_loading_delay: props.min_loading_delay ?? globalConfig.min_loading_delay ?? 600,
+    retry_attempts: props.retry_attempts ?? globalConfig.retry_attempts ?? 3,
+    retry_delay: props.retry_delay ?? globalConfig.retry_delay ?? 2000,
+  };
+});
 const emit = defineEmits(['tradePage', 'beforeFetch', 'afterFetch', 'clickedClearSearch']);
 
 // =======================================================
@@ -402,9 +422,9 @@ const isDraggingColumns = ref(false);
 
 /*--------- definição de páginação ---------------*/
 const pagination = ref<PaginationObject>({
-  current_page: props.page_starts_at, // pagina atual
+  current_page: options.value.page_starts_at, // pagina atual
   count: 0,  // total de itens
-  limit_per_page: props.limit_per_page, // limite de itens por página
+  limit_per_page: options.value.limit_per_page, // limite de itens por página
   search: '', // termo de busca
   filter: '', // filtro selecionado
 })
@@ -416,23 +436,23 @@ const {
   close_all_expanded_items,
   is_item_expanded
 } = useExpandedItem(
-  props.close_expanded_item_on_expand_new,
-  props.item_key,
-  props.deactivate_animation_expand,
-  props.scroll_to_expanded_item
+  options.value.close_expanded_item_on_expand_new,
+  options.value.item_key,
+  options.value.deactivate_animation_expand,
+  options.value.scroll_to_expanded_item
 );
 
 const {
   items, error, response, attempt, default_params,
   fetchDataWithDelay, reSearch,
   showLoadingState, first_fetch
-} = useDataTableFetch<T>(props, pagination, columns, orderings_state, emit, close_all_expanded_items);
+} = useDataTableFetch<T>(options.value, pagination, columns, orderings_state, emit, close_all_expanded_items);
 
 
 const {
   selectAllCheckbox, selected_items, isSelected,
   atLeastOneSelected, toggleSelectAll, toggleItemSelection
-} = useCheckBox(props, items);
+} = useCheckBox(options.value, items);
 
 // =======================================================
 // 4. PROPRIEDADES COMPUTADAS
@@ -459,7 +479,7 @@ const renderedColumns = computed(() => {
 
 const item_use = computed<number[]>(() => {
   let use = [1]
-  if (props.list_filter.length > 0) {
+  if (options.value.list_filter.length > 0) {
     use.push(2)
   }
   return use;
@@ -477,8 +497,8 @@ const item_use = computed<number[]>(() => {
 
 watch(response, (newResponse: any) => {
   if (newResponse) {
-    items.value = newResponse[props.data_key] || [];
-    totalItems.value = newResponse[props.total_key] || 0;
+    items.value = newResponse[options.value.data_key] || [];
+    totalItems.value = newResponse[options.value.total_key] || 0;
     pagination.value.count = totalItems.value;
   } else {
     items.value = [];
@@ -596,8 +616,8 @@ function set_page(newPage: number): void {
 
 function colspanExpandItems(): number {
   let colspan = columns.value.length;
-  if (props.use_checkbox) colspan += 1;
-  if (props.use_expandable_items) colspan += 1;
+  if (options.value.use_checkbox) colspan += 1;
+  if (options.value.use_expandable_items) colspan += 1;
   return colspan;
 }
 function tradePageEmit(): void {
@@ -643,7 +663,7 @@ defineExpose<ExposedFunctions<T>>({
 });
 const on_mounted_called = ref<boolean>(false);
 watch(
-  () => props.add_params,
+  () => options.value.add_params,
   () => {
     if (!on_mounted_called.value) {
       on_mounted_called.value = true;
@@ -655,7 +675,7 @@ watch(
       reSearch();
     }
   },
-  { deep: true, immediate: props.immediate }
+  { deep: true, immediate: options.value.immediate }
 )
 
 </script>
