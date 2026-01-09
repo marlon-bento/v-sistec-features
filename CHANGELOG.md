@@ -1,3 +1,10 @@
+# [1.18.0-beta.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.18.0-beta.2...v1.18.0-beta.3) (2026-01-08)
+
+
+### Features
+
+* restore data_key and total_key props in VDataTable component ([28ad89b](https://github.com/marlon-bento/v-sistec-features/commit/28ad89b81789e49805ae007b50de863195a1f32b))
+
 # [1.18.0-beta.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.18.0-beta.1...v1.18.0-beta.2) (2026-01-08)
 
 
