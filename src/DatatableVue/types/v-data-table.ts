@@ -72,7 +72,7 @@ export interface VDataTableProps {
   immediate?: boolean;
   placeholder_search?: string;
   deactivate_search_on_clear?: boolean;
-
+  disable_search?: boolean;
   disable_request?: MaybeRefOrGetter<boolean>;
 }
 export type DataTablePropsWithDefaults = VDataTableProps & {
@@ -91,6 +91,7 @@ export type DataTablePropsWithDefaults = VDataTableProps & {
     placeholder_search: string;
     type_animation_expand: string;
     type_button_expand: string;
+    
 
     // Classes CSS (Strings)
     class_table: string;
