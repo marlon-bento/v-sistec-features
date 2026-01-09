@@ -1,3 +1,12 @@
+# [1.19.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.18.0...v1.19.0) (2026-01-09)
+
+
+### Features
+
+* add disable_search prop to VDataTable for enhanced search control ([6db48dd](https://github.com/marlon-bento/v-sistec-features/commit/6db48ddcb76676bf4cbc08e8542d482c0a5a987a))
+* add disable_search prop to VDataTable for improved search control ([9fa5a1f](https://github.com/marlon-bento/v-sistec-features/commit/9fa5a1f4d55fbf51bab3802758bd6e9613804243))
+* add disable_search prop to VDataTableProps for enhanced search functionality ([e3c975f](https://github.com/marlon-bento/v-sistec-features/commit/e3c975fb74614cb8d9791715b4381289d9049ddc))
+
 # [1.18.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.17.7...v1.18.0) (2026-01-08)
 
 
