@@ -12,7 +12,7 @@
                   v-model.lazy="pagination.limit_per_page" min="1" size="3" aria-label="Número de registros por página"
                   type="number" />
               </div>
-              {{ options.second_text_page_size }} 
+              {{ options.second_text_page_size }}
             </div>
           </slot>
 
@@ -20,8 +20,11 @@
 
           </slot>
 
-          <Search v-model:search="pagination.search" v-model:filter="pagination.filter" :list_filter="options.list_filter"
-            :item_use="item_use" @search="reSearch" :deactivate_search_on_clear="options.deactivate_search_on_clear"
+          <Search 
+            v-if="!options.disable_search"
+            v-model:search="pagination.search" v-model:filter="pagination.filter"
+            :list_filter="options.list_filter" :item_use="item_use" @search="reSearch"
+            :deactivate_search_on_clear="options.deactivate_search_on_clear"
             :placeholder_search="options.placeholder_search" :deactivate_search_empty="options.deactivate_search_empty"
             @clicked-clear-search="$emit('clickedClearSearch')" />
         </div>
@@ -47,8 +50,8 @@
 
 
         <VDataTableLoading v-if="showLoadingState" :columns="columns" :limit="pagination.limit_per_page"
-          :type_loading="options.type_loading" :custom_loading="options.custom_loading" :class_table="options.class_table"
-          :attempt="attempt" :pagination="pagination" />
+          :type_loading="options.type_loading" :custom_loading="options.custom_loading"
+          :class_table="options.class_table" :attempt="attempt" :pagination="pagination" />
         <div v-else-if="error" class="feedback-container text-center">
           <h4 class="text-danger">Ocorreu um Erro</h4>
           <p class="text-secondary" v-if="attempt">
@@ -236,10 +239,10 @@
                       <span @click="col.click ? col.click(item) : null" v-else-if="col.type === 'date'"
                         :class="computeClasses(col, item)">
                         <span v-if="col.format === 'complete'">{{ new Date(getSubItem(col.field, item)).toLocaleString()
-                          }}</span>
+                        }}</span>
                         <span v-if="col.format === 'simple'"> {{ new Date(getSubItem(col.field,
                           item)).toLocaleDateString()
-                          }} </span>
+                        }} </span>
                       </span>
                       <div @click="col.click ? col.click(item) : null" :class="computeClasses(col, item)"
                         v-else-if="col.type === 'html'" v-html="getSubItem(col.field, item)">
@@ -362,6 +365,7 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   type_button_expand: 'arrow',
   deactivate_search_empty: false,
   disable_request: false,
+  disable_search: false
 });
 const options = computed(() => {
   return {
@@ -370,12 +374,12 @@ const options = computed(() => {
 
     // Agora SOBRESCREVEMOS as propriedades que precisam de lógica Global/Default
     // (Prioridade para Prop, mas aceita Global)
-    
+
     // === TEXTOS ===
     first_text_page_size: props.first_text_page_size ?? globalConfig.first_text_page_size ?? 'Mostrar',
     second_text_page_size: props.second_text_page_size ?? globalConfig.second_text_page_size ?? 'registros',
     placeholder_search: props.placeholder_search ?? globalConfig.placeholder_search ?? 'Buscar...',
-    
+
     // === CLASSES  ===
     class_table: props.class_table || globalConfig.class_table || '',
     class_pagination: props.class_pagination || globalConfig.class_pagination || '',

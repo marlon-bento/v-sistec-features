@@ -91,6 +91,7 @@ export type DataTablePropsWithDefaults = VDataTableProps & {
     placeholder_search: string;
     type_animation_expand: string;
     type_button_expand: string;
+    disable_search: boolean;
 
     // Classes CSS (Strings)
     class_table: string;
