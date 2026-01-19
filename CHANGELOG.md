@@ -1,3 +1,10 @@
+# [1.22.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.21.0...v1.22.0) (2026-01-19)
+
+
+### Features
+
+* add index to loading and body slots for improved item tracking in VDataPage ([c0daaa2](https://github.com/marlon-bento/v-sistec-features/commit/c0daaa25b3bdd7bb097e02b8ea6173261f5c6640))
+
 # [1.21.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.20.0...v1.21.0) (2026-01-19)
 
 
