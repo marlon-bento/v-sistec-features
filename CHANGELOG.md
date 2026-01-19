@@ -1,3 +1,10 @@
+# [1.20.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.19.0...v1.20.0) (2026-01-19)
+
+
+### Features
+
+* add pagination_teleport and search_teleport props for enhanced teleportation support in VDataTable and VDataPage ([022f7d8](https://github.com/marlon-bento/v-sistec-features/commit/022f7d8740595be2a0a14f0ae8c725e72788f3dc))
+
 # [1.19.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.18.0...v1.19.0) (2026-01-09)
 
 
