@@ -26,8 +26,8 @@
                 </slot>
             </template>
             <div v-else :class="props.class_container">
-                <template v-for="item in items" :key="item[props.item_key]">
-                    <slot name="body" :item="item">
+                <template v-for="(item, index) in items" :key="item[props.item_key]">
+                    <slot name="body" :item="item" :index="index">
 
                     </slot>
                 </template>

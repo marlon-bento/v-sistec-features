@@ -194,10 +194,10 @@
 
               </thead>
               <tbody>
-                <template v-for="item in items" :key="item[options.item_key]">
+                <template v-for="(item, index) in items" :key="item[options.item_key]">
                   <TransitionGroup tag="tr" :name="isDraggingColumns ? 'column-move' : ''">
                     <td v-if="options.use_expandable_items" class="w-1">
-                      <slot name="expand-button" :item="item" :is-expanded="is_item_expanded(item)"
+                      <slot name="expand-button" :item="item" :index="index" :is-expanded="is_item_expanded(item)"
                         :expand_item_toggle="expand_item_toggle">
                         <button type="button" class="btn-clean btn-icon-anim"
                           :class="{ 'is-expanded': is_item_expanded(item) }" @click="expand_item_toggle(item)">
@@ -231,8 +231,9 @@
                         @change="toggleItemSelection(item)" aria-label="Selecionar este item" />
                     </td>
 
-                    <td v-for="col in renderedColumns" :key="col.field || col.header" :class="col.class_row">
-                      <component v-if="col.bodySlot" :is="col.bodySlot" :item="item" :is-selected="isSelected(item)" />
+                    <td v-for="(col, index) in renderedColumns" :key="col.field || col.header" :class="col.class_row">
+                      <component v-if="col.bodySlot" :is="col.bodySlot" :item="item" :index="index"
+                        :is-selected="isSelected(item)" />
                       <span @click="col.click ? col.click(item) : null" :class="computeClasses(col, item)"
                         v-else-if="col.type === 'text'">
                         {{
