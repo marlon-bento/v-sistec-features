@@ -1,3 +1,10 @@
+# [1.21.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.20.0...v1.21.0) (2026-01-19)
+
+
+### Features
+
+* add index to item slot in VDataTable and VDataPage for improved item tracking ([ed78455](https://github.com/marlon-bento/v-sistec-features/commit/ed7845590d0cfa38eba21114f3e581cd9a670f0f))
+
 # [1.20.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.19.0...v1.20.0) (2026-01-19)
 
 
