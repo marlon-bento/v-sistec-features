@@ -74,6 +74,9 @@ export interface VDataTableProps {
   deactivate_search_on_clear?: boolean;
   disable_search?: boolean;
   disable_request?: MaybeRefOrGetter<boolean>;
+  // Aceita string (seletor) OU HTMLElement (ref direto) OU null
+  pagination_teleport?: string | HTMLElement | null;
+  search_teleport?: string | HTMLElement | null;
 }
 export type DataTablePropsWithDefaults = VDataTableProps & {
     // Strings

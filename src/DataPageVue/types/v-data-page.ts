@@ -62,6 +62,9 @@ export interface VDataPageProps {
     element_id?: string;
     watch?: WatchSource[];
     disable_request?: MaybeRefOrGetter<boolean>;
+
+    // Aceita string (seletor) OU HTMLElement (ref direto) OU null
+    pagination_teleport?: string | HTMLElement | null
 }
 export interface PaginationObject {
     current_page: number;
