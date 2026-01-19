@@ -55,12 +55,16 @@
                 </template>
             </InfiniteLoading>
         </div>
-        <slot v-if="type_fetch === 'pagination'" name="pagination" :pagination="pagination"
-            :tradePage="fetchDataWithDelay" :error="error">
-            <div v-if="!error && pagination.count > 0" class="px-3" :class="props.class_pagination">
-                <Pagination :filtering="true" :page_starts_at="props.page_starts_at" :pagination="pagination" @tradePage="tradePageEmit" />
-            </div>
-        </slot>
+
+        <Teleport :to="props.pagination_teleport || 'body'" :disabled="!props.pagination_teleport">
+            <slot v-if="type_fetch === 'pagination'" name="pagination" :pagination="pagination"
+                :tradePage="fetchDataWithDelay" :error="error">
+                <div v-if="!error && pagination.count > 0" class="px-3" :class="props.class_pagination">
+                    <Pagination :filtering="true" :page_starts_at="props.page_starts_at" :pagination="pagination"
+                        @tradePage="tradePageEmit" />
+                </div>
+            </slot>
+        </Teleport>
     </div>
 
 </template>
@@ -112,6 +116,7 @@ const props = withDefaults(defineProps<VDataPageProps>(), {
     class_loading_container: '',
     watch: () => [],
     disable_request: false,
+    pagination_teleport: null,
 });
 
 
@@ -148,7 +153,7 @@ const pagination = ref<PaginationObject>({
 const { data: response, pending: pending, error, execute, attempt: _attempt } = props.fetch(props.endpoint, {
     disable_request: () => props.disable_request,
     params: () => {
-        
+
         if (props.deactivate_default_params) {
             if (props.add_params && typeof props.add_params === 'function') {
                 return props.add_params();
@@ -409,7 +414,7 @@ async function carregarPaginaTop($state: any) {
         $state.loaded();
         return;
     }
-    
+
     // --- FILTRAR DUPLICATAS ---
     const novosItens = items.value.filter(
         (novoItem: any) => !items_infinite.value.some(itemExistente => itemExistente[props.item_key] === novoItem[props.item_key])

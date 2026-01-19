@@ -10,7 +10,7 @@ import { defineStore } from "pinia";
  * 2 = error
  * 3 = info
  */
-type ToastStoreType = 1 | 2 | 3;
+type ToastStoreType = 1 | 2 | 3 | 'success' | 'error' | 'info';
 
 export const useToastStore = defineStore("toastStore", () => {
   const showToast = (
@@ -39,6 +39,17 @@ export const useToastStore = defineStore("toastStore", () => {
         });
         break;
       case 3:
+        toast.info(content, {});
+        break;
+      case 'success':
+        toast.success(content, {});
+        break;
+      case 'error':
+        toast.error(content, {
+          timeout: 7000,
+        });
+        break;
+      case 'info':
         toast.info(content, {});
         break;
       default:

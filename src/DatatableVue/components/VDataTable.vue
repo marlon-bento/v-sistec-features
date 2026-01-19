@@ -19,14 +19,17 @@
           <slot name="fieldMiddle">
 
           </slot>
-
-          <Search 
-            v-if="!options.disable_search"
-            v-model:search="pagination.search" v-model:filter="pagination.filter"
-            :list_filter="options.list_filter" :item_use="item_use" @search="reSearch"
-            :deactivate_search_on_clear="options.deactivate_search_on_clear"
-            :placeholder_search="options.placeholder_search" :deactivate_search_empty="options.deactivate_search_empty"
-            @clicked-clear-search="$emit('clickedClearSearch')" />
+          <Teleport :to="options.search_teleport || 'body'" :disabled="!options.search_teleport">
+            <slot name="search-field" :search="pagination.search" :filter="pagination.filter" :reSearch="reSearch"
+              :list_filter="options.list_filter" :item_use="item_use">
+              <Search v-if="!options.disable_search" v-model:search="pagination.search"
+                v-model:filter="pagination.filter" :list_filter="options.list_filter" :item_use="item_use"
+                @search="reSearch" :deactivate_search_on_clear="options.deactivate_search_on_clear"
+                :placeholder_search="options.placeholder_search"
+                :deactivate_search_empty="options.deactivate_search_empty"
+                @clicked-clear-search="$emit('clickedClearSearch')" />
+            </slot>
+          </Teleport>
         </div>
         <slot name="item-selected-info" :selected_items="selected_items" :clearSelection="() => selected_items = []">
           <div v-if="(options.use_checkbox && selected_items.length > 0) && !options.deactivate_selected_info"
@@ -239,10 +242,10 @@
                       <span @click="col.click ? col.click(item) : null" v-else-if="col.type === 'date'"
                         :class="computeClasses(col, item)">
                         <span v-if="col.format === 'complete'">{{ new Date(getSubItem(col.field, item)).toLocaleString()
-                        }}</span>
+                          }}</span>
                         <span v-if="col.format === 'simple'"> {{ new Date(getSubItem(col.field,
                           item)).toLocaleDateString()
-                        }} </span>
+                          }} </span>
                       </span>
                       <div @click="col.click ? col.click(item) : null" :class="computeClasses(col, item)"
                         v-else-if="col.type === 'html'" v-html="getSubItem(col.field, item)">
@@ -303,12 +306,14 @@
         </div>
       </div>
     </div>
-    <slot name="pagination" :pagination="pagination" :tradePage="fetchDataWithDelay" :error="error">
-      <div v-if="!error && pagination.count > 0" class="px-3" :class="options.class_pagination">
-        <PaginationDatatable :page_starts_at="options.page_starts_at" :filtering="true" :pagination="pagination"
-          @tradePage="tradePageEmit" />
-      </div>
-    </slot>
+    <Teleport :to="options.pagination_teleport || 'body'" :disabled="!options.pagination_teleport">
+      <slot name="pagination" :pagination="pagination" :tradePage="fetchDataWithDelay" :error="error">
+        <div v-if="!error && pagination.count > 0" class="px-3" :class="options.class_pagination">
+          <PaginationDatatable :page_starts_at="options.page_starts_at" :filtering="true" :pagination="pagination"
+            @tradePage="tradePageEmit" />
+        </div>
+      </slot>
+    </Teleport>
 
     <div v-if="isHovering" class="image-preview-container" :style="previewStyle">
       <img :src="previewSrc" alt="Preview" class="image-preview-large" />
@@ -365,7 +370,9 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   type_button_expand: 'arrow',
   deactivate_search_empty: false,
   disable_request: false,
-  disable_search: false
+  disable_search: false,
+  pagination_teleport: null,
+  search_teleport: null,
 });
 const options = computed(() => {
   return {
