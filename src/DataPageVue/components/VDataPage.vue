@@ -4,8 +4,8 @@
 
             <template v-if="showLoadingState">
                 <div :class="props.class_loading_container">
-                    <template v-for="n in pagination.limit_per_page" :key="'placeholder-' + n">
-                        <slot name="loading" :n="n">
+                    <template v-for="(n, index) in pagination.limit_per_page" :key="'placeholder-' + n">
+                        <slot name="loading" :n="n" :index="index">
 
                         </slot>
                     </template>
@@ -39,10 +39,10 @@
                 <template #complete><span></span></template>
                 <template #spinner><span></span></template>
             </InfiniteLoading>
-            <template v-for="item in items_infinite" :key="item[props.item_key]">
-                <slot v-if="!item.loading" name="body" :item="item">
+            <template v-for="(item, index) in items_infinite" :key="item[props.item_key]">
+                <slot v-if="!item.loading" name="body" :item="item" :index="index" >
                 </slot>
-                <slot v-else name="loading">
+                <slot v-else name="loading" :index="index" >
 
                 </slot>
             </template>
