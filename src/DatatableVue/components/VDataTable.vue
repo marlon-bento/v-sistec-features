@@ -325,7 +325,7 @@
 
 <script setup lang="ts" generic="T extends Record<string, any>">
 import type { VDataTableProps, ExposedFunctions, PaginationObject } from '../types/v-data-table.ts';
-import { readonly, ref, provide, computed, watch, nextTick, inject } from 'vue';
+import { readonly, ref, provide, computed, watch, nextTick, inject, onMounted } from 'vue';
 import { DATA_TABLE_CONFIG } from '@/config/datatableConfig'
 import PaginationDatatable from '@/Pagination/Pagination.vue';
 import Search from './SearchDatatable.vue';
@@ -673,23 +673,22 @@ defineExpose<ExposedFunctions<T>>({
   close_all_expanded_items,
   selectAllCheckbox
 });
-const on_mounted_called = ref<boolean>(false);
+
+onMounted(() => {
+  if (options.value.immediate) {
+    nextTick(() => {
+      reSearch();
+    });
+  }
+});
+
 watch(
   () => options.value.add_params,
   () => {
-    if (!on_mounted_called.value) {
-      on_mounted_called.value = true;
-      // esperar até existir os exposes
-      nextTick(() => {
-        reSearch();
-      });
-    } else {
-      reSearch();
-    }
+    reSearch();
   },
-  { deep: true, immediate: options.value.immediate }
-)
-
+  { deep: true }
+);
 </script>
 
 <style lang="scss" scoped>
