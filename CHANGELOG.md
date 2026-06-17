@@ -1,3 +1,10 @@
+## [1.22.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.22.1...v1.22.2) (2026-06-17)
+
+
+### Bug Fixes
+
+* forçando nova versão pelo bug da última por falta de token válido por causa da mudança no npm ([6fb61db](https://github.com/marlon-bento/v-sistec-features/commit/6fb61db901a1e95a4812f477fd8e205f4c418aac))
+
 ## [1.22.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.22.0...v1.22.1) (2026-06-17)
 
 
