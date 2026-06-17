@@ -534,7 +534,6 @@ function addColumn(colConfig: ColumnConfiguration): void {
 provide(dataTableApiKey, { addColumn });
 
 
-
 const changePageSize = (event: Event): void => {
   const target = event.target as HTMLInputElement;
   const newSize = parseInt(target.value, 10);
