@@ -1,3 +1,10 @@
+## [1.22.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.22.0...v1.22.1) (2026-06-17)
+
+
+### Bug Fixes
+
+* tava dando problema o watch com imediate, por que gerava uma condição de corrida que o authorization com token ainda não tava definido então passei a lógica para o onmounted ([f1f4a31](https://github.com/marlon-bento/v-sistec-features/commit/f1f4a31bb66130fedf7f80e1e5d04170bae28b6c))
+
 # [1.22.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.21.0...v1.22.0) (2026-01-19)
 
 
