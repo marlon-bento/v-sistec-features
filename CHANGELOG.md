@@ -1,3 +1,10 @@
+## [1.22.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.22.2...v1.22.3) (2026-06-17)
+
+
+### Bug Fixes
+
+* testando se a nova forma de token pulando 2fa funciona ([672ec89](https://github.com/marlon-bento/v-sistec-features/commit/672ec8941ec6d994582388a8da39058798d6e6e4))
+
 ## [1.22.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.22.1...v1.22.2) (2026-06-17)
 
 
