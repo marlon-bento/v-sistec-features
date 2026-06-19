@@ -1,3 +1,10 @@
+# [1.23.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.22.3...v1.23.0) (2026-06-19)
+
+
+### Features
+
+* agora é possível mudar a forma como a header de cada coluna é exibida usando slots, um slot para adicionar mais coisa, e outro pra sobrescrever todo o comportamento padrão ([605ec28](https://github.com/marlon-bento/v-sistec-features/commit/605ec283dd744932bbb205b52fa76b3bca071454))
+
 ## [1.22.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.22.2...v1.22.3) (2026-06-17)
 
 
