@@ -14,13 +14,14 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "npm run build"
+        "prepareCmd": "npm run build",
+        "publishCmd": "npm publish --provenance"
       }
     ],
     [
       "@semantic-release/npm",
       {
-        "npmPublish": true
+        "npmPublish": false
       }
     ],
     [
