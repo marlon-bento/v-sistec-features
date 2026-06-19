@@ -1,3 +1,14 @@
+## [1.23.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.23.0...v1.23.1) (2026-06-19)
+
+
+### Bug Fixes
+
+* teste autenticação oidc com npm para não precisar de token mais ([dbdbe08](https://github.com/marlon-bento/v-sistec-features/commit/dbdbe08e44f6bbec04b006a9dd10df18a27c1a0b))
+* teste autenticação oidc com npm para não precisar de token mais ([60793a7](https://github.com/marlon-bento/v-sistec-features/commit/60793a72e79aaab7d7f097c54a6b30d09d188731))
+* teste autenticação oidc com npm para não precisar de token mais ([bed1f51](https://github.com/marlon-bento/v-sistec-features/commit/bed1f516a1b96ffb529d2afe4d15ae9ca6befc44))
+* teste de oidc npm novamente ([69c6532](https://github.com/marlon-bento/v-sistec-features/commit/69c6532934bdc404ad6246627c19e3c674ed1bcf))
+* teste de oidc npm novamente ([781ebf9](https://github.com/marlon-bento/v-sistec-features/commit/781ebf9b20ba0f033fa21c5ff83ef2189c29928e))
+
 # [1.23.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.22.3...v1.23.0) (2026-06-19)
 
 
