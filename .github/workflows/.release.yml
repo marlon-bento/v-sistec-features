@@ -26,7 +26,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-          # não usa mais o registry como ta usando o oidc do npm registry-url: 'https://registry.npmjs.org'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: npm install
@@ -38,7 +38,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true # Habilita a geração de arquivos de proveniência para o npm
-          # O Semantic Release EXIGE essa variável, mas como temos o Provenance, 
-          # passamos um texto falso só para ele parar de reclamar:
-          NPM_TOKEN: "provenance-dummy-token"
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN || '' }}
         run: npx semantic-release
