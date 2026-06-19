@@ -3,12 +3,14 @@
 </template>
 
 <script setup lang="ts">
-import { inject, onMounted, useSlots, defineSlots } from 'vue';
+import { inject, onMounted, useSlots } from 'vue';
 import { dataTableApiKey } from '../keys';
 
 defineSlots<{
   // props para o slot body 
   body?: (props: { item: any }) => any,
+  col_header?: (props: { col: any, locked: boolean }) => any,
+  col_header_midle?: (props: { col: any, locked: boolean }) => any,
 }>();
 interface VColumnProps {
   field?: string | null;
@@ -113,9 +115,15 @@ onMounted(() => {
     class_rules: props.class_rules,
 
     bodySlot: slots.body,
+    // colHeaderSlot é para o slot do header da coluna, que pode ser usado para colocar ícone de ordenação ou qualquer outra coisa que o usuário queira colocar no header da coluna
+    colHeaderSlot: slots.col_header,
+    // colHeaderMidleSlot é para o slot do header da coluna, mas ele fica entre o texto do header e o ícone de ordenação, para o usuário colocar coisas entre eles
+    colHeaderMidleSlot: slots.col_header_midle,
     ...(props.type === 'text' && { limite_text: Number(props.limite_text) }),
     ...(props.type === 'img' && { deactivate_img_preview: props.deactivate_img_preview }),
     ...(props.type === 'date' && { format: props.format }),
+    
   });
+  
 });
 </script>

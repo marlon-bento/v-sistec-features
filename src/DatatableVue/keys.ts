@@ -10,6 +10,8 @@ export interface ColumnConfiguration {
   class_item: string;
   transform_function: ((value: any) => any) | null;
   bodySlot?: Slot;
+  colHeaderSlot?: Slot;
+  colHeaderMidleSlot?: Slot;
   limite_text?: number;
   deactivate_img_preview?: boolean;
   format?: 'complete' | 'simple';

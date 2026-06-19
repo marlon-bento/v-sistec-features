@@ -75,6 +75,7 @@
                 <draggable v-model="draggableColumns" tag="tr" item-key="header" :animation="400"
                   ghost-class="ghost-item" drag-class="dragging-item" @start="isDraggingColumns = true"
                   @end="() => onDragEnd()">
+
                   <template #header>
                     <th v-if="options.use_expandable_items"></th>
                     <th v-if="options.use_checkbox" class="w-1">
@@ -84,115 +85,27 @@
                   </template>
 
                   <template #item="{ element: col }">
-                    <template v-if="col.use_ordering">
-                      <th class="header-draggable" :class="col.class_column">
-                        <div class="header-ordering">
-                          <span>{{ col.header }}</span>
-
-                          <span @click="() => toggleOrderingState(col.header)" class="ms-2 cursor-pointer">
-                            <svg v-if="!orderings_state[col.header] || orderings_state[col.header] === 'none'"
-                              xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="m3 8 4-4 4 4"></path>
-                              <path d="m11 16-4 4-4-4"></path>
-                              <path d="M7 4v16"></path>
-                              <path d="M15 8h6"></path>
-                              <path d="M15 16h6"></path>
-                              <path d="M13 12h8"></path>
-                            </svg>
-
-
-                            <svg v-else-if="orderings_state[col.header] === 'decreasing'"
-                              xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="m3 16 4 4 4-4"></path>
-                              <path d="M7 20V4"></path>
-                              <path d="M11 4h10"></path>
-                              <path d="M11 8h7"></path>
-                              <path d="M11 12h4"></path>
-                            </svg>
-
-                            <svg v-else-if="orderings_state[col.header] === 'increasing'"
-                              xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                              <path d="m3 8 4-4 4 4"></path>
-                              <path d="M7 4v16"></path>
-                              <path d="M11 12h4"></path>
-                              <path d="M11 16h7"></path>
-                              <path d="M11 20h10"></path>
-                            </svg>
-
-                          </span>
-                        </div>
-
-                      </th>
-                    </template>
-                    <template v-else>
-                      <th class="header-draggable" :class="col.class_column">
-                        {{ col.header }}
-                      </th>
-                    </template>
-
+                    <v-th-data-table :header="col.header" :class_column="col.class_column"
+                      :use_ordering="col.use_ordering" :orderings_state="orderings_state[col.header] || 'none'"
+                      @toggleOrderingState="() => toggleOrderingState(col.header)" :locked="false" :col="col">
+                      
+                    </v-th-data-table>
                   </template>
 
                   <template #footer>
+
                     <template v-for="col in lockedColumns" :key="col.field || col.header">
-                      <template v-if="col.use_ordering">
-                        <th class="header-locked header-ordering" :class="col.class_column">
-                          <div class="header-ordering">
-                            <span>{{ col.header }}</span>
-
-                            <span @click="() => toggleOrderingState(col.header)" class="ms-2 cursor-pointer">
-                              <svg v-if="!orderings_state[col.header] || orderings_state[col.header] === 'none'"
-                                xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path d="m3 8 4-4 4 4"></path>
-                                <path d="m11 16-4 4-4-4"></path>
-                                <path d="M7 4v16"></path>
-                                <path d="M15 8h6"></path>
-                                <path d="M15 16h6"></path>
-                                <path d="M13 12h8"></path>
-                              </svg>
-
-
-                              <svg v-else-if="orderings_state[col.header] === 'decreasing'"
-                                xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path d="m3 16 4 4 4-4"></path>
-                                <path d="M7 20V4"></path>
-                                <path d="M11 4h10"></path>
-                                <path d="M11 8h7"></path>
-                                <path d="M11 12h4"></path>
-                              </svg>
-
-                              <svg v-else-if="orderings_state[col.header] === 'increasing'"
-                                xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round">
-                                <path d="m3 8 4-4 4 4"></path>
-                                <path d="M7 4v16"></path>
-                                <path d="M11 12h4"></path>
-                                <path d="M11 16h7"></path>
-                                <path d="M11 20h10"></path>
-                              </svg>
-                            </span>
-                          </div>
-                        </th>
-                      </template>
-
-                      <template v-else>
-                        <th class="header-locked" :class="col.class_column">
-                          {{ col.header }}
-                        </th>
-                      </template>
+                      <v-th-data-table :header="col.header" :class_column="col.class_column"
+                        :use_ordering="col.use_ordering" :orderings_state="orderings_state[col.header] || 'none'"
+                        @toggleOrderingState="() => toggleOrderingState(col.header)" :col="col" locked>
+                        
+                      </v-th-data-table>
 
                     </template>
                   </template>
                 </draggable>
-
               </thead>
+
               <tbody>
                 <template v-for="(item, index) in items" :key="item[options.item_key]">
                   <TransitionGroup tag="tr" :name="isDraggingColumns ? 'column-move' : ''">
@@ -243,10 +156,10 @@
                       <span @click="col.click ? col.click(item) : null" v-else-if="col.type === 'date'"
                         :class="computeClasses(col, item)">
                         <span v-if="col.format === 'complete'">{{ new Date(getSubItem(col.field, item)).toLocaleString()
-                          }}</span>
+                        }}</span>
                         <span v-if="col.format === 'simple'"> {{ new Date(getSubItem(col.field,
                           item)).toLocaleDateString()
-                          }} </span>
+                        }} </span>
                       </span>
                       <div @click="col.click ? col.click(item) : null" :class="computeClasses(col, item)"
                         v-else-if="col.type === 'html'" v-html="getSubItem(col.field, item)">
@@ -336,6 +249,7 @@ import { useExpandedItem } from '../composables/useExpandedItem';
 import { useDataTableFetch } from '../composables/useDataTableFetch';
 import { useCheckBox } from '../composables/useCheckBox.ts';
 import VDataTableLoading from './VDataTableLoading.vue';
+import VThDataTable from './VThDataTable.vue';
 const globalConfig = inject(DATA_TABLE_CONFIG, {});
 const {
   isHovering,
@@ -532,6 +446,7 @@ function onDragEnd() {
 function addColumn(colConfig: ColumnConfiguration): void {
   columns.value.push(colConfig);
 }
+
 provide(dataTableApiKey, { addColumn });
 
 
@@ -575,6 +490,7 @@ function limiteText(text: string | null, limite: number | null): string | null {
 }
 
 function toggleOrderingState(header: string) {
+
   // desabilita todos que não são o header clicado
   for (const key in orderings_state.value) {
     if (key !== header) {
