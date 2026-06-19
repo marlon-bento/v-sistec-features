@@ -38,4 +38,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true # Habilita a geração de arquivos de proveniência para o npm
+          # O Semantic Release EXIGE essa variável, mas como temos o Provenance, 
+          # passamos um texto falso só para ele parar de reclamar:
+          NPM_TOKEN: "provenance-dummy-token"
         run: npx semantic-release
