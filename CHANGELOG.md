@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.25.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.24.0...v1.25.0) (2026-07-17)
+
+
+### Features
+
+* agora é possível escolher qual coluna fica visivel por padrão e o usuário escolher quais ele quer ver ([0fd2339](https://github.com/marlon-bento/v-sistec-features/commit/0fd2339a66d3dc9cd63c7ab24720d93b2c3db771))
+
 # [1.24.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.23.2...v1.24.0) (2026-07-17)
 
 
