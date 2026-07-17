@@ -77,6 +77,7 @@ export interface VDataTableProps {
   // Aceita string (seletor) OU HTMLElement (ref direto) OU null
   pagination_teleport?: string | HTMLElement | null;
   search_teleport?: string | HTMLElement | null;
+  show_header_when_empty?: boolean;
 }
 export type DataTablePropsWithDefaults = VDataTableProps & {
     // Strings

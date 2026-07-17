@@ -68,7 +68,7 @@
           </button>
         </div>
         <div class="table-responsive" v-else-if="items">
-          <div v-if="items.length > 0">
+          <div v-if="hasItems || options.show_header_when_empty">
             <table class="table table-vcenter table-selectable" :class="options.class_table">
               <thead>
 
@@ -88,7 +88,7 @@
                     <v-th-data-table :header="col.header" :class_column="col.class_column"
                       :use_ordering="col.use_ordering" :orderings_state="orderings_state[col.header] || 'none'"
                       @toggleOrderingState="() => toggleOrderingState(col.header)" :locked="false" :col="col">
-                      
+
                     </v-th-data-table>
                   </template>
 
@@ -98,7 +98,7 @@
                       <v-th-data-table :header="col.header" :class_column="col.class_column"
                         :use_ordering="col.use_ordering" :orderings_state="orderings_state[col.header] || 'none'"
                         @toggleOrderingState="() => toggleOrderingState(col.header)" :col="col" locked>
-                        
+
                       </v-th-data-table>
 
                     </template>
@@ -107,109 +107,114 @@
               </thead>
 
               <tbody>
-                <template v-for="(item, index) in items" :key="item[options.item_key]">
-                  <TransitionGroup tag="tr" :name="isDraggingColumns ? 'column-move' : ''">
-                    <td v-if="options.use_expandable_items" class="w-1">
-                      <slot name="expand-button" :item="item" :index="index" :is-expanded="is_item_expanded(item)"
-                        :expand_item_toggle="expand_item_toggle">
-                        <button type="button" class="btn-clean btn-icon-anim"
-                          :class="{ 'is-expanded': is_item_expanded(item) }" @click="expand_item_toggle(item)">
+                <template v-if="hasItems">
+                  <template v-for="(item, index) in items" :key="item[options.item_key]">
+                    <TransitionGroup tag="tr" :name="isDraggingColumns ? 'column-move' : ''">
+                      <td v-if="options.use_expandable_items" class="w-1">
+                        <slot name="expand-button" :item="item" :index="index" :is-expanded="is_item_expanded(item)"
+                          :expand_item_toggle="expand_item_toggle">
+                          <button type="button" class="btn-clean btn-icon-anim"
+                            :class="{ 'is-expanded': is_item_expanded(item) }" @click="expand_item_toggle(item)">
 
-                          <template v-if="options.type_button_expand === 'arrow'">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                              stroke-linejoin="round"
-                              class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right icon-transition-arrow">
-                              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                              <path d="M9 6l6 6l-6 6" />
-                            </svg>
+                            <template v-if="options.type_button_expand === 'arrow'">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right icon-transition-arrow">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M9 6l6 6l-6 6" />
+                              </svg>
 
-                          </template>
+                            </template>
 
-                          <template v-else>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                              stroke-linejoin="round" class="icon icon-transition-plus">
-                              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                              <path d="M12 5l0 14" class="vertical-line" />
-                              <path d="M5 12l14 0" />
-                            </svg>
-                          </template>
+                            <template v-else>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="icon icon-transition-plus">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M12 5l0 14" class="vertical-line" />
+                                <path d="M5 12l14 0" />
+                              </svg>
+                            </template>
 
-                        </button>
-                      </slot>
-                    </td>
-                    <td v-if="options.use_checkbox" class="w-1">
-                      <input class="form-check-input m-0" type="checkbox" :checked="isSelected(item)"
-                        @change="toggleItemSelection(item)" aria-label="Selecionar este item" />
-                    </td>
+                          </button>
+                        </slot>
+                      </td>
+                      <td v-if="options.use_checkbox" class="w-1">
+                        <input class="form-check-input m-0" type="checkbox" :checked="isSelected(item)"
+                          @change="toggleItemSelection(item)" aria-label="Selecionar este item" />
+                      </td>
 
-                    <td v-for="(col, index) in renderedColumns" :key="col.field || col.header" :class="col.class_row">
-                      <component v-if="col.bodySlot" :is="col.bodySlot" :item="item" :index="index"
-                        :is-selected="isSelected(item)" />
-                      <span @click="col.click ? col.click(item) : null" :class="computeClasses(col, item)"
-                        v-else-if="col.type === 'text'">
-                        {{
-                          limiteText(getSubItem(col.field, item, col.transform_function), col.limite_text ?? null)
-                        }}</span>
+                      <td v-for="(col, index) in renderedColumns" :key="col.field || col.header" :class="col.class_row">
+                        <component v-if="col.bodySlot" :is="col.bodySlot" :item="item" :index="index"
+                          :is-selected="isSelected(item)" />
+                        <span @click="col.click ? col.click(item) : null" :class="computeClasses(col, item)"
+                          v-else-if="col.type === 'text'">
+                          {{
+                            limiteText(getSubItem(col.field, item, col.transform_function), col.limite_text ?? null)
+                          }}</span>
 
-                      <span @click="col.click ? col.click(item) : null" v-else-if="col.type === 'date'"
-                        :class="computeClasses(col, item)">
-                        <span v-if="col.format === 'complete'">{{ new Date(getSubItem(col.field, item)).toLocaleString()
-                        }}</span>
-                        <span v-if="col.format === 'simple'"> {{ new Date(getSubItem(col.field,
-                          item)).toLocaleDateString()
-                        }} </span>
-                      </span>
-                      <div @click="col.click ? col.click(item) : null" :class="computeClasses(col, item)"
-                        v-else-if="col.type === 'html'" v-html="getSubItem(col.field, item)">
-                      </div>
-
-                      <div @click="col.click ? col.click(item) : null" :class="computeClasses(col, item)"
-                        v-else-if="col.type === 'img'">
-
-                        <div v-if="getSubItem(col.field, item)" v-bind="col.deactivate_img_preview ? {
-                          class: 'container-img'
-                        } :
-                          {
-                            onMouseover: (event) => handleMouseOver(event, getSubItem(col.field, item)),
-                            onMousemove: handleMouseMove,
-                            onMouseleave: handleMouseLeave,
-                            class: 'container-img container-img-preview'
-                          }">
-
-                          <img class="img-tamanho" :src="getSubItem(col.field, item)" />
-                          <img class="img-tamanho-cover" :src="getSubItem(col.field, item)" />
-                          <div class="bg-img"></div>
+                        <span @click="col.click ? col.click(item) : null" v-else-if="col.type === 'date'"
+                          :class="computeClasses(col, item)">
+                          <span v-if="col.format === 'complete'">{{ new Date(getSubItem(col.field,
+                            item)).toLocaleString()
+                            }}</span>
+                          <span v-if="col.format === 'simple'"> {{ new Date(getSubItem(col.field,
+                            item)).toLocaleDateString()
+                            }} </span>
+                        </span>
+                        <div @click="col.click ? col.click(item) : null" :class="computeClasses(col, item)"
+                          v-else-if="col.type === 'html'" v-html="getSubItem(col.field, item)">
                         </div>
 
-                      </div>
-                      <span class="text-danger erro-custom-container" v-else>tipo <span
-                          class="badge bg-orange text-white erro-custom-text">{{ col.type }}</span> não suportado</span>
-                    </td>
-                  </TransitionGroup>
-                  <Transition :name="'expand-item-' + options.type_animation_expand"
-                    :css="!options.deactivate_animation_expand">
-                    <!-- mostra uma linha após cada item -->
-                    <tr :id="'expand-item-' + item[options.item_key]" v-if="is_item_expanded(item)"
-                      class="expanded-item-row">
-                      <!-- se estiver usando checkbox existe uma coluna a mais -->
-                      <td :colspan="colspanExpandItems()">
-                        <slot name="after-row" :item="item">
+                        <div @click="col.click ? col.click(item) : null" :class="computeClasses(col, item)"
+                          v-else-if="col.type === 'img'">
 
-                        </slot>
+                          <div v-if="getSubItem(col.field, item)" v-bind="col.deactivate_img_preview ? {
+                            class: 'container-img'
+                          } :
+                            {
+                              onMouseover: (event) => handleMouseOver(event, getSubItem(col.field, item)),
+                              onMousemove: handleMouseMove,
+                              onMouseleave: handleMouseLeave,
+                              class: 'container-img container-img-preview'
+                            }">
 
+                            <img class="img-tamanho" :src="getSubItem(col.field, item)" />
+                            <img class="img-tamanho-cover" :src="getSubItem(col.field, item)" />
+                            <div class="bg-img"></div>
+                          </div>
+
+                        </div>
+                        <span class="text-danger erro-custom-container" v-else>tipo <span
+                            class="badge bg-orange text-white erro-custom-text">{{ col.type }}</span> não
+                          suportado</span>
                       </td>
-                    </tr>
-                  </Transition>
+                    </TransitionGroup>
+                    <Transition :name="'expand-item-' + options.type_animation_expand"
+                      :css="!options.deactivate_animation_expand">
+                      <!-- mostra uma linha após cada item -->
+                      <tr :id="'expand-item-' + item[options.item_key]" v-if="is_item_expanded(item)"
+                        class="expanded-item-row">
+                        <!-- se estiver usando checkbox existe uma coluna a mais -->
+                        <td :colspan="colspanExpandItems()">
+                          <slot name="after-row" :item="item">
+
+                          </slot>
+
+                        </td>
+                      </tr>
+                    </Transition>
 
 
+                  </template>
                 </template>
+
 
               </tbody>
             </table>
           </div>
-          <div v-else-if="first_fetch === false">
+          <div v-if="!hasItems && first_fetch === false">
             <slot name="idle-state">
 
             </slot>
@@ -288,6 +293,7 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   disable_search: false,
   pagination_teleport: null,
   search_teleport: null,
+  show_header_when_empty: false,
 });
 const options = computed(() => {
   return {
@@ -326,6 +332,7 @@ const options = computed(() => {
     min_loading_delay: props.min_loading_delay ?? globalConfig.min_loading_delay ?? 600,
     retry_attempts: props.retry_attempts ?? globalConfig.retry_attempts ?? 3,
     retry_delay: props.retry_delay ?? globalConfig.retry_delay ?? 2000,
+    show_header_when_empty: props.show_header_when_empty ?? globalConfig.show_header_when_empty ?? false,
   };
 });
 const emit = defineEmits(['tradePage', 'beforeFetch', 'afterFetch', 'clickedClearSearch']);
@@ -411,8 +418,10 @@ const item_use = computed<number[]>(() => {
   return use;
 });
 
-
-
+//tem pelo menos um item
+const hasItems = computed(() => {
+  return items.value.length > 0
+});
 
 
 // =======================================================
@@ -608,258 +617,5 @@ watch(
 </script>
 
 <style lang="scss" scoped>
-.table-responsive {
-  overflow-x: auto;
-}
-
-.state-feedback {
-  padding: 1rem;
-  text-align: center;
-}
-
-.state-feedback.error {
-  color: red;
-}
-
-.pagination-controls {
-  margin-top: 1rem;
-  display: flex;
-  justify-content: space-between;
-}
-
-$max-width-img: 40px;
-
-
-.container-img {
-  aspect-ratio: 1;
-  display: flex;
-  justify-content: center;
-  overflow: hidden;
-  position: relative;
-  max-width: $max-width-img;
-  min-width: $max-width-img;
-
-  .img-tamanho-cover {
-    position: absolute;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: 0;
-    opacity: 0.5;
-    filter: blur(4px);
-  }
-
-  .img-tamanho {
-    object-fit: contain;
-    width: 100%;
-    height: 100%;
-    z-index: 2;
-  }
-
-  &.container-img-preview {
-    cursor: pointer;
-
-    &:hover {
-      border-style: dashed;
-      border-color: var(--tblr-primary);
-      border-width: 2px;
-      transition: border-width 0.15s ease-in-out;
-
-      .img-tamanho {
-        opacity: 0.3;
-      }
-    }
-  }
-}
-
-.bg-img {
-  background-color: #0000004d;
-  position: absolute;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1;
-}
-
-$max-width-preview: 250px;
-
-.image-preview-container {
-  position: fixed;
-
-  z-index: 9999;
-
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  padding: 5px;
-
-  pointer-events: none;
-  transition: opacity 0.2s ease-in-out;
-
-  .image-preview-large {
-    display: block;
-    max-width: $max-width-preview;
-
-    max-height: $max-width-preview;
-    border-radius: 4px;
-  }
-}
-
-.form-check-input {
-  border-width: 1px !important;
-  border-color: rgba(0, 0, 0, 0.391) !important;
-  width: 17px;
-  height: 17px;
-}
-
-[data-bs-theme=dark] .form-check-input {
-  border-color: rgba(255, 255, 255, 0.374) !important;
-}
-
-
-
-/*
-  Estilos para arrastar e soltar colunas
-*/
-
-.ghost-item {
-  opacity: 0.5;
-  background: var(--tblr-primary-lt, #e6f0ff);
-  border-radius: 8px;
-}
-
-.dragging-item {
-  cursor: grabbing;
-  background: var(--tblr-primary);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  opacity: 0.5;
-  background-color: var(--tblr-primary-bg-subtle);
-  filter: grayscale(0) invert(0);
-}
-
-.header-draggable {
-  cursor: grab;
-}
-
-
-/*
-  Animações para movimentação de colunas
-*/
-.column-move-move {
-  transition: transform 0.4s ease;
-}
-
-.column-move-enter-active,
-.column-move-leave-active {
-  transition: all 0.4s ease;
-}
-
-
-.header-ordering {
-  display: flex;
-  justify-content: space-between;
-}
-
-
-
-
-
-
-
-
-
-
-/* 1. Animação de entrada para novos itens */
-.expand-item-expand-enter-active {
-  transition: all 0.5s ease;
-}
-
-.expand-item-expand-enter-from {
-  opacity: 0;
-  transform: scaleY(0.3) translateY(-30px);
-  /* Começa em cima e desce */
-}
-
-.expand-item-expand-enter-to {
-  opacity: 1;
-  transform: scaleY(1);
-  transform: translateY(0);
-}
-
-/* 2. Animação de saída para itens removidos*/
-.expand-item-expand-leave-active {
-  transition: all 0.4s ease;
-}
-
-.expand-item-expand-leave-to {
-  opacity: 0;
-  transform: scaleY(0.3) translateY(-30px);
-  /* Desliza para  cima e desaparece */
-}
-
-
-
-.expand-item-fade-enter-active,
-.expand-item-fade-leave-active {
-  transition: opacity 0.5s ease;
-}
-
-.expand-item-fade-enter-from,
-.expand-item-fade-leave-to {
-  opacity: 0;
-}
-
-
-
-
-
-.btn-clean {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
-  background: transparent;
-  border: none;
-  outline: none;
-  cursor: pointer;
-
-
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-  }
-}
-
-
-.icon-transition-arrow {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
-  color: var(--tblr-primary, #206bc4);
-}
-
-
-.is-expanded .icon-transition-arrow {
-  transform: rotate(90deg);
-}
-
-
-.icon-transition-plus {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
-  color: var(--tblr-primary, #206bc4);
-}
-
-.icon-transition-plus .vertical-line {
-  transform-origin: center;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
-}
-
-.is-expanded .icon-transition-plus {
-  transform: rotate(180deg);
-}
-
-.is-expanded .icon-transition-plus .vertical-line {
-  transform: scaleY(0);
-  opacity: 0;
-}
+@use '@/DatatableVue/style/scss/VDataTable.scss';
 </style>

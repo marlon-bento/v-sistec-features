@@ -1,0 +1,177 @@
+@use 'image-preview';
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.state-feedback {
+  padding: 1rem;
+  text-align: center;
+}
+
+.state-feedback.error {
+  color: red;
+}
+
+.pagination-controls {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+
+.form-check-input {
+  border-width: 1px !important;
+  border-color: rgba(0, 0, 0, 0.391) !important;
+  width: 17px;
+  height: 17px;
+}
+
+[data-bs-theme=dark] .form-check-input {
+  border-color: rgba(255, 255, 255, 0.374) !important;
+}
+
+
+/*
+  Estilos para arrastar e soltar colunas
+*/
+
+.ghost-item {
+  opacity: 0.5;
+  background: var(--tblr-primary-lt, #e6f0ff);
+  border-radius: 8px;
+}
+
+.dragging-item {
+  cursor: grabbing;
+  background: var(--tblr-primary);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  opacity: 0.5;
+  background-color: var(--tblr-primary-bg-subtle);
+  filter: grayscale(0) invert(0);
+}
+
+.header-draggable {
+  cursor: grab;
+}
+
+
+/*
+  Animações para movimentação de colunas
+*/
+.column-move-move {
+  transition: transform 0.4s ease;
+}
+
+.column-move-enter-active,
+.column-move-leave-active {
+  transition: all 0.4s ease;
+}
+
+
+.header-ordering {
+  display: flex;
+  justify-content: space-between;
+}
+
+
+
+
+
+
+
+
+
+
+/* 1. Animação de entrada para novos itens */
+.expand-item-expand-enter-active {
+  transition: all 0.5s ease;
+}
+
+.expand-item-expand-enter-from {
+  opacity: 0;
+  transform: scaleY(0.3) translateY(-30px);
+  /* Começa em cima e desce */
+}
+
+.expand-item-expand-enter-to {
+  opacity: 1;
+  transform: scaleY(1);
+  transform: translateY(0);
+}
+
+/* 2. Animação de saída para itens removidos*/
+.expand-item-expand-leave-active {
+  transition: all 0.4s ease;
+}
+
+.expand-item-expand-leave-to {
+  opacity: 0;
+  transform: scaleY(0.3) translateY(-30px);
+  /* Desliza para  cima e desaparece */
+}
+
+
+
+.expand-item-fade-enter-active,
+.expand-item-fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.expand-item-fade-enter-from,
+.expand-item-fade-leave-to {
+  opacity: 0;
+}
+
+
+
+
+
+.btn-clean {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+}
+
+
+.icon-transition-arrow {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
+  color: var(--tblr-primary, #206bc4);
+}
+
+
+.is-expanded .icon-transition-arrow {
+  transform: rotate(90deg);
+}
+
+
+.icon-transition-plus {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
+  color: var(--tblr-primary, #206bc4);
+}
+
+.icon-transition-plus .vertical-line {
+  transform-origin: center;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+}
+
+.is-expanded .icon-transition-plus {
+  transform: rotate(180deg);
+}
+
+.is-expanded .icon-transition-plus .vertical-line {
+  transform: scaleY(0);
+  opacity: 0;
+}
