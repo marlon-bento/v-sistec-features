@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.24.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.23.2...v1.24.0) (2026-07-17)
+
+
+### Features
+
+* agora é possível mostrar o header mesmo que não tenha itens vindos da api ([2ae7a2f](https://github.com/marlon-bento/v-sistec-features/commit/2ae7a2fcb78e0543269bf1365fdb36e89b3ba8dd))
+
 ## [1.23.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.23.1...v1.23.2) (2026-07-17)
 
 
