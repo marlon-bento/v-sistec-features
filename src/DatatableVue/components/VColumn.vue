@@ -5,7 +5,7 @@
 <script setup lang="ts">
 import { inject, onMounted, useSlots } from 'vue';
 import { dataTableApiKey } from '../keys';
-
+const column_internal_id = crypto.randomUUID();
 defineSlots<{
   // props para o slot body 
   body?: (props: { item: any }) => any,
@@ -31,6 +31,7 @@ interface VColumnProps {
   decreasing_value?: string;
   increasing_value?: string;
   class_rules?: Record<string, (item: any) => boolean>;
+  start_hidden?: boolean;
 }
 const props = withDefaults(defineProps<VColumnProps>(), {
   field: null,
@@ -59,6 +60,7 @@ const props = withDefaults(defineProps<VColumnProps>(), {
   locked: false,
 
   use_ordering: false,
+  start_hidden: false,
   param_ordering: '',
   decreasing_value: '',
   increasing_value: '',
@@ -99,6 +101,7 @@ onMounted(() => {
   }
 
   parentApi.addColumn({
+    id: column_internal_id,
     field: props.field,
     header: props.header,
     type: props.type,
@@ -122,8 +125,11 @@ onMounted(() => {
     ...(props.type === 'text' && { limite_text: Number(props.limite_text) }),
     ...(props.type === 'img' && { deactivate_img_preview: props.deactivate_img_preview }),
     ...(props.type === 'date' && { format: props.format }),
+
+    start_hidden: props.start_hidden,// se a coluna é opcional por padrão ela não é visível, mas o usuário pode escolher mostrar ela
+    visible:! props.start_hidden // Se start_hidden for true, ela não estará visível inicialmente
     
   });
-  
+
 });
 </script>

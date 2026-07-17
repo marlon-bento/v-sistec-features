@@ -144,4 +144,13 @@ export interface ExposedFunctions<T extends Record<string, any>> {
   expand_item_toggle: (item: any) => void;
   close_all_expanded_items: () => void;
   selectAllCheckbox: Ref<HTMLInputElement | null>;
+  toggleColumnVisibility: (field: string) => void;
+  columns_list: ComputedRef<Array<{
+    id: string;
+    header: string;
+    field: string | null;
+    start_hidden: boolean;
+    visible: boolean;
+    locked: boolean;
+  }>>;
 }

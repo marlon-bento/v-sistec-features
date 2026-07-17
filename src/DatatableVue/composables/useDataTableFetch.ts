@@ -30,9 +30,9 @@ export function useDataTableFetch<T>(
         const objectOrdering: Record<string, any> = {};
         for (const col of columns.value) {
             if (col.use_ordering) {
-                if (orderings_state.value[col.header] === 'increasing') {
+                if (orderings_state.value[col.id] === 'increasing') {
                     objectOrdering[col.param_ordering] = col.increasing_value || 'increasing';
-                } else if (orderings_state.value[col.header] === 'decreasing') {
+                } else if (orderings_state.value[col.id] === 'decreasing') {
                     objectOrdering[col.param_ordering] = col.decreasing_value || 'decreasing';
                 } 
             } 

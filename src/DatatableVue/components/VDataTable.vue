@@ -72,7 +72,7 @@
             <table class="table table-vcenter table-selectable" :class="options.class_table">
               <thead>
 
-                <draggable v-model="draggableColumns" tag="tr" item-key="header" :animation="400"
+                <draggable v-model="draggableColumns" tag="tr" item-key="id" :animation="400"
                   ghost-class="ghost-item" drag-class="dragging-item" @start="isDraggingColumns = true"
                   @end="() => onDragEnd()">
 
@@ -86,8 +86,8 @@
 
                   <template #item="{ element: col }">
                     <v-th-data-table :header="col.header" :class_column="col.class_column"
-                      :use_ordering="col.use_ordering" :orderings_state="orderings_state[col.header] || 'none'"
-                      @toggleOrderingState="() => toggleOrderingState(col.header)" :locked="false" :col="col">
+                      :use_ordering="col.use_ordering" :orderings_state="orderings_state[col.id] || 'none'"
+                      @toggleOrderingState="() => toggleOrderingState(col.id)" :locked="false" :col="col">
 
                     </v-th-data-table>
                   </template>
@@ -96,8 +96,8 @@
 
                     <template v-for="col in lockedColumns" :key="col.field || col.header">
                       <v-th-data-table :header="col.header" :class_column="col.class_column"
-                        :use_ordering="col.use_ordering" :orderings_state="orderings_state[col.header] || 'none'"
-                        @toggleOrderingState="() => toggleOrderingState(col.header)" :col="col" locked>
+                        :use_ordering="col.use_ordering" :orderings_state="orderings_state[col.id] || 'none'"
+                        @toggleOrderingState="() => toggleOrderingState(col.id)" :col="col" locked>
 
                       </v-th-data-table>
 
@@ -219,7 +219,7 @@
 
             </slot>
           </div>
-          <div v-else class="text-center p-4 text-secondary">
+          <div v-else-if="!hasItems" class="text-center p-4 text-secondary">
             <p class="m-0">Nenhum item encontrado.</p>
           </div>
         </div>
@@ -255,6 +255,7 @@ import { useDataTableFetch } from '../composables/useDataTableFetch';
 import { useCheckBox } from '../composables/useCheckBox.ts';
 import VDataTableLoading from './VDataTableLoading.vue';
 import VThDataTable from './VThDataTable.vue';
+
 const globalConfig = inject(DATA_TABLE_CONFIG, {});
 const {
   isHovering,
@@ -393,22 +394,49 @@ const {
 
 // colunas TRAVADAS (apenas leitura)
 const lockedColumns = computed(() =>
-  columns.value.filter(c => c.locked)
+  columns.value.filter(c => c.locked && c.visible !== false)
 );
 // 'v-model' para as colunas ARRASTÁVEIS (com get/set)
 const draggableColumns = computed({
   get() {
-    return columns.value.filter(c => !c.locked);
+    return columns.value.filter(c => !c.locked && c.visible !== false);
   },
   set(newUnlockedOrder) {
-    const locked = lockedColumns.value;
-    columns.value = [...newUnlockedOrder, ...locked];
+    const locked = columns.value.filter(c => c.locked);
+    const hidden = columns.value.filter(c => !c.locked && c.visible === false);
+    columns.value = [...newUnlockedOrder, ...hidden, ...locked];
   }
 });
 // colunas RENDERIZADAS (ordem final)
 const renderedColumns = computed(() => {
   return [...draggableColumns.value, ...lockedColumns.value];
 });
+/*
+Variável que mapeia as colunas cadastradas.
+Usada para entregar ao componente pai as informações de cabeçalho, campo, se a coluna é opcional e se está visível atualmente.
+*/
+const columns_list = computed(() => {
+  return columns.value.map(col => ({
+    id: col.id,
+    header: col.header,
+    field: col.field,
+    start_hidden: !!col.start_hidden, // Converte para booleano, caso seja undefined
+    visible: col.visible !== false,
+    locked: col.locked
+  }));
+});
+/*
+Função que inverte o estado de visibilidade de uma coluna específica.
+Recebe: id (string), que é o identificador único da coluna.
+Devolve: nada (void).
+Por que é usada: Permite ao usuário exibir ou ocultar uma coluna dinamicamente (como as opcionais) diretamente pela interface externa da tabela.
+*/
+function toggleColumnVisibility(id: string): void {
+  const coluna = columns.value.find(c => c.id === id);
+  if (coluna) {
+    coluna.visible = !coluna.visible;
+  }
+}
 
 const item_use = computed<number[]>(() => {
   let use = [1]
@@ -498,22 +526,22 @@ function limiteText(text: string | null, limite: number | null): string | null {
   return text;
 }
 
-function toggleOrderingState(header: string) {
+function toggleOrderingState(id: string) {
 
   // desabilita todos que não são o header clicado
   for (const key in orderings_state.value) {
-    if (key !== header) {
+    if (key !== id) {
       orderings_state.value[key] = 'none';
     }
   }
 
-  const currentState = orderings_state.value[header] || 'none';
+  const currentState = orderings_state.value[id] || 'none';
   if (currentState === 'none') {
-    orderings_state.value[header] = 'increasing';
+    orderings_state.value[id] = 'increasing';
   } else if (currentState === 'increasing') {
-    orderings_state.value[header] = 'decreasing';
+    orderings_state.value[id] = 'decreasing';
   } else {
-    orderings_state.value[header] = 'none';
+    orderings_state.value[id] = 'none';
   }
 
   reSearch();
@@ -596,7 +624,9 @@ defineExpose<ExposedFunctions<T>>({
   atLeastOneSelected,
   expand_item_toggle,
   close_all_expanded_items,
-  selectAllCheckbox
+  selectAllCheckbox,
+  toggleColumnVisibility,
+  columns_list,
 });
 
 onMounted(() => {

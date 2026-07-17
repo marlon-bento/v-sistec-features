@@ -22,6 +22,10 @@ export interface ColumnConfiguration {
   decreasing_value: string;
   increasing_value: string;
   class_rules?: Record<string, (item: any) => boolean>;
+  start_hidden?: boolean;
+  // não é prop, é uma propriedade interna do VDataTable para controlar a visibilidade da coluna
+  visible?: boolean; 
+  id: string; // ID único da coluna, gerado internamente pelo VDataTable
 }
 
 // A API que o VDataTable "fornece" para os filhos
