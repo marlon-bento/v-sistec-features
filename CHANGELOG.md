@@ -1,3 +1,12 @@
+# Changelog
+
+## [1.23.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.23.1...v1.23.2) (2026-07-17)
+
+
+### Bug Fixes
+
+* atualisando modo de publicação para oidc e atualizando a biblioteca do v-required para a nova versão ([1de85be](https://github.com/marlon-bento/v-sistec-features/commit/1de85be1fc6c4b95e249a8ced90be6f3473d277c))
+
 ## [1.23.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.23.0...v1.23.1) (2026-06-19)
 
 
