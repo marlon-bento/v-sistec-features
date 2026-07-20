@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.26.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.25.0...v1.26.0) (2026-07-20)
+
+
+### Features
+
+* realizei algumas refatorações no datatable elas são: agora é posivel adicionar mais um slot do lado direito do componente de search, também é possível quando usar o header custom, pegar como retorno do slot o próprio componente de ordenação para se quiser reutilizar o botão já vim pronto para renderizar, também agora é possível usar uma prop para ativar o uso de um dropdown pronto que fica do lado do buscar, para o usuário poder escolher quais colunas estarão visíveis sem precisar usar as funções exportadas para isso, a não ser que o usuário queira mudar o estilo ([701a07c](https://github.com/marlon-bento/v-sistec-features/commit/701a07c5682b5e4b3c44eccba2aa0c92588382b3))
+
 # [1.25.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.24.0...v1.25.0) (2026-07-17)
 
 
