@@ -21,24 +21,31 @@
           </slot>
 
           <Teleport :to="options.search_teleport || 'body'" :disabled="!options.search_teleport">
-            <Search v-if="!options.disable_search" v-model:search="pagination.search" v-model:filter="pagination.filter"
-              :list_filter="options.list_filter" :item_use="item_use" @search="reSearch"
-              :deactivate_search_on_clear="options.deactivate_search_on_clear"
-              :placeholder_search="options.placeholder_search"
-              :deactivate_search_empty="options.deactivate_search_empty"
-              :use_column_manager="options.use_column_manager" :toggleColumnVisibility="toggleColumnVisibility"
-              :columns_list="columns_list" @clicked-clear-search="$emit('clickedClearSearch')">
-              
-              <template #search-field>
-                <slot name="search-field" :search="pagination.search" :filter="pagination.filter" :reSearch="reSearch">
-                </slot>
-              </template>
+            <div class="dropdown d-flex">
+              <Search v-if="!options.disable_search" v-model:search="pagination.search"
+                v-model:filter="pagination.filter" :list_filter="options.list_filter" :item_use="item_use"
+                @search="reSearch" :deactivate_search_on_clear="options.deactivate_search_on_clear"
+                :placeholder_search="options.placeholder_search"
+                :deactivate_search_empty="options.deactivate_search_empty"
+                :use_column_manager="options.use_column_manager" :toggleColumnVisibility="toggleColumnVisibility"
+                :columns_list="columns_list" @clicked-clear-search="$emit('clickedClearSearch')">
 
-              <template #extra-actions>
-                <slot name="extra-actions">
-                </slot>
-              </template>
-            </Search>
+                <template #search-field>
+                  <slot name="search-field" :search="pagination.search" :filter="pagination.filter"
+                    :reSearch="reSearch">
+                  </slot>
+                </template>
+              </Search>
+
+              <VExtraActions :use_column_manager="options.use_column_manager" :columns_list="columns_list"
+                :toggleColumnVisibility="toggleColumnVisibility">
+                <template #extra-actions>
+                  <slot name="extra-actions">
+                  </slot>
+                </template>
+              </VExtraActions>
+            </div>
+
           </Teleport>
         </div>
         <slot name="item-selected-info" :selected_items="selected_items" :clearSelection="() => selected_items = []">
@@ -257,6 +264,7 @@ import { readonly, ref, provide, computed, watch, nextTick, inject, onMounted } 
 import { DATA_TABLE_CONFIG } from '@/config/datatableConfig'
 import PaginationDatatable from '@/Pagination/Pagination.vue';
 import Search from './SearchDatatable.vue';
+import VExtraActions from './VExtraActions.vue';
 import { useImagePreview } from '../composables/useImagePreview';
 import { dataTableApiKey, type ColumnConfiguration } from '../keys';
 import draggable from 'vuedraggable';

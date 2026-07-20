@@ -1,94 +1,60 @@
 <template>
-    <div class="dropdown d-flex">
-        <slot name="search-field">
-            <a v-if="item_use.includes(2)" href="#" class="btn dropdown-toggle" data-bs-toggle="dropdown"
-                title="Pesquisas Prédefinidas">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-filter" width="24"
-                    height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                    <path
-                        d="M4 4h16v2.172a2 2 0 0 1 -.586 1.414l-4.414 4.414v7l-6 2v-8.5l-4.48 -4.928a2 2 0 0 1 -.52 -1.345v-2.227z">
-                    </path>
-                </svg>
-            </a>
-            <div class="input-icon">
-                <input type="text" class="form-control ms-1" id="inputSearchVDataTable" v-model="modelSearch"
-                    @keyup.enter="searchEnter" :placeholder="placeholder_search">
 
-                <span v-if="modelSearch" @click="cleanSearch()" class=" inputClose" title="Limpar pesquisa">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="icon icon-tabler icons-tabler-outline icon-tabler-x">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                        <path d="M18 6l-12 12" />
-                        <path d="M6 6l12 12" />
-                    </svg>
-                </span>
-                <span v-else class="input-icon-addon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        class="icon">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                        <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path>
-                        <path d="M21 21l-6 -6"></path>
-                    </svg>
-                </span>
-            </div>
-            <div v-if="item_use.includes(2)" class="dropdown-menu">
-                <template v-for="(filter, index) in props.list_filter" :key="index">
-                    <router-link
-                        v-if="('type' in filter ? filter.type === 1 : false) && ('visible' in filter ? filter.visible : true)"
-                        :to="filter?.to" class="dropdown-item cursor-pointer">
-                        {{ filter.text }}
-                    </router-link>
-                    <a v-else-if="('type' in filter ? filter.type === 2 : true) && ('visible' in filter ? filter.visible : true)"
-                        @click.prevent="tradeFilter(String(filter.value))" class="dropdown-item cursor-pointer"
-                        :class="modelFilter === filter?.value ? 'bg-info text-dark selected' : ''">
-                        {{ filter.text }}
-                    </a>
-                    <a v-else-if="('type' in filter ? filter.type === 3 : true) && ('visible' in filter ? filter.visible : true)"
-                        @click.prevent="clickItem(filter)" class="dropdown-item cursor-pointer"
-                        :class="filter?.active ? 'bg-info text-dark selected' : ''">
-                        {{ filter.text }}
-                    </a>
-                </template>
-            </div>
 
-            <div v-if="use_column_manager" class="dropdown d-inline-block ms-2">
-                <button class="btn  dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"
-                    title="Gerenciar Colunas visíveis">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-columns" width="24"
-                        height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                        <path d="M4 6l5.5 0" />
-                        <path d="M4 10l5.5 0" />
-                        <path d="M4 14l5.5 0" />
-                        <path d="M4 18l5.5 0" />
-                        <path d="M14.5 6l5.5 0" />
-                        <path d="M14.5 10l5.5 0" />
-                        <path d="M14.5 14l5.5 0" />
-                        <path d="M14.5 18l5.5 0" />
-                    </svg>
-                </button>
-                <div class="dropdown-menu dropdown-menu-end p-3 shadow-sm" style="min-width: 220px; z-index: 1050;">
-                    <h6 class="dropdown-header text-uppercase fw-bold mb-2">Exibir Colunas</h6>
-                    <div class="d-flex flex-column gap-2">
-                        <label v-for="coluna in columns_list" :key="coluna.id" class="form-check cursor-pointer m-0">
-                            <input class="form-check-input" type="checkbox" :checked="coluna.visible"
-                                :disabled="coluna.locked" @change="toggleColumnVisibility(coluna.id)">
-                            <span class="form-check-label user-select-none">{{ coluna.header }}</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
-        </slot>
+    <a v-if="item_use.includes(2)" href="#" class="btn dropdown-toggle" data-bs-toggle="dropdown"
+        title="Pesquisas Prédefinidas">
+        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-filter" width="24" height="24"
+            viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+            <path
+                d="M4 4h16v2.172a2 2 0 0 1 -.586 1.414l-4.414 4.414v7l-6 2v-8.5l-4.48 -4.928a2 2 0 0 1 -.52 -1.345v-2.227z">
+            </path>
+        </svg>
+    </a>
+    <div class="input-icon">
+        <input type="text" class="form-control ms-1" id="inputSearchVDataTable" v-model="modelSearch"
+            @keyup.enter="searchEnter" :placeholder="placeholder_search">
 
-        <slot name="extra-actions">
-
-        </slot>
+        <span v-if="modelSearch" @click="cleanSearch()" class=" inputClose" title="Limpar pesquisa">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="icon icon-tabler icons-tabler-outline icon-tabler-x">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                <path d="M18 6l-12 12" />
+                <path d="M6 6l12 12" />
+            </svg>
+        </span>
+        <span v-else class="input-icon-addon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path>
+                <path d="M21 21l-6 -6"></path>
+            </svg>
+        </span>
     </div>
+    <div v-if="item_use.includes(2)" class="dropdown-menu">
+        <template v-for="(filter, index) in props.list_filter" :key="index">
+            <router-link
+                v-if="('type' in filter ? filter.type === 1 : false) && ('visible' in filter ? filter.visible : true)"
+                :to="filter?.to" class="dropdown-item cursor-pointer">
+                {{ filter.text }}
+            </router-link>
+            <a v-else-if="('type' in filter ? filter.type === 2 : true) && ('visible' in filter ? filter.visible : true)"
+                @click.prevent="tradeFilter(String(filter.value))" class="dropdown-item cursor-pointer"
+                :class="modelFilter === filter?.value ? 'bg-info text-dark selected' : ''">
+                {{ filter.text }}
+            </a>
+            <a v-else-if="('type' in filter ? filter.type === 3 : true) && ('visible' in filter ? filter.visible : true)"
+                @click.prevent="clickItem(filter)" class="dropdown-item cursor-pointer"
+                :class="filter?.active ? 'bg-info text-dark selected' : ''">
+                {{ filter.text }}
+            </a>
+        </template>
+    </div>
+
+
 </template>
 <script setup lang="ts">
 import { computed, watch } from 'vue';
@@ -100,9 +66,7 @@ interface SearchProps {
     placeholder_search?: string;
     deactivate_search_on_clear?: boolean;
     deactivate_search_empty?: boolean;
-    columns_list?: any[];
-    use_column_manager?: boolean;
-    toggleColumnVisibility?: (columnId: string) => void;
+
 }
 const props = withDefaults(defineProps<SearchProps>(), {
     filter: "",
@@ -139,9 +103,6 @@ const props = withDefaults(defineProps<SearchProps>(), {
     click: null,
     deactivate_search_on_clear: false,
     deactivate_search_empty: false,
-    columns_list: () => [],
-    use_column_manager: false,
-    toggleColumnVisibility: () => { }
 });
 
 const emit = defineEmits(['update:search', 'update:filter', "search", "clickedClearSearch"]);
