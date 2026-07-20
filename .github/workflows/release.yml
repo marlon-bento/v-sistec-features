@@ -37,7 +37,8 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-
+      - name: Build Project
+        run: npm run build
       - name: Configure Git
         run: |
           git config --global user.name 'github-actions[bot]'
@@ -48,8 +49,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx release-it --ci
 
-      - name: Build Project
-        run: npm run build
+
 
       - name: Publish to NPM
         run: npm publish --provenance --access public

@@ -35,7 +35,7 @@ interface SearchProps {
     use_column_manager?: boolean;
     toggleColumnVisibility?: (columnId: string) => void;
 }
-const props = withDefaults(defineProps<SearchProps>(), {
+withDefaults(defineProps<SearchProps>(), {
     columns_list: () => [],
     use_column_manager: false,
     toggleColumnVisibility: () => { }
