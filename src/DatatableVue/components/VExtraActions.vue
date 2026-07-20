@@ -1,5 +1,4 @@
 <template>
-
     <div v-if="use_column_manager" class="dropdown d-inline-block ms-2">
         <button class="btn  dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false"
             title="Gerenciar Colunas visíveis">
@@ -28,6 +27,9 @@
             </div>
         </div>
     </div>
+    <slot name="extra-actions">
+
+    </slot>
 </template>
 <script setup lang="ts">
 interface SearchProps {
