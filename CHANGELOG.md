@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.26.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.26.2...v1.26.3) (2026-07-20)
+
+
+### Bug Fixes
+
+* resolvendo bug da versão anterior que estava sem o slot de extra-actions ([d2ac36b](https://github.com/marlon-bento/v-sistec-features/commit/d2ac36bc78d6d0e0861dae02857cd8ce5526f56b))
+
 ## [1.26.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.26.0...v1.26.2) (2026-07-20)
 
 
