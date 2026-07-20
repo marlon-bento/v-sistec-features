@@ -26,6 +26,8 @@ export interface ColumnConfiguration {
   // não é prop, é uma propriedade interna do VDataTable para controlar a visibilidade da coluna
   visible?: boolean; 
   id: string; // ID único da coluna, gerado internamente pelo VDataTable
+  // Chave gerada dinamicamente para salvar e recuperar o estado da coluna no localstorage
+  storage_key?: string;
 }
 
 // A API que o VDataTable "fornece" para os filhos

@@ -19,23 +19,34 @@
           <slot name="fieldMiddle">
 
           </slot>
+
           <Teleport :to="options.search_teleport || 'body'" :disabled="!options.search_teleport">
-            <slot name="search-field" :search="pagination.search" :filter="pagination.filter" :reSearch="reSearch"
-              :list_filter="options.list_filter" :item_use="item_use">
-              <Search v-if="!options.disable_search" v-model:search="pagination.search"
-                v-model:filter="pagination.filter" :list_filter="options.list_filter" :item_use="item_use"
-                @search="reSearch" :deactivate_search_on_clear="options.deactivate_search_on_clear"
-                :placeholder_search="options.placeholder_search"
-                :deactivate_search_empty="options.deactivate_search_empty"
-                @clicked-clear-search="$emit('clickedClearSearch')" />
-            </slot>
+            <Search v-if="!options.disable_search" v-model:search="pagination.search" v-model:filter="pagination.filter"
+              :list_filter="options.list_filter" :item_use="item_use" @search="reSearch"
+              :deactivate_search_on_clear="options.deactivate_search_on_clear"
+              :placeholder_search="options.placeholder_search"
+              :deactivate_search_empty="options.deactivate_search_empty"
+              :use_column_manager="options.use_column_manager" :toggleColumnVisibility="toggleColumnVisibility"
+              :columns_list="columns_list" @clicked-clear-search="$emit('clickedClearSearch')">
+              
+              <template #search-field>
+                <slot name="search-field" :search="pagination.search" :filter="pagination.filter" :reSearch="reSearch">
+                </slot>
+              </template>
+
+              <template #extra-actions>
+                <slot name="extra-actions">
+                </slot>
+              </template>
+            </Search>
           </Teleport>
         </div>
         <slot name="item-selected-info" :selected_items="selected_items" :clearSelection="() => selected_items = []">
           <div v-if="(options.use_checkbox && selected_items.length > 0) && !options.deactivate_selected_info"
             class="alert alert-cyan d-flex justify-content-center align-items-center py-2" role="alert">
             <h4 class="alert-title m-0"> <strong>oi Itens Selecionados:</strong> <span
-                class="badge bg-azure text-azure-fg">{{ selected_items.length }}</span></h4>
+                class="badge bg-azure text-azure-fg">{{
+                  selected_items.length }}</span></h4>
             <a class=" cursor-pointer " @click="selected_items = []">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -72,9 +83,8 @@
             <table class="table table-vcenter table-selectable" :class="options.class_table">
               <thead>
 
-                <draggable v-model="draggableColumns" tag="tr" item-key="id" :animation="400"
-                  ghost-class="ghost-item" drag-class="dragging-item" @start="isDraggingColumns = true"
-                  @end="() => onDragEnd()">
+                <draggable v-model="draggableColumns" tag="tr" item-key="id" :animation="400" ghost-class="ghost-item"
+                  drag-class="dragging-item" @start="isDraggingColumns = true" @end="() => onDragEnd()">
 
                   <template #header>
                     <th v-if="options.use_expandable_items"></th>
@@ -256,6 +266,7 @@ import { useCheckBox } from '../composables/useCheckBox.ts';
 import VDataTableLoading from './VDataTableLoading.vue';
 import VThDataTable from './VThDataTable.vue';
 
+
 const globalConfig = inject(DATA_TABLE_CONFIG, {});
 const {
   isHovering,
@@ -295,6 +306,8 @@ const props = withDefaults(defineProps<VDataTableProps>(), {
   pagination_teleport: null,
   search_teleport: null,
   show_header_when_empty: false,
+  storage_id: '',
+  use_column_manager: false,
 });
 const options = computed(() => {
   return {
@@ -334,6 +347,8 @@ const options = computed(() => {
     retry_attempts: props.retry_attempts ?? globalConfig.retry_attempts ?? 3,
     retry_delay: props.retry_delay ?? globalConfig.retry_delay ?? 2000,
     show_header_when_empty: props.show_header_when_empty ?? globalConfig.show_header_when_empty ?? false,
+    storage_id: props.storage_id ?? globalConfig.storage_id ?? '',
+    use_column_manager: props.use_column_manager ?? globalConfig.use_column_manager ?? false,
   };
 });
 const emit = defineEmits(['tradePage', 'beforeFetch', 'afterFetch', 'clickedClearSearch']);
@@ -388,6 +403,92 @@ const {
   atLeastOneSelected, toggleSelectAll, toggleItemSelection
 } = useCheckBox(options.value, items);
 
+
+
+// Variável computada que forma uma string exclusiva para garantir que este cache não atropele o cache de outra tabela.
+const storageKey = computed(() => {
+  if (!options.value.storage_id) return null;
+
+  return `vdatatable_${options.value.storage_id}_${options.value.endpoint}`;
+});
+
+/* 
+Recebe: Nada.
+Devolve: Nada.
+Por que é usada: Inspeciona cada coluna para gerar um ID confiável de cache. Se for incapaz de gerar IDs únicos sem conflitos, a aplicação é encerrada propositalmente.
+*/
+function validateAndAssignKeys(): void {
+  for (const col of columns.value) {
+    let key = '';
+    const fieldCount = columns.value.filter(c => c.field === col.field).length;
+
+    if (col.field && fieldCount === 1) {
+      key = col.field;
+    } else {
+      const headerCount = columns.value.filter(c => c.header === col.header).length;
+      if (col.header && headerCount === 1) {
+        key = col.header;
+      } else {
+        throw new Error(`[VDataTable] Falha de integridade: Impossível designar um ID único de armazenamento. O 'field' e 'header' estão duplicados ou ausentes. Header ofensor: ${col.header}`);
+      }
+    }
+    col.storage_key = key;
+  }
+}
+
+/* 
+Recebe: Nada.
+Devolve: Nada.
+Por que é usada: Converte o estado de visibilidade e a ordem das colunas para JSON e grava no navegador do usuário.
+*/
+function saveColumnsState(): void {
+  if (!storageKey.value) return;
+  const state = columns.value.map(col => ({
+    storage_key: col.storage_key,
+    visible: col.visible
+  }));
+  localStorage.setItem(storageKey.value, JSON.stringify(state));
+}
+
+/* 
+Recebe: Nada.
+Devolve: Nada.
+Por que é usada: Tenta recuperar o estado anterior da tabela. Caso detecte mudanças na estrutura das colunas, ele expurga o cache velho e impõe a nova realidade.
+*/
+function loadColumnsState(): void {
+  if (!storageKey.value) return;
+  const saved = localStorage.getItem(storageKey.value);
+  if (!saved) return;
+
+  try {
+    const parsed = JSON.parse(saved);
+    const currentKeys = columns.value.map(c => c.storage_key).sort();
+    const savedKeys = parsed.map((p: any) => p.storage_key).sort();
+
+    if (JSON.stringify(currentKeys) !== JSON.stringify(savedKeys)) {
+      localStorage.removeItem(storageKey.value);
+      saveColumnsState();
+      return;
+    }
+
+    const newColumnsOrder = [];
+    for (const savedCol of parsed) {
+      const found = columns.value.find(c => c.storage_key === savedCol.storage_key);
+      if (found) {
+        found.visible = savedCol.visible;
+        newColumnsOrder.push(found);
+      }
+    }
+
+    // Atualiza o array in-place para não destruir a instância que o vuedraggable vigia
+    columns.value.splice(0, columns.value.length, ...newColumnsOrder);
+
+  } catch (e) {
+    localStorage.removeItem(storageKey.value);
+  }
+}
+
+
 // =======================================================
 // 4. PROPRIEDADES COMPUTADAS
 // =======================================================
@@ -404,7 +505,9 @@ const draggableColumns = computed({
   set(newUnlockedOrder) {
     const locked = columns.value.filter(c => c.locked);
     const hidden = columns.value.filter(c => !c.locked && c.visible === false);
-    columns.value = [...newUnlockedOrder, ...hidden, ...locked];
+    // Usa splice para não quebrar a referência de reatividade do array original!
+    columns.value.splice(0, columns.value.length, ...newUnlockedOrder, ...hidden, ...locked);
+    saveColumnsState();
   }
 });
 // colunas RENDERIZADAS (ordem final)
@@ -435,6 +538,7 @@ function toggleColumnVisibility(id: string): void {
   const coluna = columns.value.find(c => c.id === id);
   if (coluna) {
     coluna.visible = !coluna.visible;
+    saveColumnsState();
   }
 }
 
@@ -468,7 +572,6 @@ watch(response, (newResponse: any) => {
     totalItems.value = 0;
   }
 }, { immediate: true });
-
 
 
 // =======================================================
@@ -635,14 +738,40 @@ onMounted(() => {
       reSearch();
     });
   }
+  nextTick(() => {
+    if (options.value.storage_id) {
+      validateAndAssignKeys();
+      loadColumnsState();
+    }
+  });
 });
 
 watch(
-  () => options.value.add_params,
   () => {
-    reSearch();
+    const params = typeof options.value.add_params === 'function'
+      ? options.value.add_params()
+      : options.value.add_params;
+    return JSON.stringify(params);
   },
-  { deep: true }
+  (newVal, oldVal) => {
+    if (newVal !== oldVal && oldVal !== undefined) {
+      reSearch();
+    }
+  }
+);
+/* 
+========
+Observa mudanças no endpoint.
+Caso a rota da API mude dinamicamente, ele reseta a tabela para a página inicial com segurança.
+========
+*/
+watch(
+  () => options.value.endpoint,
+  (newVal, oldVal) => {
+    if (newVal !== oldVal && oldVal !== undefined) {
+      pagination.value.current_page = options.value.page_starts_at;
+    }
+  }
 );
 </script>
 

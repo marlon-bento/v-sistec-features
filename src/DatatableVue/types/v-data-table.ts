@@ -78,6 +78,9 @@ export interface VDataTableProps {
   pagination_teleport?: string | HTMLElement | null;
   search_teleport?: string | HTMLElement | null;
   show_header_when_empty?: boolean;
+  // Propriedade para ativar a persistência de configuração da tabela no localstorage
+  storage_id?: string;
+  use_column_manager?: boolean;
 }
 export type DataTablePropsWithDefaults = VDataTableProps & {
     // Strings
@@ -129,6 +132,8 @@ export type DataTablePropsWithDefaults = VDataTableProps & {
     add_params: Record<string, any> | (() => Record<string, any>);
     list_filter: any[]; 
     custom_loading: any | null; 
+    storage_id: string;
+    use_column_manager: boolean;
 };
 export interface ExposedFunctions<T extends Record<string, any>> {
   execute: () => void;

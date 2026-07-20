@@ -15,10 +15,9 @@ export function useDataTableFetch<T>(
     const items = ref<T[]>([]) as Ref<T[]>;
 
     const urlReativa = computed(() => {
-        pagination.value.current_page = props.page_starts_at;
         return props.endpoint;
     });
-
+    
     const default_params = computed<Record<string, any>>(() => ({
         [props.page_param_name]: pagination.value.current_page + 1,
         [props.page_size_param_name]: pagination.value.limit_per_page,

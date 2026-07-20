@@ -4,12 +4,13 @@
 
 <script setup lang="ts">
 import { inject, onMounted, useSlots } from 'vue';
+import type { Component } from 'vue';
 import { dataTableApiKey } from '../keys';
 const column_internal_id = crypto.randomUUID();
 defineSlots<{
   // props para o slot body 
   body?: (props: { item: any }) => any,
-  col_header?: (props: { col: any, locked: boolean }) => any,
+  col_header?: (props: { col: any, locked: boolean, OrderingComponent: Component  }) => any,
   col_header_midle?: (props: { col: any, locked: boolean }) => any,
 }>();
 interface VColumnProps {
