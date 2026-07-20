@@ -1,3 +1,13 @@
+# Changelog
+
+## [1.26.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.26.0...v1.26.2) (2026-07-20)
+
+
+### Bug Fixes
+
+* arrumando erro de lógica, o disable search tava afetando o template extra-actions gerando comportamento inesperado ([c0a28f1](https://github.com/marlon-bento/v-sistec-features/commit/c0a28f15b57ae08aa4aac16fd3616549e4ffa4eb))
+* teve um erro no commit anteriror que a prop não era usada, resolvendo nesse e mudando a lógica para buildar primeiro e se falhar nem gera nova release ([0ba5335](https://github.com/marlon-bento/v-sistec-features/commit/0ba5335076f86ee7a3a4a4a20e9d17a9cea337e4))
+
 # [1.26.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.25.0...v1.26.0) (2026-07-20)
 
 
