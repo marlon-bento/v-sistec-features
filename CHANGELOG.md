@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.26.4](https://github.com/marlon-bento/v-sistec-features/compare/v1.26.3...v1.26.4) (2026-07-21)
+
+
+### Bug Fixes
+
+* arrumando bug do teleport ([cbc7f6c](https://github.com/marlon-bento/v-sistec-features/commit/cbc7f6ca273e600efbbcf8112d68a3ca554b4dba))
+
 ## [1.26.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.26.2...v1.26.3) (2026-07-20)
 
 
