@@ -20,7 +20,7 @@
 
           </slot>
 
-          <Teleport :to="options.search_teleport || 'body'" :disabled="!options.search_teleport">
+          <Teleport v-if="isMounted" :to="options.search_teleport || 'body'" :disabled="!options.search_teleport">
             <div class="dropdown d-flex">
               <Search v-if="!options.disable_search" v-model:search="pagination.search"
                 v-model:filter="pagination.filter" :list_filter="options.list_filter" :item_use="item_use"
@@ -242,7 +242,7 @@
         </div>
       </div>
     </div>
-    <Teleport :to="options.pagination_teleport || 'body'" :disabled="!options.pagination_teleport">
+    <Teleport v-if="isMounted" :to="options.pagination_teleport || 'body'" :disabled="!options.pagination_teleport">
       <slot name="pagination" :pagination="pagination" :tradePage="fetchDataWithDelay" :error="error">
         <div v-if="!error && pagination.count > 0" class="px-3" :class="options.class_pagination">
           <PaginationDatatable :page_starts_at="options.page_starts_at" :filtering="true" :pagination="pagination"
@@ -274,7 +274,11 @@ import { useCheckBox } from '../composables/useCheckBox.ts';
 import VDataTableLoading from './VDataTableLoading.vue';
 import VThDataTable from './VThDataTable.vue';
 
-
+/* 
+Variável responsável por indicar se o componente já foi totalmente montado no DOM.
+Por que é usada: Impede que o componente Teleport tente enviar elementos para uma div que ainda não foi renderizada, evitando quebras na aplicação.
+*/
+const isMounted = ref(false);
 const globalConfig = inject(DATA_TABLE_CONFIG, {});
 const {
   isHovering,
@@ -741,6 +745,7 @@ defineExpose<ExposedFunctions<T>>({
 });
 
 onMounted(() => {
+  isMounted.value = true;
   if (options.value.immediate) {
     nextTick(() => {
       reSearch();
