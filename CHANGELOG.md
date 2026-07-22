@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.27.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.26.4...v1.27.0) (2026-07-22)
+
+
+### Features
+
+* adicionado para a biblioteca a possibilidade de teleportar o extra actions e o column manage, também foi refatorado algumas coisas e estou começando a colocar a possibilidade de desativar a estilização padrão para poder o usuário customizar como quiser, também está sendo refatorado o código para melhor manutenção futura ([73bd552](https://github.com/marlon-bento/v-sistec-features/commit/73bd5526c4dbe9ebfb0d176a2b192e32826773e0))
+
 ## [1.26.4](https://github.com/marlon-bento/v-sistec-features/compare/v1.26.3...v1.26.4) (2026-07-21)
 
 
