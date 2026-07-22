@@ -2,48 +2,81 @@ import type { Ref, ComputedRef, Component, MaybeRefOrGetter } from 'vue';
 import type { PaginationObject } from '../keys';
 
 export type { PaginationObject } from '../keys';
-export interface VDataTableProps {
+
+
+/*
+Tipagem para configurações de API.
+Por que é usada: Isola as propriedades responsáveis por buscar e interpretar os dados do backend.
+*/
+export interface ApiProps {
   /* configuração do useApiFetch */
   fetch: Function;
-  fetch_name?: string;
   endpoint: string;
-  /* tipos de loading pré-definidos*/
-  type_loading?: 'placeholder' | 'spiner-table' | 'spiner';
-  /*recebe um component para loading*/
-  custom_loading?: Component | null;
-  /* retira os params default da requisição */
-  deactivate_default_params?: boolean;
+  fetch_name?: string;
+  /* usado para pegar os dados do useApiFetch */
+  data_key?: string;
+  total_key?: string;
   /* nomes dos parâmetros para passar para o backend */
   filter_param_name?: string;
   search_param_name?: string;
   page_param_name?: string;
   page_size_param_name?: string;
-  add_params?: Object | Function;
+  add_params?: Record<string, any> | (() => Record<string, any>);
+  /* retira os params default da requisição */
+  deactivate_default_params?: boolean;
+  disable_request?: MaybeRefOrGetter<boolean>;
+}
 
-  /* usado para pegar os dados do useApiFetch */
-  data_key?: string;
-  total_key?: string;
-
-  /* filtros que irão ser usados */
-  list_filter?: any[];
-  /* mudar o que está escrito no select de mudança de items_per_page*/
-  first_text_page_size?: string;
-  second_text_page_size?: string;
-
-
-  /* props para estilizar o vdatatable */
-  class_table?: string;
+/**
+ * =====================================================
+ *  Tipagem para classes CSS.
+ *  Por que é usada: Agrupa as opções de estilização estrutural do datatable.
+ * =====================================================
+ * **/
+export interface ColumnManagerClass{
+    class_column_manager_dropdown?: string;
+    class_column_manager_dropdown_menu?: string;
+    class_column_manager_button?: string;
+    disable_class_column_manager_default?: boolean;
+}
+export interface PaginationClass{
+  class_pagination?: string;
+}
+export interface BodyClass{
   class_content?: string;
   class_container?: string;
-  class_pagination?: string;
+}
+export interface TableClass{
+  class_table?: string;
+}
+export interface FiltersClass{
   class_filters?: string;
   class_page_size?: string;
+}
+/*
+Tipagem para classes CSS.
+Por que é usada: Agrupa as opções de estilização estrutural do datatable.
+*/
+export type ClassProps = (
+  ColumnManagerClass & 
+  PaginationClass & 
+  BodyClass & 
+  TableClass & 
+  FiltersClass
+);
 
-  /*
+/*
+Tipagem para o comportamento principal.
+Por que é usada: Controla limites, tempos de carregamento, armazenamento de estado e identificadores.
+*/
+export interface BehaviorProps {
+  limit_per_page?: number;
+  page_starts_at?: number;
+    /*
   * tempo mínimo em ms para mostrar o loading para evitar telas piscando
 */
   min_loading_delay?: number;
-  /* 
+    /* 
   - Número de tentativas automáticas em caso de falha.
   - 1 significa que a requisição será feita apenas uma vez, sem retentativas.
   - Valor padrão é 3.
@@ -51,37 +84,84 @@ export interface VDataTableProps {
   retry_attempts?: number;
   // Atraso em milissegundos entre cada tentativa
   retry_delay?: number;
-
-  // Ativa a funcionalidade de seleção com checkboxes
-  use_checkbox?: boolean;
-  use_expandable_items?: boolean;
-  close_expanded_item_on_expand_new?: boolean;
-  scroll_to_expanded_item?: boolean;
-
-  type_animation_expand?: 'fade' | 'expand' | 'none';
-  deactivate_animation_expand?: boolean;
-  type_button_expand?: 'arrow' | 'plus';
-  deactivate_search_empty?: boolean;
-
-  // Define qual propriedade do item será usada como chave única para a seleção.
-  item_key?: string;
-
-  limit_per_page?: number;
-  page_starts_at?: number;
-  deactivate_selected_info?: boolean;
   immediate?: boolean;
-  placeholder_search?: string;
-  deactivate_search_on_clear?: boolean;
-  disable_search?: boolean;
-  disable_request?: MaybeRefOrGetter<boolean>;
-  // Aceita string (seletor) OU HTMLElement (ref direto) OU null
-  pagination_teleport?: string | HTMLElement | null;
-  search_teleport?: string | HTMLElement | null;
-  show_header_when_empty?: boolean;
   // Propriedade para ativar a persistência de configuração da tabela no localstorage
   storage_id?: string;
   use_column_manager?: boolean;
+  show_header_when_empty?: boolean;
+  // Define qual propriedade do item será usada como chave única para a seleção.
+  item_key?: string;
+  /* tipos de loading pré-definidos*/
+  type_loading?: 'placeholder' | 'spiner-table' | 'spiner';
+  /*recebe um component para loading*/
+  custom_loading?: Component | null;
 }
+
+/*
+Tipagem para regras de busca.
+Por que é usada: Define propriedades dos filtros, placeholders e teleports de pesquisa.
+*/
+export interface SearchProps {
+  /* filtros que irão ser usados */
+  list_filter?: any[];
+  placeholder_search?: string;
+  disable_search?: boolean;
+  deactivate_search_empty?: boolean;
+  deactivate_search_on_clear?: boolean;
+}
+/*
+Tipagem para regras de paginação.
+Por que é usada: Define os textos exibidos e o local de renderização da paginação.
+*/
+export interface PaginationProps {
+  first_text_page_size?: string;
+  second_text_page_size?: string;
+}
+/*
+Tipagem para regras de movimentação de itens
+*/
+export interface TeleportsProps {
+  /*teleports para o search e para a paginação*/
+  search_teleport?: string | HTMLElement | null;
+  // Aceita string (seletor) OU HTMLElement (ref direto) OU null
+  pagination_teleport?: string | HTMLElement | null;
+  extra_actions_teleport?: string | HTMLElement | null;
+  column_manager_teleport?: string | HTMLElement | null;
+}
+/*
+Tipagem para recursos extras.
+Por que é usada: Habilita checkboxes e itens expansíveis na tabela.
+*/
+export interface ExtraFeaturesProps {
+  // Ativa a funcionalidade de seleção com checkboxes
+  use_checkbox?: boolean;
+  deactivate_selected_info?: boolean;
+  use_expandable_items?: boolean;
+  close_expanded_item_on_expand_new?: boolean;
+  scroll_to_expanded_item?: boolean;
+  type_animation_expand?: 'fade' | 'expand' | 'none';
+  deactivate_animation_expand?: boolean;
+  type_button_expand?: 'arrow' | 'plus';
+}
+
+/*
+Tipagem consolidada de propriedades do VDataTable.
+Por que é usada: Une todas as categorias lógicas através de interseção, fornecendo uma interface plana para o Vue, preservando a retrocompatibilidade com versões anteriores da aplicação.
+*/
+export type VDataTableProps = (
+  ApiProps &
+  ClassProps &
+  BehaviorProps &
+  SearchProps &
+  PaginationProps &
+  ExtraFeaturesProps &
+  TeleportsProps
+);
+
+/*
+Tipagem consolidada de propriedades do VDataTable com valores padrão.
+Por que é usada: Fornece uma interface completa para o Vue, incluindo todas as propriedades obrigatórias e opcionais, com valores padrão definidos.
+*/
 export type DataTablePropsWithDefaults = VDataTableProps & {
     // Strings
     fetch_name: string;

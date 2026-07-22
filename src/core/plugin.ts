@@ -29,7 +29,7 @@ import '../assets/v-required-style.css'
 import Toast, { type PluginOptions as ToastPluginOptions } from "vue-toastification";
 import "vue-toastification/dist/index.css";
 
-import { DATA_TABLE_CONFIG, type DataTableGlobalConfig } from '@/config/datatableConfig';
+import { DATA_TABLE_CONFIG, type DataTableGlobalConfig } from '@/DatatableVue/config/datatableConfig';
 export interface SistecOptions {
   dataTable?: DataTableGlobalConfig; // Configurações opcionais da tabela
   toast?: ToastPluginOptions;        // Configurações opcionais do Toast

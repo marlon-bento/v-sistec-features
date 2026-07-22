@@ -20,8 +20,9 @@
 
           </slot>
 
-          <Teleport v-if="isMounted" :to="options.search_teleport || 'body'" :disabled="!options.search_teleport">
-            <div class="dropdown d-flex">
+
+          <div class="dropdown d-flex">
+            <Teleport v-if="isMounted" :to="options.search_teleport || 'body'" :disabled="!options.search_teleport">
               <Search v-if="!options.disable_search" v-model:search="pagination.search"
                 v-model:filter="pagination.filter" :list_filter="options.list_filter" :item_use="item_use"
                 @search="reSearch" :deactivate_search_on_clear="options.deactivate_search_on_clear"
@@ -36,17 +37,19 @@
                   </slot>
                 </template>
               </Search>
+            </Teleport>
+            <Teleport v-if="isMounted" :to="options.column_manager_teleport || 'body'" :disabled="!options.column_manager_teleport">
+              <VColumnManager :use_column_manager="options.use_column_manager" :columns_list="columns_list"
+                :toggleColumnVisibility="toggleColumnVisibility"
+                :disable_class_column_manager_default="options.disable_class_column_manager_default"
+                >
+              </VColumnManager>
+            </Teleport>
+            <Teleport v-if="isMounted" :to="options.extra_actions_teleport || 'body'" :disabled="!options.extra_actions_teleport">
+              <slot name="extra-actions"></slot>
+            </Teleport>
+          </div>
 
-              <VExtraActions :use_column_manager="options.use_column_manager" :columns_list="columns_list"
-                :toggleColumnVisibility="toggleColumnVisibility">
-                <template #extra-actions>
-                  <slot name="extra-actions">
-                  </slot>
-                </template>
-              </VExtraActions>
-            </div>
-
-          </Teleport>
         </div>
         <slot name="item-selected-info" :selected_items="selected_items" :clearSelection="() => selected_items = []">
           <div v-if="(options.use_checkbox && selected_items.length > 0) && !options.deactivate_selected_info"
@@ -55,17 +58,9 @@
                 class="badge bg-azure text-azure-fg">{{
                   selected_items.length }}</span></h4>
             <a class=" cursor-pointer " @click="selected_items = []">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="icon icon-tabler icons-tabler-outline icon-tabler-trash">
-                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                <path d="M4 7l16 0" />
-                <path d="M10 11l0 6" />
-                <path d="M14 11l0 6" />
-                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
-                <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
-              </svg>
-              Limpar Seleção</a>
+              <component :is="icons.checkbox.clear" />
+              Limpar Seleção
+            </a>
           </div>
         </slot>
 
@@ -134,24 +129,11 @@
                             :class="{ 'is-expanded': is_item_expanded(item) }" @click="expand_item_toggle(item)">
 
                             <template v-if="options.type_button_expand === 'arrow'">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="icon icon-tabler icons-tabler-outline icon-tabler-chevron-right icon-transition-arrow">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M9 6l6 6l-6 6" />
-                              </svg>
-
+                              <component :is="icons.expand.arrow" />
                             </template>
 
                             <template v-else>
-                              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" class="icon icon-transition-plus">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M12 5l0 14" class="vertical-line" />
-                                <path d="M5 12l14 0" />
-                              </svg>
+                              <component :is="icons.expand.plus" />
                             </template>
 
                           </button>
@@ -260,26 +242,28 @@
 
 <script setup lang="ts" generic="T extends Record<string, any>">
 import type { VDataTableProps, ExposedFunctions, PaginationObject } from '../types/v-data-table.ts';
-import { readonly, ref, provide, computed, watch, nextTick, inject, onMounted } from 'vue';
-import { DATA_TABLE_CONFIG } from '@/config/datatableConfig'
+import { readonly, ref, provide, computed, watch, nextTick, onMounted } from 'vue';
 import PaginationDatatable from '@/Pagination/Pagination.vue';
 import Search from './SearchDatatable.vue';
-import VExtraActions from './VExtraActions.vue';
+import VColumnManager from './VColumnManager.vue';
 import { useImagePreview } from '../composables/useImagePreview';
 import { dataTableApiKey, type ColumnConfiguration } from '../keys';
 import draggable from 'vuedraggable';
 import { useExpandedItem } from '../composables/useExpandedItem';
 import { useDataTableFetch } from '../composables/useDataTableFetch';
-import { useCheckBox } from '../composables/useCheckBox.ts';
+import { useCheckBox } from '../composables/useCheckBox';
+import { useDataTableConfig } from '../composables/useDataTableConfig';
 import VDataTableLoading from './VDataTableLoading.vue';
 import VThDataTable from './VThDataTable.vue';
-
+import { buildIcons } from '@/utils/svgFactory'
+import { svgs } from '@/DatatableVue/style/svgs'
+const icons = buildIcons(svgs)
 /* 
 Variável responsável por indicar se o componente já foi totalmente montado no DOM.
 Por que é usada: Impede que o componente Teleport tente enviar elementos para uma div que ainda não foi renderizada, evitando quebras na aplicação.
 */
 const isMounted = ref(false);
-const globalConfig = inject(DATA_TABLE_CONFIG, {});
+
 const {
   isHovering,
   previewSrc,
@@ -289,80 +273,11 @@ const {
   handleMouseLeave
 } = useImagePreview();
 
+// Apenas define as props! O que não for passado será undefined, ativando a cascata
+const props = defineProps<VDataTableProps>();
+// mescla a prop com o padrão e o global definido pelo usuario
+const { options } = useDataTableConfig(props);
 
-// =======================================================
-// 1. DEFINIÇÃO DE PROPS COM VALORES PADRÃO
-// =======================================================
-const props = withDefaults(defineProps<VDataTableProps>(), {
-  fetch_name: '',
-  custom_loading: null,
-  deactivate_default_params: false,
-
-  add_params: () => ({}),
-  list_filter: () => [],
-
-  use_checkbox: false,
-
-  deactivate_selected_info: false,
-  immediate: true,
-  deactivate_search_on_clear: false,
-  use_expandable_items: false,
-  close_expanded_item_on_expand_new: false,
-  scroll_to_expanded_item: false,
-  type_animation_expand: 'expand',
-  deactivate_animation_expand: false,
-  type_button_expand: 'arrow',
-  deactivate_search_empty: false,
-  disable_request: false,
-  disable_search: false,
-  pagination_teleport: null,
-  search_teleport: null,
-  show_header_when_empty: false,
-  storage_id: '',
-  use_column_manager: false,
-});
-const options = computed(() => {
-  return {
-    // Primeiro, espelha todas as props originais.
-    ...props,
-
-    // Agora SOBRESCREVEMOS as propriedades que precisam de lógica Global/Default
-    // (Prioridade para Prop, mas aceita Global)
-
-    // === TEXTOS ===
-    first_text_page_size: props.first_text_page_size ?? globalConfig.first_text_page_size ?? 'Mostrar',
-    second_text_page_size: props.second_text_page_size ?? globalConfig.second_text_page_size ?? 'registros',
-    placeholder_search: props.placeholder_search ?? globalConfig.placeholder_search ?? 'Buscar...',
-
-    // === CLASSES  ===
-    class_table: props.class_table || globalConfig.class_table || '',
-    class_pagination: props.class_pagination || globalConfig.class_pagination || '',
-    class_container: props.class_container || globalConfig.class_container || '',
-    class_content: props.class_content || globalConfig.class_content || '',
-    class_filters: props.class_filters || globalConfig.class_filters || '',
-    class_page_size: props.class_page_size || globalConfig.class_page_size || '',
-
-    // === CONFIGURAÇÃO DE API ===
-    filter_param_name: props.filter_param_name ?? globalConfig.filter_param_name ?? 'filter',
-    search_param_name: props.search_param_name ?? globalConfig.search_param_name ?? 'search',
-    page_param_name: props.page_param_name ?? globalConfig.page_param_name ?? 'page',
-    page_size_param_name: props.page_size_param_name ?? globalConfig.page_size_param_name ?? 'page_size',
-    page_starts_at: props.page_starts_at ?? globalConfig.page_starts_at ?? 0,
-    item_key: props.item_key ?? globalConfig.item_key ?? 'id',
-    data_key: props.data_key ?? globalConfig.data_key ?? 'results',
-    total_key: props.total_key ?? globalConfig.total_key ?? 'count',
-
-    // === COMPORTAMENTO ===
-    limit_per_page: props.limit_per_page ?? globalConfig.limit_per_page ?? 5,
-    type_loading: props.type_loading ?? globalConfig.type_loading ?? 'placeholder',
-    min_loading_delay: props.min_loading_delay ?? globalConfig.min_loading_delay ?? 600,
-    retry_attempts: props.retry_attempts ?? globalConfig.retry_attempts ?? 3,
-    retry_delay: props.retry_delay ?? globalConfig.retry_delay ?? 2000,
-    show_header_when_empty: props.show_header_when_empty ?? globalConfig.show_header_when_empty ?? false,
-    storage_id: props.storage_id ?? globalConfig.storage_id ?? '',
-    use_column_manager: props.use_column_manager ?? globalConfig.use_column_manager ?? false,
-  };
-});
 const emit = defineEmits(['tradePage', 'beforeFetch', 'afterFetch', 'clickedClearSearch']);
 
 // =======================================================

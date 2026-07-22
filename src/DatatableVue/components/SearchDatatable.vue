@@ -1,37 +1,22 @@
 <template>
 
 
-    <a v-if="item_use.includes(2)" href="#" class="btn dropdown-toggle" data-bs-toggle="dropdown"
+    <a @click.prevent v-if="item_use.includes(2)" href="#" class="btn dropdown-toggle" data-bs-toggle="dropdown"
         title="Pesquisas Prédefinidas">
-        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-filter" width="24" height="24"
-            viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
-            stroke-linejoin="round">
-            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-            <path
-                d="M4 4h16v2.172a2 2 0 0 1 -.586 1.414l-4.414 4.414v7l-6 2v-8.5l-4.48 -4.928a2 2 0 0 1 -.52 -1.345v-2.227z">
-            </path>
-        </svg>
+        <!-- filter -->
+        <component :is="icons.search.filter" />
     </a>
     <div class="input-icon">
         <input type="text" class="form-control ms-1" id="inputSearchVDataTable" v-model="modelSearch"
             @keyup.enter="searchEnter" :placeholder="placeholder_search">
 
         <span v-if="modelSearch" @click="cleanSearch()" class=" inputClose" title="Limpar pesquisa">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                class="icon icon-tabler icons-tabler-outline icon-tabler-x">
-                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                <path d="M18 6l-12 12" />
-                <path d="M6 6l12 12" />
-            </svg>
+            <!-- clear -->
+            <component :is="icons.search.clear" />
         </span>
         <span v-else class="input-icon-addon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path>
-                <path d="M21 21l-6 -6"></path>
-            </svg>
+            <!-- lupa -->
+            <component :is="icons.search.loupe" />
         </span>
     </div>
     <div v-if="item_use.includes(2)" class="dropdown-menu">
@@ -58,6 +43,9 @@
 </template>
 <script setup lang="ts">
 import { computed, watch } from 'vue';
+import {buildIcons} from '@/utils/svgFactory'
+import { svgs } from '@/DatatableVue/style/svgs'
+const icons = buildIcons(svgs)
 interface SearchProps {
     search: string;
     filter?: string;
