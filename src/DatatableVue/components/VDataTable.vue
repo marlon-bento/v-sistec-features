@@ -42,6 +42,9 @@
               <VColumnManager :use_column_manager="options.use_column_manager" :columns_list="columns_list"
                 :toggleColumnVisibility="toggleColumnVisibility"
                 :disable_class_column_manager_default="options.disable_class_column_manager_default"
+                :class_column_manager_button="options.class_column_manager_button"
+                :class_column_manager_dropdown_menu="options.class_column_manager_dropdown_menu"
+                :class_column_manager_dropdown="options.class_column_manager_dropdown"
                 >
               </VColumnManager>
             </Teleport>
