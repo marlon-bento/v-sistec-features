@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.27.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.27.1...v1.27.2) (2026-07-24)
+
+
+### Bug Fixes
+
+* icon tava com erro por que tava com um span quebrado ([8038ef6](https://github.com/marlon-bento/v-sistec-features/commit/8038ef6e503af9bf2daf86405cbf85d223cc05f9))
+
 ## [1.27.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.27.0...v1.27.1) (2026-07-24)
 
 
