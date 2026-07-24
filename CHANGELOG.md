@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.27.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.27.0...v1.27.1) (2026-07-24)
+
+
+### Bug Fixes
+
+* faltou adicionar as classes do column manager na prop ([07feec4](https://github.com/marlon-bento/v-sistec-features/commit/07feec4fe8562905b3166c49fde3865a28db9816))
+
 # [1.27.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.26.4...v1.27.0) (2026-07-22)
 
 
