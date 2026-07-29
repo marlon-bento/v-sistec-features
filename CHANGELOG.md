@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.28.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.27.2...v1.28.0) (2026-07-29)
+
+
+### Features
+
+* resolvido problema de reatividade das props, melhorado a granularidade de como parametros podem ser processados, antigamente era possível usar o v-datatable para mandar no addparams, mas o addparams já possuí internamente a caracteristica base de refazer o fetch e também voltar para a primeira página, pensando nisso foram adicionadas duas novas props de parametros, que em suma fazem o mesmo que o addparams, só que uma não refaz o fetch e não volta para a primeira página, e a outra refaz o fetch mas não volta para a primeira página ([6590430](https://github.com/marlon-bento/v-sistec-features/commit/6590430253f217e1b79cbbab0b4e7755968a8a71))
+
 ## [1.27.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.27.1...v1.27.2) (2026-07-24)
 
 
