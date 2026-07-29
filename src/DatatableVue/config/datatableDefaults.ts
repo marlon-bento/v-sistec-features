@@ -13,6 +13,9 @@ export const defaultDataTableConfig: DataTableGlobalConfig = {
     deactivate_default_params: false,
 
     add_params: {},
+    add_params_keep_page: {},
+    silent_params: {},
+
     list_filter: [],
 
     use_checkbox: false,

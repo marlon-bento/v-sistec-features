@@ -21,7 +21,23 @@ export interface ApiProps {
   search_param_name?: string;
   page_param_name?: string;
   page_size_param_name?: string;
+  /* 
+  Parâmetros reativos: dispara um novo fetch e reseta a tabela para a página 1 sempre que sofrer mutação. 
+  Ideal para buscas e filtros primários.
+  */
   add_params?: Record<string, any> | (() => Record<string, any>);
+  
+  /* 
+  Parâmetros de recarregamento suave: dispara um novo fetch quando alterados, mas NÃO reseta a página atual. 
+  Ideal para ordenação externa ou filtros que não devem interromper a navegação.
+  */
+  add_params_keep_page?: Record<string, any> | (() => Record<string, any>);
+  
+  /* 
+  Parâmetros silenciosos: injeta dados na requisição sem disparar um fetch automático. 
+  Ideal para injeção de paginação manual ou tokens.
+  */
+  silent_params?: Record<string, any> | (() => Record<string, any>);
   /* retira os params default da requisição */
   deactivate_default_params?: boolean;
   disable_request?: MaybeRefOrGetter<boolean>;

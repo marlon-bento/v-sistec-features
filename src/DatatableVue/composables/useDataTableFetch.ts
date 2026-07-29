@@ -1,10 +1,11 @@
-import { ref, computed, type Ref } from 'vue';
+import { ref, computed, type Ref, watch, unref } from 'vue';
 import type { PaginationObject, DataTablePropsWithDefaults } from '../types/v-data-table'; // Ajuste o caminho conforme necessário
 import { type ColumnConfiguration } from '../keys';
 
 
 export function useDataTableFetch<T>(
-    props: DataTablePropsWithDefaults,
+    /* para manter a reatividade a prop agora precisa usar unref*/
+    props: Ref<DataTablePropsWithDefaults>,
     pagination: Ref<PaginationObject>,
     columns: Ref<ColumnConfiguration[]>,
     orderings_state: Ref<Record<string, 'none' | 'increasing' | 'decreasing'>>,
@@ -13,16 +14,17 @@ export function useDataTableFetch<T>(
 
 ) {
     const items = ref<T[]>([]) as Ref<T[]>;
-
+    const propsValue = computed(() => unref(props)); 
     const urlReativa = computed(() => {
-        return props.endpoint;
+        return propsValue.value.endpoint;
     });
     
+    
     const default_params = computed<Record<string, any>>(() => ({
-        [props.page_param_name]: pagination.value.current_page + 1,
-        [props.page_size_param_name]: pagination.value.limit_per_page,
-        [props.search_param_name]: pagination.value.search || "",
-        [props.filter_param_name]: pagination.value.filter || "",
+        [propsValue.value.page_param_name]: pagination.value.current_page + 1,
+        [propsValue.value.page_size_param_name]: pagination.value.limit_per_page,
+        [propsValue.value.search_param_name]: pagination.value.search || "",
+        [propsValue.value.filter_param_name]: pagination.value.filter || "",
     }));
 
     const params_ordering = computed(() => {
@@ -39,35 +41,65 @@ export function useDataTableFetch<T>(
 
         return objectOrdering;
     });
-    const { data: response, pending, error, execute, attempt } = props.fetch(urlReativa, {
-        disable_request: () => props.disable_request,
+    const { data: response, pending, error, execute, attempt } = propsValue.value.fetch(urlReativa, {
+        disable_request: () => propsValue.value.disable_request,
         params: () => {
-            const isFunction = typeof props.add_params === 'function';
-            let extraParams = {};
+            /*add_params*/
+            const addParamsIsFunction = typeof propsValue.value.add_params === 'function';
+            let extraAddParams = {};
+            /*silent_params*/
+            const silentParamsIsFunction = typeof propsValue.value.silent_params === 'function';
+            let extraSilentParams = {};
+            /*add_params_keep_page*/
+            const addParamsKeepPageIsFunction = typeof propsValue.value.add_params_keep_page === 'function';
+            let extraAddParamsKeepPage = {};
 
-            if (isFunction) {
-                const getParams = props.add_params as () => Record<string, any>;
-                extraParams = getParams();
+            
+            
+
+            if (addParamsIsFunction) {
+                const getParams = propsValue.value.add_params as () => Record<string, any>;
+                extraAddParams = getParams();
             } else {
-                extraParams = props.add_params || {};
+                extraAddParams = propsValue.value.add_params || {};
             }
-            if (props.deactivate_default_params) {
+
+            if (silentParamsIsFunction) {
+                const getParams = propsValue.value.silent_params as () => Record<string, any>;
+                extraSilentParams = getParams();
+            } else {
+                extraSilentParams = propsValue.value.silent_params || {};
+            }
+
+            if (addParamsKeepPageIsFunction) {
+                const getParams = propsValue.value.add_params_keep_page as () => Record<string, any>;
+                extraAddParamsKeepPage = getParams();
+            } else {
+                extraAddParamsKeepPage = propsValue.value.add_params_keep_page || {};
+            }
+
+
+            if (propsValue.value.deactivate_default_params) {
                 return {
-                    ...extraParams,
+                    ...extraAddParams,
+                    ...extraSilentParams,
+                    ...extraAddParamsKeepPage,
                     ...params_ordering.value
                 };
             }
             return {
                 ...default_params.value,
-                ...props.add_params,
+                ...extraAddParams,
+                ...extraSilentParams,
+                ...extraAddParamsKeepPage,
                 ...params_ordering.value
             };
         },
-        retry: props.retry_attempts,
-        retryDelay: props.retry_delay,
+        retry: propsValue.value.retry_attempts,
+        retryDelay: propsValue.value.retry_delay,
         paramsReactives: false,
         immediate: false,
-    }, props.fetch_name);
+    }, propsValue.value.fetch_name);
 
     const isDelaying = ref<boolean>(false);
     const delayTimer = ref<ReturnType<typeof setTimeout> | null>(null);
@@ -87,7 +119,7 @@ export function useDataTableFetch<T>(
 
         delayTimer.value = setTimeout(() => {
             isDelaying.value = false;
-        }, props.min_loading_delay);
+        }, propsValue.value.min_loading_delay);
         close_all_expanded_items();
         emit('beforeFetch');
         await execute(); // Executa a busca de dados original do useApiFetch
@@ -95,9 +127,62 @@ export function useDataTableFetch<T>(
     }
 
     function reSearch(): void {
-        pagination.value.current_page = props.page_starts_at;
+        pagination.value.current_page = propsValue.value.page_starts_at;
         fetchDataWithDelay();
     }
+
+
+    watch(response, (newResponse: any) => {
+    if (newResponse) {
+        items.value = newResponse[propsValue.value.data_key] || [];
+        pagination.value.count = newResponse[propsValue.value.total_key] || 0;
+    } else {
+        items.value = [];
+        pagination.value.count = 0;
+    }
+    }, { immediate: true });
+    
+    watch(
+      () => {
+        const params = typeof propsValue.value.add_params === 'function'
+          ? propsValue.value.add_params()
+          : propsValue.value.add_params;
+        return JSON.stringify(params);
+      },
+      (newVal, oldVal) => {
+        if (newVal !== oldVal && oldVal !== undefined) {
+          reSearch();
+        }
+      }
+    );
+    watch(
+      () => {
+        const params = typeof propsValue.value.add_params_keep_page === 'function'
+          ? propsValue.value.add_params_keep_page()
+          : propsValue.value.add_params_keep_page;
+        return JSON.stringify(params);
+      },
+      (newVal, oldVal) => {
+        if (newVal !== oldVal && oldVal !== undefined) {
+          fetchDataWithDelay();
+        }
+      }
+    );
+
+    /* 
+    ========
+    Observa mudanças no endpoint.
+    Caso a rota da API mude dinamicamente, ele reseta a tabela para a página inicial com segurança.
+    ========
+    */
+    watch(
+    () => propsValue.value.endpoint,
+        (newVal, oldVal) => {
+            if (newVal !== oldVal && oldVal !== undefined) {
+            pagination.value.current_page = propsValue.value.page_starts_at;
+            }
+        }
+    );
     return {
         items,
         pending,

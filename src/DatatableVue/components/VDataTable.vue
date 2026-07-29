@@ -245,7 +245,7 @@
 
 <script setup lang="ts" generic="T extends Record<string, any>">
 import type { VDataTableProps, ExposedFunctions, PaginationObject } from '../types/v-data-table.ts';
-import { readonly, ref, provide, computed, watch, nextTick, onMounted } from 'vue';
+import { readonly, ref, provide, computed, nextTick, onMounted } from 'vue';
 import PaginationDatatable from '@/Pagination/Pagination.vue';
 import Search from './SearchDatatable.vue';
 import VColumnManager from './VColumnManager.vue';
@@ -291,7 +291,7 @@ const emit = defineEmits(['tradePage', 'beforeFetch', 'afterFetch', 'clickedClea
 
 const orderings_state = ref<Record<string, 'none' | 'increasing' | 'decreasing'>>({});
 const columns = ref<ColumnConfiguration[]>([]);
-const totalItems = ref<number>(0);
+
 
 
 
@@ -322,10 +322,10 @@ const {
 );
 
 const {
-  items, error, response, attempt, default_params,
+  items, error, attempt, default_params,
   fetchDataWithDelay, reSearch,
   showLoadingState, first_fetch
-} = useDataTableFetch<T>(options.value, pagination, columns, orderings_state, emit, close_all_expanded_items);
+} = useDataTableFetch<T>(options, pagination, columns, orderings_state, emit, close_all_expanded_items);
 
 
 const {
@@ -492,16 +492,7 @@ const hasItems = computed(() => {
 
 
 
-watch(response, (newResponse: any) => {
-  if (newResponse) {
-    items.value = newResponse[options.value.data_key] || [];
-    totalItems.value = newResponse[options.value.total_key] || 0;
-    pagination.value.count = totalItems.value;
-  } else {
-    items.value = [];
-    totalItems.value = 0;
-  }
-}, { immediate: true });
+
 
 
 // =======================================================
@@ -677,33 +668,8 @@ onMounted(() => {
   });
 });
 
-watch(
-  () => {
-    const params = typeof options.value.add_params === 'function'
-      ? options.value.add_params()
-      : options.value.add_params;
-    return JSON.stringify(params);
-  },
-  (newVal, oldVal) => {
-    if (newVal !== oldVal && oldVal !== undefined) {
-      reSearch();
-    }
-  }
-);
-/* 
-========
-Observa mudanças no endpoint.
-Caso a rota da API mude dinamicamente, ele reseta a tabela para a página inicial com segurança.
-========
-*/
-watch(
-  () => options.value.endpoint,
-  (newVal, oldVal) => {
-    if (newVal !== oldVal && oldVal !== undefined) {
-      pagination.value.current_page = options.value.page_starts_at;
-    }
-  }
-);
+
+
 </script>
 
 <style lang="scss" scoped>
