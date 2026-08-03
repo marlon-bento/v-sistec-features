@@ -3,7 +3,7 @@ import type { PaginationObject, DataTablePropsWithDefaults } from '../types/v-da
 import { type ColumnConfiguration } from '../keys';
 
 
-export function useDataTableFetch<T>(
+export function useDataTableFetch<T extends Record<string, any>>(
     /* para manter a reatividade a prop agora precisa usar unref*/
     props: Ref<DataTablePropsWithDefaults>,
     pagination: Ref<PaginationObject>,
@@ -13,13 +13,16 @@ export function useDataTableFetch<T>(
     close_all_expanded_items: () => void
 
 ) {
-    const items = ref<T[]>([]) as Ref<T[]>;
-    const propsValue = computed(() => unref(props)); 
+    // Estado para armazenar o retorno bruto da API
+    const raw_items = ref<T[]>([]) as Ref<T[]>;
+
+
+    const propsValue = computed(() => unref(props));
     const urlReativa = computed(() => {
         return propsValue.value.endpoint;
     });
-    
-    
+
+
     const default_params = computed<Record<string, any>>(() => ({
         [propsValue.value.page_param_name]: pagination.value.current_page + 1,
         [propsValue.value.page_size_param_name]: pagination.value.limit_per_page,
@@ -35,8 +38,8 @@ export function useDataTableFetch<T>(
                     objectOrdering[col.param_ordering] = col.increasing_value || 'increasing';
                 } else if (orderings_state.value[col.id] === 'decreasing') {
                     objectOrdering[col.param_ordering] = col.decreasing_value || 'decreasing';
-                } 
-            } 
+                }
+            }
         }
 
         return objectOrdering;
@@ -54,8 +57,8 @@ export function useDataTableFetch<T>(
             const addParamsKeepPageIsFunction = typeof propsValue.value.add_params_keep_page === 'function';
             let extraAddParamsKeepPage = {};
 
-            
-            
+
+
 
             if (addParamsIsFunction) {
                 const getParams = propsValue.value.add_params as () => Record<string, any>;
@@ -101,17 +104,64 @@ export function useDataTableFetch<T>(
         immediate: false,
     }, propsValue.value.fetch_name);
 
+    const filtered_items = computed<T[]>(() => {
+        if (!propsValue.value.frontend_pagination) {
+            return raw_items.value;
+        }
+
+        let filtered = raw_items.value;
+        const customFilterFn = propsValue.value.custom_frontend_filter;
+
+        if (customFilterFn && typeof customFilterFn === 'function') {
+            filtered = filtered.filter(item =>
+                customFilterFn(item, pagination.value.search, pagination.value.filter)
+            );
+        } else if (pagination.value.search) {
+            const searchLower = pagination.value.search.toLowerCase();
+            filtered = filtered.filter(item => {
+                return Object.values(item).some(val =>
+                    val !== null && val !== undefined && String(val).toLowerCase().includes(searchLower)
+                );
+            });
+        }
+
+        return filtered;
+    });
+
+    watch(filtered_items, (newVal) => {
+        if (propsValue.value.frontend_pagination) {
+            pagination.value.count = newVal.length;
+
+            const maxPage = Math.ceil(newVal.length / pagination.value.limit_per_page) - 1;
+            if (pagination.value.current_page > maxPage && maxPage >= 0) {
+                pagination.value.current_page = maxPage;
+            }
+        }
+    }, { immediate: true });
+
+    const items = computed<T[]>(() => {
+        if (!propsValue.value.frontend_pagination) {
+            return raw_items.value;
+        }
+
+        const start = pagination.value.current_page * pagination.value.limit_per_page;
+        const end = start + pagination.value.limit_per_page;
+
+        return filtered_items.value.slice(start, end);
+    });
+
     const isDelaying = ref<boolean>(false);
     const delayTimer = ref<ReturnType<typeof setTimeout> | null>(null);
     const first_fetch = ref<boolean>(false);
     // para controlar a exibição do loading
     const showLoadingState = computed<boolean>(() => {
-    return (pending.value || isDelaying.value)
+        return (pending.value || isDelaying.value)
     });
     // Função que gerencia o delay e a chamada da API
     async function fetchDataWithDelay(): Promise<void> {
         // agora já fez pelo menos a primeira busca então marca como true
         if (!first_fetch.value) first_fetch.value = true;
+
         // Limpa timer anterior, se houver
         if (delayTimer.value) clearTimeout(delayTimer.value);
 
@@ -120,53 +170,72 @@ export function useDataTableFetch<T>(
         delayTimer.value = setTimeout(() => {
             isDelaying.value = false;
         }, propsValue.value.min_loading_delay);
+
         close_all_expanded_items();
         emit('beforeFetch');
-        await execute(); // Executa a busca de dados original do useApiFetch
+        if (!propsValue.value.frontend_pagination || raw_items.value.length === 0) {
+            await execute(); // Executa a busca de dados original do useApiFetch
+        }
+
         emit('afterFetch');
     }
 
     function reSearch(): void {
         pagination.value.current_page = propsValue.value.page_starts_at;
+
         fetchDataWithDelay();
     }
 
 
     watch(response, (newResponse: any) => {
-    if (newResponse) {
-        items.value = newResponse[propsValue.value.data_key] || [];
-        pagination.value.count = newResponse[propsValue.value.total_key] || 0;
-    } else {
-        items.value = [];
-        pagination.value.count = 0;
-    }
-    }, { immediate: true });
-    
-    watch(
-      () => {
-        const params = typeof propsValue.value.add_params === 'function'
-          ? propsValue.value.add_params()
-          : propsValue.value.add_params;
-        return JSON.stringify(params);
-      },
-      (newVal, oldVal) => {
-        if (newVal !== oldVal && oldVal !== undefined) {
-          reSearch();
+        if (newResponse) {
+            let fetchedData = [];
+
+            // Aceitação de dados direto da raiz do objeto quando data_key for string vazia
+            if (!propsValue.value.data_key) {
+                fetchedData = Array.isArray(newResponse) ? newResponse : [newResponse];
+            } else {
+                fetchedData = newResponse[propsValue.value.data_key] || [];
+            }
+
+            raw_items.value = fetchedData;
+
+            // O count é operado pelo frontend se a prop estiver ativa
+            if (!propsValue.value.frontend_pagination) {
+                pagination.value.count = newResponse[propsValue.value.total_key] || 0;
+            }
+
+        } else {
+            raw_items.value = [];
+            pagination.value.count = 0;
         }
-      }
+    }, { immediate: true });
+
+    watch(
+        () => {
+            const params = typeof propsValue.value.add_params === 'function'
+                ? propsValue.value.add_params()
+                : propsValue.value.add_params;
+            return JSON.stringify(params);
+        },
+        (newVal, oldVal) => {
+            if (newVal !== oldVal && oldVal !== undefined) {
+                reSearch();
+            }
+        }
     );
     watch(
-      () => {
-        const params = typeof propsValue.value.add_params_keep_page === 'function'
-          ? propsValue.value.add_params_keep_page()
-          : propsValue.value.add_params_keep_page;
-        return JSON.stringify(params);
-      },
-      (newVal, oldVal) => {
-        if (newVal !== oldVal && oldVal !== undefined) {
-          fetchDataWithDelay();
+        () => {
+            const params = typeof propsValue.value.add_params_keep_page === 'function'
+                ? propsValue.value.add_params_keep_page()
+                : propsValue.value.add_params_keep_page;
+            return JSON.stringify(params);
+        },
+        (newVal, oldVal) => {
+            if (newVal !== oldVal && oldVal !== undefined) {
+                fetchDataWithDelay();
+            }
         }
-      }
     );
 
     /* 
@@ -176,10 +245,10 @@ export function useDataTableFetch<T>(
     ========
     */
     watch(
-    () => propsValue.value.endpoint,
+        () => propsValue.value.endpoint,
         (newVal, oldVal) => {
             if (newVal !== oldVal && oldVal !== undefined) {
-            pagination.value.current_page = propsValue.value.page_starts_at;
+                pagination.value.current_page = propsValue.value.page_starts_at;
             }
         }
     );

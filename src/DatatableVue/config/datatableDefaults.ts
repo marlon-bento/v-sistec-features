@@ -11,7 +11,7 @@ export const defaultDataTableConfig: DataTableGlobalConfig = {
     fetch_name: '',
     custom_loading: null,
     deactivate_default_params: false,
-
+    frontend_pagination: false,
     add_params: {},
     add_params_keep_page: {},
     silent_params: {},
@@ -75,4 +75,6 @@ export const defaultDataTableConfig: DataTableGlobalConfig = {
     show_header_when_empty: false,
     storage_id: '',
     use_column_manager: false,
+
+    custom_frontend_filter: null,
 };  

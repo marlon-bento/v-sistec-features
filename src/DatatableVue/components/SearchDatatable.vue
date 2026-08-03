@@ -54,7 +54,6 @@ interface SearchProps {
     placeholder_search?: string;
     deactivate_search_on_clear?: boolean;
     deactivate_search_empty?: boolean;
-
 }
 const props = withDefaults(defineProps<SearchProps>(), {
     filter: "",

@@ -86,6 +86,7 @@ Tipagem para o comportamento principal.
 Por que é usada: Controla limites, tempos de carregamento, armazenamento de estado e identificadores.
 */
 export interface BehaviorProps {
+  frontend_pagination?: boolean;
   limit_per_page?: number;
   page_starts_at?: number;
     /*
@@ -124,6 +125,7 @@ export interface SearchProps {
   disable_search?: boolean;
   deactivate_search_empty?: boolean;
   deactivate_search_on_clear?: boolean;
+  custom_frontend_filter?: ((item: any, search: string, filter: string) => boolean) | null;
 }
 /*
 Tipagem para regras de paginação.
@@ -179,6 +181,8 @@ Tipagem consolidada de propriedades do VDataTable com valores padrão.
 Por que é usada: Fornece uma interface completa para o Vue, incluindo todas as propriedades obrigatórias e opcionais, com valores padrão definidos.
 */
 export type DataTablePropsWithDefaults = VDataTableProps & {
+    custom_frontend_filter: ((item: any, search: string, filter: string) => boolean) | null;
+    frontend_pagination: boolean;
     // Strings
     fetch_name: string;
     type_loading: string;
