@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.29.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.28.0...v1.29.0) (2026-08-03)
+
+
+### Features
+
+* agora o v-data-table permite datakey vazio para pegar da raiz os items, e também permite receber todos os dados de uma vez e já paginar diretamente no frontend ([d5fcd5c](https://github.com/marlon-bento/v-sistec-features/commit/d5fcd5c08b393e685f10ec7596c0683e02aac1e8))
+
 # [1.28.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.27.2...v1.28.0) (2026-07-29)
 
 
