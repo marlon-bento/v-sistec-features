@@ -263,7 +263,8 @@ export function useDataTableFetch<T extends Record<string, any>>(
         fetchDataWithDelay,
         reSearch,
         showLoadingState,
-        first_fetch
+        first_fetch,
+        raw_items
 
     };
 }

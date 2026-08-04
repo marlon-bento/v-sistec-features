@@ -324,7 +324,7 @@ const {
 const {
   items, error, attempt, default_params,
   fetchDataWithDelay, reSearch,
-  showLoadingState, first_fetch
+  showLoadingState, first_fetch, raw_items
 } = useDataTableFetch<T>(options, pagination, columns, orderings_state, emit, close_all_expanded_items);
 
 
@@ -651,6 +651,8 @@ defineExpose<ExposedFunctions<T>>({
   selectAllCheckbox,
   toggleColumnVisibility,
   columns_list,
+  items: readonly(items),
+  results: readonly(raw_items),
 });
 
 onMounted(() => {

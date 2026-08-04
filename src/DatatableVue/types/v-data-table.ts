@@ -1,4 +1,4 @@
-import type { Ref, ComputedRef, Component, MaybeRefOrGetter } from 'vue';
+import type { Ref, ComputedRef, Component, MaybeRefOrGetter, DeepReadonly } from 'vue';
 import type { PaginationObject } from '../keys';
 
 export type { PaginationObject } from '../keys';
@@ -258,4 +258,6 @@ export interface ExposedFunctions<T extends Record<string, any>> {
     visible: boolean;
     locked: boolean;
   }>>;
+  items: DeepReadonly<Ref<T[]>>;
+  results: DeepReadonly<Ref<T[]>>;
 }
