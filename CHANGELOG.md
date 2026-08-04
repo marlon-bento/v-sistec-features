@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.30.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.29.0...v1.30.0) (2026-08-04)
+
+
+### Features
+
+* agora o datatable expoem os items para poder facilitar o uso no futuro caso o usuário precisar dos dados pra não ter que refazer fetch por fora do datatable, o retorno items vai entregar a paginação, e o retorno results para mostrar os dados que vieram brutos da requisição sem a transformação do datatable ([430af45](https://github.com/marlon-bento/v-sistec-features/commit/430af45285b845e5170b685fcd3551c95c238a5d))
+
 # [1.29.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.28.0...v1.29.0) (2026-08-03)
 
 
