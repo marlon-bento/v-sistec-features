@@ -24,21 +24,18 @@
                         <path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4" />
                     </svg>
                 </button>
-
-
             </div>
 
             <div class="dropdown-divider my-3"></div>
             <div class="d-flex flex-column gap-2">
-                <label v-for="coluna in columns_list" :key="coluna.id" class="form-check cursor-pointer m-0">
-                    <input class="form-check-input" type="checkbox" :checked="coluna.visible"
-                        :disabled="coluna.disable_hide" @change="toggleColumnVisibility(coluna.id)">
-                    <span class="form-check-label user-select-none">{{ coluna.header }}</span>
-                </label>
+                <template v-for="coluna in columns_list" :key="coluna.id">
+                    <label v-if="!coluna.disable_hide" class="form-check cursor-pointer m-0">
+                        <input class="form-check-input" type="checkbox" :checked="coluna.visible"
+                            :disabled="coluna.disable_hide" @change="toggleColumnVisibility(coluna.id)">
+                        <span class="form-check-label user-select-none">{{ coluna.header }}</span>
+                    </label>
+                </template>
             </div>
-
-
-
 
         </div>
     </div>
