@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.31.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.30.0...v1.31.0) (2026-08-05)
+
+
+### Features
+
+* agora é possível proibir uma coluna de ser ocultada sem precisar travar ela, também é possível travar no começo ou travar no final as colunas ([faeb483](https://github.com/marlon-bento/v-sistec-features/commit/faeb4836e6a827697a78ae3f827e5494b704d919))
+
 # [1.30.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.29.0...v1.30.0) (2026-08-04)
 
 
