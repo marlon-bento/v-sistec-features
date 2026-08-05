@@ -10,8 +10,8 @@ const column_internal_id = crypto.randomUUID();
 defineSlots<{
   // props para o slot body 
   body?: (props: { item: any }) => any,
-  col_header?: (props: { col: any, locked: boolean, OrderingComponent: Component  }) => any,
-  col_header_midle?: (props: { col: any, locked: boolean }) => any,
+  col_header?: (props: { col: any, locked: boolean | 'start' | 'end', OrderingComponent: Component  }) => any,
+  col_header_midle?: (props: { col: any, locked: boolean | 'start' | 'end' }) => any,
 }>();
 interface VColumnProps {
   field?: string | null;
@@ -26,13 +26,14 @@ interface VColumnProps {
   transform_function?: ((value: any) => any) | null;
   click?: Function | null;
   // bloqueia a coluna para não ser movida
-  locked?: boolean;
+  locked?: boolean | 'start' | 'end';
   use_ordering?: boolean;
   param_ordering?: string;
   decreasing_value?: string;
   increasing_value?: string;
   class_rules?: Record<string, (item: any) => boolean>;
   start_hidden?: boolean;
+  disable_hide?: boolean;
 }
 const props = withDefaults(defineProps<VColumnProps>(), {
   field: null,
@@ -66,6 +67,7 @@ const props = withDefaults(defineProps<VColumnProps>(), {
   decreasing_value: '',
   increasing_value: '',
   class_rules: () => ({}),
+  disable_hide: false,
 });
 
 const slots = useSlots();
@@ -117,6 +119,7 @@ onMounted(() => {
     decreasing_value: props.decreasing_value,
     increasing_value: props.increasing_value,
     class_rules: props.class_rules,
+    disable_hide: props.disable_hide,
 
     bodySlot: slots.body,
     // colHeaderSlot é para o slot do header da coluna, que pode ser usado para colocar ícone de ordenação ou qualquer outra coisa que o usuário queira colocar no header da coluna
@@ -126,8 +129,8 @@ onMounted(() => {
     ...(props.type === 'text' && { limite_text: Number(props.limite_text) }),
     ...(props.type === 'img' && { deactivate_img_preview: props.deactivate_img_preview }),
     ...(props.type === 'date' && { format: props.format }),
-
-    start_hidden: props.start_hidden,// se a coluna é opcional por padrão ela não é visível, mas o usuário pode escolher mostrar ela
+    // já trata também se desabilitou o hide que ai o start_hidden não importa
+    start_hidden: props.disable_hide ? false : props.start_hidden,// se a coluna é opcional por padrão ela não é visível, mas o usuário pode escolher mostrar ela
     visible:! props.start_hidden // Se start_hidden for true, ela não estará visível inicialmente
     
   });

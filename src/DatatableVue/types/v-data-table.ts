@@ -256,7 +256,7 @@ export interface ExposedFunctions<T extends Record<string, any>> {
     field: string | null;
     start_hidden: boolean;
     visible: boolean;
-    locked: boolean;
+    locked: boolean | 'start' | 'end';
   }>>;
   items: DeepReadonly<Ref<T[]>>;
   results: DeepReadonly<Ref<T[]>>;

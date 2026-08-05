@@ -16,7 +16,7 @@ export interface ColumnConfiguration {
   deactivate_img_preview?: boolean;
   format?: 'complete' | 'simple';
   click: Function | null;
-  locked: boolean;
+  locked: boolean | 'start' | 'end';
   use_ordering: boolean;
   param_ordering: string;
   decreasing_value: string;
@@ -28,6 +28,7 @@ export interface ColumnConfiguration {
   id: string; // ID único da coluna, gerado internamente pelo VDataTable
   // Chave gerada dinamicamente para salvar e recuperar o estado da coluna no localstorage
   storage_key?: string;
+  disable_hide?: boolean; // Se true, a coluna não poderá ser escondida pelo usuário
 }
 
 // A API que o VDataTable "fornece" para os filhos

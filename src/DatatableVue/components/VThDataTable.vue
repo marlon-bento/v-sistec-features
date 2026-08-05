@@ -29,7 +29,7 @@ import VOrderingIcon from './VOrderingIcon.vue';
 const props = defineProps<{
   header: string;
   class_column: string;
-  locked: boolean;
+  locked: boolean | 'start' | 'end';
   use_ordering: boolean;
   orderings_state: 'none' | 'increasing' | 'decreasing';
   col: any;
@@ -42,7 +42,9 @@ const OrderingComponent = () => h(VOrderingIcon, {
 const class_all = computed(() => {
   return {
     'header-draggable': !props.locked,
-    'header-locked': props.locked,
+    'header-locked': !!props.locked,
+    'header-locked-start': props.locked === 'start',
+    'header-locked-end': props.locked === true || props.locked === 'end',
     [props.class_column]: true,
   }
 })

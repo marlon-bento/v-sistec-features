@@ -38,17 +38,19 @@
                 </template>
               </Search>
             </Teleport>
-            <Teleport v-if="isMounted" :to="options.column_manager_teleport || 'body'" :disabled="!options.column_manager_teleport">
+            <Teleport v-if="isMounted" :to="options.column_manager_teleport || 'body'"
+              :disabled="!options.column_manager_teleport">
               <VColumnManager :use_column_manager="options.use_column_manager" :columns_list="columns_list"
                 :toggleColumnVisibility="toggleColumnVisibility"
                 :disable_class_column_manager_default="options.disable_class_column_manager_default"
                 :class_column_manager_button="options.class_column_manager_button"
                 :class_column_manager_dropdown_menu="options.class_column_manager_dropdown_menu"
                 :class_column_manager_dropdown="options.class_column_manager_dropdown"
-                >
+                :resetColumnsState="resetColumnsState" >
               </VColumnManager>
             </Teleport>
-            <Teleport v-if="isMounted" :to="options.extra_actions_teleport || 'body'" :disabled="!options.extra_actions_teleport">
+            <Teleport v-if="isMounted" :to="options.extra_actions_teleport || 'body'"
+              :disabled="!options.extra_actions_teleport">
               <slot name="extra-actions"></slot>
             </Teleport>
           </div>
@@ -97,6 +99,13 @@
                       <input class="form-check-input m-0" type="checkbox" ref="selectAllCheckbox"
                         @change="toggleSelectAll" aria-label="Selecionar todos os itens na página" />
                     </th>
+                    <!-- Colunas travadas no COMEÇO ficam aqui, antes das arrastáveis, mas depois das de controle -->
+                    <template v-for="col in lockedStartColumns" :key="col.field || col.header">
+                      <v-th-data-table :header="col.header" :class_column="col.class_column"
+                        :use_ordering="col.use_ordering" :orderings_state="orderings_state[col.id] || 'none'"
+                        @toggleOrderingState="() => toggleOrderingState(col.id)" :col="col" locked>
+                      </v-th-data-table>
+                    </template>
                   </template>
 
                   <template #item="{ element: col }">
@@ -108,14 +117,12 @@
                   </template>
 
                   <template #footer>
-
-                    <template v-for="col in lockedColumns" :key="col.field || col.header">
+                    <!-- Colunas travadas no FIM ficam no footer para serem processadas por último -->
+                    <template v-for="col in lockedEndColumns" :key="col.field || col.header">
                       <v-th-data-table :header="col.header" :class_column="col.class_column"
                         :use_ordering="col.use_ordering" :orderings_state="orderings_state[col.id] || 'none'"
                         @toggleOrderingState="() => toggleOrderingState(col.id)" :col="col" locked>
-
                       </v-th-data-table>
-
                     </template>
                   </template>
                 </draggable>
@@ -342,6 +349,7 @@ const storageKey = computed(() => {
   return `vdatatable_${options.value.storage_id}_${options.value.endpoint}`;
 });
 
+const original_columns_order = ref<string[]>([]);
 /* 
 Recebe: Nada.
 Devolve: Nada.
@@ -364,6 +372,8 @@ function validateAndAssignKeys(): void {
     }
     col.storage_key = key;
   }
+  // salva a ordem original que as colunas foram declaradas no template original
+  original_columns_order.value = columns.value.map(c => c.id);
 }
 
 /* 
@@ -405,7 +415,12 @@ function loadColumnsState(): void {
     for (const savedCol of parsed) {
       const found = columns.value.find(c => c.storage_key === savedCol.storage_key);
       if (found) {
-        found.visible = savedCol.visible;
+        // Se a coluna estiver marcada como disable_hide, ela sempre será visível, independentemente do estado salvo.
+        if (found.disable_hide) {
+          found.visible = true;
+        } else {
+          found.visible = savedCol.visible;
+        }
         newColumnsOrder.push(found);
       }
     }
@@ -418,32 +433,64 @@ function loadColumnsState(): void {
   }
 }
 
+/*
+========
+Restaura as colunas para o estado original definido no código.
+Remove o cache do localStorage, restaura a visibilidade padrão e devolve as colunas para a ordem inicial.
+========
+*/
+function resetColumnsState(): void {
+  if (storageKey.value) {
+    localStorage.removeItem(storageKey.value);
+  }
 
+  if (original_columns_order.value.length > 0) {
+    const restored = [];
+    for (const id of original_columns_order.value) {
+      const found = columns.value.find(c => c.id === id);
+      if (found) {
+        // Restaura a visibilidade baseada no start_hidden original
+        found.visible = !found.start_hidden;
+        restored.push(found);
+      }
+    }
+    // Aplica a ordem original reativamente
+    columns.value.splice(0, columns.value.length, ...restored);
+  }
+}
 // =======================================================
 // 4. PROPRIEDADES COMPUTADAS
 // =======================================================
-
-// colunas TRAVADAS (apenas leitura)
-const lockedColumns = computed(() =>
-  columns.value.filter(c => c.locked && c.visible !== false)
+// Pega colunas travadas no início (aceita true ou 'start')
+const lockedStartColumns = computed(() =>
+  columns.value.filter(c => c.locked === 'start' && c.visible !== false)
 );
-// 'v-model' para as colunas ARRASTÁVEIS (com get/set)
+
+// Pega colunas travadas no FIM (aceita true ou 'end' para manter retrocompatibilidade)
+const lockedEndColumns = computed(() =>
+  columns.value.filter(c => (c.locked === true || c.locked === 'end') && c.visible !== false)
+);
+
 const draggableColumns = computed({
   get() {
     return columns.value.filter(c => !c.locked && c.visible !== false);
   },
   set(newUnlockedOrder) {
-    const locked = columns.value.filter(c => c.locked);
+    const lockedStart = columns.value.filter(c => c.locked === 'start');
+    const lockedEnd = columns.value.filter(c => c.locked === true || c.locked === 'end');
     const hidden = columns.value.filter(c => !c.locked && c.visible === false);
-    // Usa splice para não quebrar a referência de reatividade do array original!
-    columns.value.splice(0, columns.value.length, ...newUnlockedOrder, ...hidden, ...locked);
+    
+    // Atualiza a reatividade mantendo as posições de começo e fim seguras
+    columns.value.splice(0, columns.value.length, ...lockedStart, ...newUnlockedOrder, ...hidden, ...lockedEnd);
     saveColumnsState();
   }
 });
-// colunas RENDERIZADAS (ordem final)
+
 const renderedColumns = computed(() => {
-  return [...draggableColumns.value, ...lockedColumns.value];
+  return [...lockedStartColumns.value, ...draggableColumns.value, ...lockedEndColumns.value];
 });
+
+
 /*
 Variável que mapeia as colunas cadastradas.
 Usada para entregar ao componente pai as informações de cabeçalho, campo, se a coluna é opcional e se está visível atualmente.
@@ -455,7 +502,8 @@ const columns_list = computed(() => {
     field: col.field,
     start_hidden: !!col.start_hidden, // Converte para booleano, caso seja undefined
     visible: col.visible !== false,
-    locked: col.locked
+    locked: col.locked,
+    disable_hide: col.disable_hide 
   }));
 });
 /*
