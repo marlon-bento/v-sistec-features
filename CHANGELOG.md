@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.4](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.3...v1.31.4) (2026-08-11)
+
+
+### Bug Fixes
+
+* melhoria arquitetural nas props, agora percorre o vnode pra ver se as props foram passadas ou não ignorando o gerencimento do vue que as vezes falha ([63268ac](https://github.com/marlon-bento/v-sistec-features/commit/63268ac2ded1c017d62c5db1aa0d0ffdea66a56e))
+
 ## [1.31.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.2...v1.31.3) (2026-08-11)
 
 
