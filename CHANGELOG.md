@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.31.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.1...v1.31.2) (2026-08-11)
+
+
+### Bug Fixes
+
+* por causa de alterações passadas em como as props eram passadas os valores padrões foram prejudicados, arrumando agora o bug voltando para props with default ([3232935](https://github.com/marlon-bento/v-sistec-features/commit/32329353fbe0a11d2c7898999aa5d8f08276a608))
+* por causa de alterações passadas em como as props eram passadas os valores padrões foram prejudicados, arrumando agora o bug voltando para props with default ([5db2b2c](https://github.com/marlon-bento/v-sistec-features/commit/5db2b2c7d33cbbffb8c8ea1e2ce74b1eb1d92ae1))
+
 ## [1.31.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.0...v1.31.1) (2026-08-05)
 
 
