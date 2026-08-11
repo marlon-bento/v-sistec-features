@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.0...v1.31.1) (2026-08-05)
+
+
+### Bug Fixes
+
+* as colunas que não pode ser ocultadas não aparecem mais no dropdown por que é inútil ([08b7f8b](https://github.com/marlon-bento/v-sistec-features/commit/08b7f8bdcec1042ee856c40665fa47b3900f5817))
+
 # [1.31.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.30.0...v1.31.0) (2026-08-05)
 
 
