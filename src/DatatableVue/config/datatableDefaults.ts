@@ -49,12 +49,12 @@ export const defaultDataTableConfig: DataTableGlobalConfig = {
     placeholder_search: 'Buscar...',
 
     // === CLASSES  ===
-    class_table: '',
-    class_pagination: '',
-    class_container: '',
-    class_content: '',
-    class_filters: '',
-    class_page_size: '',
+    class_table: undefined,
+    class_pagination: undefined,
+    class_container: undefined,
+    class_content: undefined,
+    class_filters: undefined,
+    class_page_size: undefined,
 
     // === CONFIGURAÇÃO DE API ===
     filter_param_name: 'filter',
