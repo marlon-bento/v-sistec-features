@@ -30,7 +30,7 @@ export function useDataTableConfig(props: VDataTableProps) {
             ...defaultDataTableConfig,       // 1º Camada: Prioridade Mínima (Valores Padrão)
             ...globalConfig,                 // 2º Camada: Prioridade Média (Valores Globais definidos por quem usa o plugin)
             ...propsPassadasPeloUsuario      // 3º Camada: Prioridade Máxima (O que o dev digitou na tela)
-        } as DataTablePropsWithDefaults;
+        } as DataTablePropsWithDefaults; 
     });
 
     return { options };
