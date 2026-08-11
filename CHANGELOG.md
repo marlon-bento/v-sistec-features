@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.2...v1.31.3) (2026-08-11)
+
+
+### Bug Fixes
+
+* para garantir que os globais funcionem e não acharem que tem algo em classes por começarem no default '', agora as props de estilo, começam com undefined pra só mudar se o usuário passar algo ([49fa4d1](https://github.com/marlon-bento/v-sistec-features/commit/49fa4d1718ff13d3f1cb5da5b0a74f5e8ac27463))
+
 ## [1.31.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.1...v1.31.2) (2026-08-11)
 
 
