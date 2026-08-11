@@ -3,7 +3,7 @@
 Responsável por mesclar as propriedades recebidas pelo componente VDataTable com a configuração global da aplicação.
 ========
 */
-import { computed, inject } from 'vue';
+import { computed, inject, getCurrentInstance } from 'vue';
 import { DATA_TABLE_CONFIG } from '@/DatatableVue/config/datatableConfig';
 import type { VDataTableProps, DataTablePropsWithDefaults } from '../types/v-data-table';
 import { defaultDataTableConfig } from '@/DatatableVue/config/datatableDefaults';
@@ -15,13 +15,19 @@ Por que é usada: Limpa o componente principal, isolando a lógica de fallback d
 */
 export function useDataTableConfig(props: VDataTableProps) {
     const globalConfig = inject(DATA_TABLE_CONFIG, {});
-
+    /* Instância interna para acesso ao Virtual DOM e leitura crua dos atributos */
+    const instance = getCurrentInstance();
     const options = computed<DataTablePropsWithDefaults>(() => {
-        // 1. Filtramos as props do componente para remover tudo que for "undefined".
-        // Se não fizermos isso, uma prop undefined vai esmagar a configuração global na hora de mesclar.
-        const propsPassadasPeloUsuario = Object.fromEntries(
-            Object.entries(props).filter(([_, valor]) => valor !== undefined)
-        );
+        const rawProps = instance?.vnode.props || {};
+        const propsPassadas = Object.keys(props).reduce((acc, key) => {
+            const kebabKey = key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+            const snakeToKebab = key.replace(/_/g, '-');
+            
+            if (key in rawProps || kebabKey in rawProps || snakeToKebab in rawProps) {
+                acc[key] = props[key as keyof VDataTableProps];
+            }
+            return acc;
+        }, {} as Record<string, any>);
 
         // 2. O Merge Dinâmico!
         // A ordem importa! O que vem por último sobrescreve o anterior. 
@@ -29,7 +35,7 @@ export function useDataTableConfig(props: VDataTableProps) {
         return {
             ...defaultDataTableConfig,       // 1º Camada: Prioridade Mínima (Valores Padrão)
             ...globalConfig,                 // 2º Camada: Prioridade Média (Valores Globais definidos por quem usa o plugin)
-            ...propsPassadasPeloUsuario      // 3º Camada: Prioridade Máxima (O que o dev digitou na tela)
+            ...propsPassadas      // 3º Camada: Prioridade Máxima (O que o dev digitou na tela)
         } as DataTablePropsWithDefaults; 
     });
 

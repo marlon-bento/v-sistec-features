@@ -267,7 +267,7 @@ import VDataTableLoading from './VDataTableLoading.vue';
 import VThDataTable from './VThDataTable.vue';
 import { buildIcons } from '@/utils/svgFactory'
 import { svgs } from '@/DatatableVue/style/svgs'
-import { defaultDataTableConfig } from '@/DatatableVue/config/datatableDefaults';
+
 const icons = buildIcons(svgs)
 /* 
 Variável responsável por indicar se o componente já foi totalmente montado no DOM.
@@ -285,12 +285,11 @@ const {
 } = useImagePreview();
 
 /* 
-Constante que define as props do componente com seus valores padrão.
-Por que é usada: Recebe as propriedades enviadas pelo pai e previne que o Vue converta booleanos não declarados para false, aplicando nosso defaultDataTableConfig.
+Propriedades do componente instanciadas de forma limpa.
 */
-const props = withDefaults(defineProps<VDataTableProps>(), defaultDataTableConfig as any);
+const props = defineProps<VDataTableProps>();
 // mescla a prop com o padrão e o global definido pelo usuario
-const { options } = useDataTableConfig(props as unknown as VDataTableProps);
+const { options } = useDataTableConfig(props);
 
 const emit = defineEmits(['tradePage', 'beforeFetch', 'afterFetch', 'clickedClearSearch']);
 
