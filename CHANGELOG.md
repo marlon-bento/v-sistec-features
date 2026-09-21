@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.31.5](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.4...v1.31.5) (2026-09-17)
+
+
+### Bug Fixes
+
+* arrumando erro no npm ci ([26d01ca](https://github.com/marlon-bento/v-sistec-features/commit/26d01ca86881ffae68d5fd04090172908d358b81))
+* colocando pra aceitar mais versões do pinia ([2564674](https://github.com/marlon-bento/v-sistec-features/commit/2564674cdb5d8ffcc9734d6fd549dd8b55473659))
+
 ## [1.31.4](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.3...v1.31.4) (2026-08-11)
 
 
