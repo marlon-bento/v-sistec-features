@@ -25,6 +25,7 @@ export default defineConfig({
         core: path.resolve(__dirname, 'src/core/index.ts'),
         vDataTable: path.resolve(__dirname, 'src/DatatableVue/index.ts'),
         vDataPage: path.resolve(__dirname, 'src/DataPageVue/index.ts'),
+        vDataAgenda: path.resolve(__dirname, 'src/DataAgenda/index.ts'),
         iframeCommunicator: path.resolve(__dirname, 'src/iframeCommunicator/index.ts'),
         Pagination: path.resolve(__dirname, 'src/Pagination/index.ts'),
         toast: path.resolve(__dirname, 'src/toast/index.ts'),
