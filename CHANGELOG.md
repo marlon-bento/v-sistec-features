@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.6](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.5...v1.31.6) (2026-10-08)
+
+
+### Bug Fixes
+
+* rando cores da agenda pra funcionar em varios themas ([65a4802](https://github.com/marlon-bento/v-sistec-features/commit/65a48021a662bae57e43f9e5f05a4914726b68fa))
+
 ## [1.31.5](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.4...v1.31.5) (2026-09-17)
 
 
