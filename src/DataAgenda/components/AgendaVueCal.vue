@@ -262,26 +262,53 @@ const horasBloqueadasNativas = computed(() => {
   </div>
 </template>
 <style scoped>
-.wrapper-calendario { display: flex; flex-direction: column; flex-grow: 1; height: 100%; overflow: hidden; background: #ffffff; }
-.calendario-principal { --vuecal-weekday-bar-size: 75px !important; background: #ffffff; flex-grow: 1; height: 100%; overflow: hidden; border-radius: 0 !important; border: none !important; box-shadow: none !important; }
+.wrapper-calendario { display: flex; flex-direction: column; flex-grow: 1; height: 100%; overflow: hidden; background: var(--bg-primary); }
+.calendario-principal { --vuecal-weekday-bar-size: 75px !important; background: var(--bg-primary); flex-grow: 1; height: 100%; overflow: hidden; border-radius: 0 !important; border: none !important; box-shadow: none !important; }
 
 :deep(.vuecal__header), :deep(.vuecal__title-bar) { display: none !important; }
-:deep(.vuecal__weekdays-headings) { border-bottom: 1px solid #e0e0e0; background-color: #ffffff; }
-:deep(.vuecal__weekday) { background-color: #ffffff; justify-content: center; border-right: 1px solid #e0e0e0; padding: 0; }
+:deep(.vuecal__weekdays-headings) { border-bottom: 1px solid var(--border-light); background-color: var(--bg-primary); color: var(--text-primary); }
+:deep(.vuecal__weekday) { background-color: var(--bg-primary); justify-content: center; border-right: 1px solid var(--border-light); padding: 0; }
 :deep(.vuecal__weekday:last-child) { border-right: none; }
 .cabecalho-dia-customizado { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; padding: 8px 0; }
-.nome-dia { font-size: 13px; color: #555; margin-bottom: 2px; font-weight: 500; }
-.numero-dia { font-size: 22px; color: #333; font-weight: 400; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid transparent; transition: all 0.2s ease; }
-.numero-dia.dia-hoje { background-color: #eaf1fb; border-color: transparent; color: #1a73e8; }
-.numero-dia.dia-hoje.dia-selecionado { background-color: #c2e7ff; color: #001d35; }
-.numero-dia:not(.dia-hoje).dia-selecionado { background-color: #f0f2f5; border-color: transparent; color: #333; }
+.nome-dia { font-size: 13px; color: var(--text-secondary); margin-bottom: 2px; font-weight: 500; }
+.numero-dia { font-size: 22px; color: var(--text-primary); font-weight: 400; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid transparent; transition: all 0.2s ease; }
+.numero-dia.dia-hoje { background-color: var(--bg-hover); border-color: transparent; color: var(--color-brand); }
+.numero-dia.dia-hoje.dia-selecionado { background-color: var(--color-brand-light); color: var(--color-brand); }
+.numero-dia:not(.dia-hoje).dia-selecionado { background-color: var(--bg-secondary); border-color: transparent; color: var(--text-primary); }
 :deep(.vuecal__scrollable-wrap), :deep(.vuecal__scrollable) { padding-top: 0 !important; margin-top: 0 !important; }
-:deep(.vuecal__cell--disabled) { background-color: rgba(0, 0, 0, 0.04) !important; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.02) 10px, rgba(0, 0, 0, 0.02) 20px) !important; cursor: not-allowed !important; pointer-events: none; }
-:deep(.vuecal__special-hours.fora-do-expediente) { background-color: rgba(0, 0, 0, 0.03); background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.02) 10px, rgba(0, 0, 0, 0.02) 20px); pointer-events: none; }
-:deep(.vuecal__cell--selected) { background-color: rgba(26, 115, 232, 0.03) !important; border-left: 1px solid rgba(26, 115, 232, 0.15) !important; border-right: 1px solid rgba(26, 115, 232, 0.15) !important; }
-:deep(.vuecal__cell--today) { background-color: rgba(0, 0, 0, 0.02) !important; }
-:deep(.vuecal__event) { background-color: rgba(66, 165, 245, 0.9) !important; color: #ffffff !important; border: 1px solid #1e88e5 !important; border-radius: 4px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15); padding: 4px; transition: all 0.2s ease; }
-:deep(.vuecal__event:hover), :deep(.vuecal__event--focus) { box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); filter: brightness(1.1); }
-:deep(.vuecal__event.reserva-minha) { background-color: #4caf50 !important; border-color: #388e3c !important; color: white !important; }
-:deep(.vuecal__event.reserva-bloqueada) { background-color: #565656 !important; border-color: #424242 !important; color: white !important; font-weight: bold; opacity: 0.75; cursor: not-allowed !important; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.1) 10px, rgba(0, 0, 0, 0.1) 20px) !important; }
+:deep(.vuecal__cell--disabled) { background-color: var(--bg-secondary) !important; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.02) 10px, rgba(0, 0, 0, 0.02) 20px) !important; cursor: not-allowed !important; pointer-events: none; border: 1px solid var(--border-light); }
+:deep(.vuecal__special-hours.fora-do-expediente) { background-color: var(--bg-secondary); background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.02) 10px, rgba(0, 0, 0, 0.02) 20px); pointer-events: none; }
+:deep(.vuecal__cell--selected) { background-color: var(--color-brand-light) !important; }
+:deep(.vuecal__cell--today) { background-color: var(--bg-hover) !important; }
+:deep(.vuecal__event) { background-color: var(--color-brand) !important; color: var(--text-inverse) !important; border: 1px solid var(--border-focus) !important; border-radius: 4px; box-shadow: var(--shadow-sm); padding: 4px; transition: all 0.2s ease; }
+:deep(.vuecal__event:hover), :deep(.vuecal__event--focus) { box-shadow: var(--shadow-float); filter: brightness(1.1); }
+:deep(.vuecal__event.reserva-minha) { background-color: var(--color-success) !important; border-color: var(--color-success) !important; color: var(--text-inverse) !important; }
+:deep(.vuecal__event.reserva-bloqueada) { background-color: var(--border-editor) !important; border-color: var(--border-light) !important; color: var(--text-primary) !important; font-weight: bold; opacity: 0.75; cursor: not-allowed !important; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.1) 10px, rgba(0, 0, 0, 0.1) 20px) !important; }
+/* Correção da coluna de horas lateral */
+:deep(.vuecal__time-column) {
+    background-color: var(--bg-primary) !important;
+    border-right: 1px solid var(--border-editor) !important;
+}
+:deep(.vuecal__time-cell) {
+    color: var(--text-secondary) !important;
+}
+:deep(.vuecal__time-cell-line::before),
+:deep(.vuecal__cell::before) {
+    border-color: var(--border-editor) !important;
+}
+/* Garante que o fundo das células normais não puxe o branco padrão */
+:deep(.vuecal__cell) {
+    background-color: transparent !important;
+    border-right: 1px solid var(--border-editor) !important;
+}
+
+:deep(.vuecal__now-line) {
+    color: var(--text-primary) !important;
+}
+:deep(.vuecal__now-line span) {
+    color: var(--text-primary) !important;
+}
+:deep(.vuecal__cell::before) {
+    border-color: var(--border-light) !important;
+}
 </style>

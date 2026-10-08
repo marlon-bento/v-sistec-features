@@ -11,8 +11,6 @@ const api = inject('api-instance-agenda') as any
 const props = defineProps<{
     alternarMenu: () => void;
     irParaHoje: () => void;
-    periodoAnterior: () => void;
-    periodoProximo: () => void;
     mudarVisao: (visao: string) => void;
 }>();
 
@@ -26,9 +24,12 @@ const textoPeriodo = computed(() => {
     }
     return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 });
+
+
 </script>
 
 <template>
+ 
   <div class="bloco-esquerda">
     <button class="btn-toggle" @click="props.alternarMenu" title="Alternar Menu">
       <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -51,21 +52,7 @@ const textoPeriodo = computed(() => {
         Hoje
       </button>
 
-      <div class="grupo-setas">
-        <button @click="props.periodoAnterior" title="Anterior">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-            <path d="M15 6l-6 6l6 6"></path>
-          </svg>
-        </button>
-
-        <button @click="props.periodoProximo" title="Próximo">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-            <path d="M9 6l6 6l-6 6"></path>
-          </svg>
-        </button>
-      </div>
+      
 
       <span class="titulo-periodo">{{ textoPeriodo }}</span>
     </div>
@@ -89,19 +76,101 @@ const textoPeriodo = computed(() => {
 </template>
 
 <style scoped>
-.bloco-esquerda, .bloco-direita { display: flex; align-items: center; gap: 16px; }
-.btn-toggle { background: transparent; border: none; cursor: pointer; color: #555; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%; transition: background 0.2s; }
-.btn-toggle:hover { background: #f0f2f5; }
-.navegacao-topo { display: flex; align-items: center; gap: 12px; }
-.btn-hoje { background: transparent; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; color: #003366; display: flex; align-items: center; gap: 6px; transition: background 0.2s; }
-.btn-hoje:hover { background: #eaf1fb; }
-.grupo-setas { display: flex; gap: 4px; }
-.grupo-setas button { background: transparent; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; color: #444746; display: flex; align-items: center; justify-content: center; transition: background 0.2s, color 0.2s; }
-.grupo-setas button:hover { background: #eaf1fb; color: #1a73e8; }
-.titulo-periodo { font-weight: 600; font-size: 1.1rem; color: #333; text-transform: capitalize; margin-left: 8px; }
-.menu-visoes { display: inline-flex; background-color: #f0f2f5; border-radius: 8px; padding: 4px; gap: 2px; }
-.menu-visoes button { background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 16px; font-size: 0.9rem; cursor: pointer; font-weight: 500; color: #666; transition: all 0.2s; }
-.menu-visoes button.ativo { background-color: #ffffff; border-color: #dcdcdc; color: #1a73e8; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); }
-.seletor-recurso { display: flex; align-items: center; font-size: 14px; color: #555; }
-.seletor-recurso select { margin-left: 10px; padding: 6px 12px; border: 1px solid #ccc; border-radius: 8px; background-color: #fff; cursor: pointer; }
+.bloco-esquerda, .bloco-direita { 
+    display: flex; 
+    align-items: center; 
+    gap: 16px; 
+}
+.btn-toggle { 
+    background: transparent; 
+    border: none; 
+    cursor: pointer; 
+    color: var(--text-secondary); 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 8px; 
+    border-radius: 50%; 
+    transition: background 0.2s; 
+}
+.btn-toggle:hover { 
+    background: var(--bg-hover); 
+}
+.navegacao-topo { 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+}
+.btn-hoje { 
+    background: transparent; 
+    border: none; 
+    padding: 8px 16px; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-size: 0.9rem; 
+    font-weight: 500; 
+    color: var(--color-brand); 
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    transition: background 0.2s; 
+}
+.btn-hoje:hover { 
+    background: var(--color-brand-light); 
+}
+
+.titulo-periodo { 
+    font-weight: 600; 
+    font-size: 1.1rem; 
+    color: var(--text-primary); 
+    text-transform: capitalize; 
+    margin-left: 8px; 
+}
+
+/* Alternador Dia / Semana */
+.menu-visoes { 
+    display: inline-flex; 
+    background-color: var(--bg-secondary); 
+    border-radius: 8px; 
+    padding: 4px; 
+    gap: 2px; 
+}
+.menu-visoes button { 
+    background: transparent; 
+    border: 1px solid transparent; 
+    border-radius: 6px; 
+    padding: 6px 16px; 
+    font-size: 0.9rem; 
+    cursor: pointer; 
+    font-weight: 500; 
+    color: var(--text-secondary); 
+    transition: all 0.2s; 
+}
+.menu-visoes button.ativo { 
+    background-color: var(--bg-primary); 
+    border-color: var(--border-light); 
+    color: var(--color-brand); 
+    box-shadow: var(--shadow-sm); 
+}
+
+/* Caixa de seleção do Recurso */
+.seletor-recurso { 
+    display: flex; 
+    align-items: center; 
+    font-size: 14px; 
+    color: var(--text-secondary); 
+}
+.seletor-recurso select { 
+    margin-left: 10px; 
+    padding: 6px 12px; 
+    border: 1px solid var(--border-light); 
+    border-radius: 8px; 
+    background-color: var(--bg-primary); 
+    color: var(--text-primary); 
+    cursor: pointer; 
+}
+.seletor-recurso select option {
+    background-color: var(--bg-modal);
+    color: var(--text-primary);
+}
 </style>

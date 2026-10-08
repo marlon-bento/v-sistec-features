@@ -192,7 +192,7 @@ const iniciarReservaMatrix = (recursoId: number, slot: any) => {
     <ModalReserva
       v-model="modalAberto"
       :dados-iniciais="dadosParaModal"
-      :usa-interceptador="usaInterceptador"
+      :usa-interceptador="props.usaInterceptador"
       @before-save="$emit('before-save', $event)"
       @salvo="dispararBuscaMatrix"
     >
@@ -311,47 +311,50 @@ const iniciarReservaMatrix = (recursoId: number, slot: any) => {
 </template>
 
 <style scoped>
-.matriz-container { width: 100%; height: 100%; background: #ffffff; display: flex; flex-direction: column; }
+
+.matriz-container { width: 100%; height: 100%; background: var(--bg-primary); display: flex; flex-direction: column; }
 .matriz-conteudo { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
-.aviso-vazio { display: flex; flex-direction: column; justify-content: center; align-items: center; flex-grow: 1; color: #64748b; font-weight: 500; font-size: 1rem; gap: 12px; }
-.spinner { width: 32px; height: 32px; border: 3px solid #f1f5f9; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; }
+.aviso-vazio { display: flex; flex-direction: column; justify-content: center; align-items: center; flex-grow: 1; color: var(--text-secondary); font-weight: 500; font-size: 1rem; gap: 12px; }
+.spinner { width: 32px; height: 32px; border: 3px solid var(--border-light); border-top-color: var(--color-brand); border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.barra-filtros { padding: 12px 24px; background-color: #ffffff; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; }
+.barra-filtros { padding: 12px 24px; background-color: var(--bg-primary); border-bottom: 1px solid var(--border-light); flex-shrink: 0; }
 .dropdown-container { position: relative; display: inline-block; }
-.btn-dropdown { display: flex; align-items: center; gap: 10px; background: #f8fafc; border: 1px solid #cbd5e1; padding: 8px 16px; border-radius: 8px; color: #334155; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s ease; }
-.btn-dropdown:hover { background: #f1f5f9; border-color: #94a3b8; }
+.btn-dropdown { display: flex; align-items: center; gap: 10px; background: var(--bg-secondary); border: 1px solid var(--border-light); padding: 8px 16px; border-radius: 8px; color: var(--text-primary); font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s ease; }
+.btn-dropdown:hover { background: var(--bg-hover); border-color: var(--border-editor); }
 .icone-seta { transition: transform 0.2s ease; }
 .icone-seta.girado { transform: rotate(180deg); }
 .backdrop-invisivel { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 40; }
-.dropdown-menu { position: absolute; top: 100%; left: 0; margin-top: 8px; width: 260px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); z-index: 50; display: flex; flex-direction: column; overflow: hidden; }
-.dropdown-acoes { display: flex; border-bottom: 1px solid #f1f5f9; background: #f8fafc; }
-.btn-acao { flex: 1; padding: 10px; background: transparent; border: none; font-size: 12px; font-weight: 600; color: #3b82f6; cursor: pointer; transition: background 0.2s; }
-.btn-acao:hover { background: #e0f2fe; }
-.btn-acao:first-child { border-right: 1px solid #f1f5f9; }
+.dropdown-menu { position: absolute; top: 100%; left: 0; margin-top: 8px; width: 260px; background: var(--bg-modal); border: 1px solid var(--border-light); border-radius: 10px; box-shadow: var(--shadow-float); z-index: 50; display: flex; flex-direction: column; overflow: hidden; }
+.dropdown-acoes { display: flex; border-bottom: 1px solid var(--border-light); background: var(--bg-secondary); }
+.btn-acao { flex: 1; padding: 10px; background: transparent; border: none; font-size: 12px; font-weight: 600; color: var(--color-brand); cursor: pointer; transition: background 0.2s; }
+.btn-acao:hover { background: var(--color-brand-light); }
+.btn-acao:first-child { border-right: 1px solid var(--border-light); }
 .dropdown-lista { max-height: 250px; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 2px; }
-.dropdown-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; color: #475569; transition: background 0.2s; }
-.dropdown-item:hover { background: #f1f5f9; }
-.dropdown-item.ativo { background: #f0f9ff; color: #0369a1; }
-.checkbox-estiloso { appearance: none; -webkit-appearance: none; width: 16px; height: 16px; border: 2px solid #94a3b8; border-radius: 4px; display: grid; place-content: center; cursor: pointer; transition: all 0.2s ease; background: #ffffff; flex-shrink: 0; }
-.dropdown-item.ativo .checkbox-estiloso { background: #3b82f6; border-color: #3b82f6; }
-.checkbox-estiloso::before { content: ""; width: 10px; height: 10px; transform: scale(0); transition: 0.12s transform ease-in-out; background-color: #ffffff; clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%); }
+.dropdown-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text-primary); transition: background 0.2s; }
+.dropdown-item:hover { background: var(--bg-hover); }
+.dropdown-item.ativo { background: var(--color-brand-light); color: var(--color-brand); }
+.checkbox-estiloso { appearance: none; -webkit-appearance: none; width: 16px; height: 16px; border: 2px solid var(--border-editor); border-radius: 4px; display: grid; place-content: center; cursor: pointer; transition: all 0.2s ease; background: var(--bg-primary); flex-shrink: 0; }
+.dropdown-item.ativo .checkbox-estiloso { background: var(--color-brand); border-color: var(--color-brand); }
+.checkbox-estiloso::before { content: ""; width: 10px; height: 10px; transform: scale(0); transition: 0.12s transform ease-in-out; background-color: var(--text-inverse); clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%); }
 .dropdown-item.ativo .checkbox-estiloso::before { transform: scale(1); }
-.tabela-wrapper { flex-grow: 1; overflow: auto; background: #f8fafc; }
+
+.tabela-wrapper { flex-grow: 1; overflow: auto; background: var(--bg-secondary); }
 .tabela-premium { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; text-align: center; table-layout: fixed; }
-.tabela-premium th, .tabela-premium td { padding: 3px; min-width: 65px; height: 48px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; }
-.tabela-premium th:first-child, .tabela-premium td:first-child { border-left: 1px solid #e2e8f0; }
-.tabela-premium thead th { border-top: 1px solid #e2e8f0; background: #ffffff; position: sticky; top: 0; z-index: 3; font-weight: 700; color: #475569; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
-.coluna-fixa { width: 200px; text-align: left; background: #ffffff; position: sticky; left: 0; z-index: 1; }
+.tabela-premium th, .tabela-premium td { padding: 3px; min-width: 65px; height: 48px; border-bottom: 1px solid var(--border-light); border-right: 1px solid var(--border-light); }
+.tabela-premium th:first-child, .tabela-premium td:first-child { border-left: 1px solid var(--border-light); }
+.tabela-premium thead th { border-top: 1px solid var(--border-light); background: var(--bg-primary); position: sticky; top: 0; z-index: 3; font-weight: 700; color: var(--text-primary); box-shadow: var(--shadow-sm); }
+.coluna-fixa { width: 200px; text-align: left; background: var(--bg-primary); position: sticky; left: 0; z-index: 1; }
 .cabecalho-canto { z-index: 4 !important; padding-left: 24px !important; }
 .linha-data td { background: transparent !important; border: none !important; padding: 8px 12px !important; }
-.barra-data-full { display: flex; align-items: center; width: 100%; background: #334155; color: #ffffff; padding: 8px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); box-sizing: border-box; }
+.barra-data-full { display: flex; align-items: center; width: 100%; background: var(--bg-primary); color: var(--text-primary); padding: 8px 0; border-radius: 8px; box-shadow: var(--shadow-sm); box-sizing: border-box; border: 1px solid var(--border-light); }
 .texto-data { position: sticky; left: 24px; font-weight: 700; font-size: 13.5px; text-transform: capitalize; letter-spacing: 0.5px; }
-.nome-recurso { font-weight: 600; color: #334155; background: #ffffff !important; padding-left: 24px !important; box-shadow: 4px 0 8px rgba(0,0,0,0.02); }
+.nome-recurso { font-weight: 600; color: var(--text-primary); background: var(--bg-primary) !important; padding-left: 24px !important; box-shadow: 4px 0 8px rgba(0,0,0,0.02); }
 .bloco-tempo { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: 6px; transition: all 0.2s ease; box-sizing: border-box; padding: 4px; }
-.bloqueado { background-color: #cbd5e1; background-image: repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(15, 23, 42, 0.08) 8px, rgba(15, 23, 42, 0.08) 16px); cursor: not-allowed; border: 1px solid #94a3b8; }
+.bloqueado { background-color: var(--border-light); background-image: repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0, 0, 0, 0.08) 8px, rgba(0, 0, 0, 0.08) 16px); cursor: not-allowed; border: 1px solid var(--border-editor); }
 .livre { background-color: transparent; cursor: pointer; }
-.livre:hover { background-color: #e0f2fe; box-shadow: inset 0 0 0 1px #7dd3fc; }
-.reservado { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.25); border: 1px solid #1d4ed8; }
-.api-forjada { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.25); border: 1px solid #047857; }
-.etiqueta-reserva { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+.livre:hover { background-color: var(--color-brand-light); box-shadow: inset 0 0 0 1px var(--color-brand); }
+.reservado { background: var(--color-brand); color: var(--text-inverse); border: 1px solid var(--color-brand); }
+.api-forjada { background: var(--color-success); color: var(--text-inverse); border: 1px solid var(--color-success); }
+.etiqueta-reserva { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%; font-weight: 600; }
+
 </style>

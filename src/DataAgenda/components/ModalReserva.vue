@@ -331,253 +331,36 @@ const salvarReserva = async () => {
 </template>
 
 <style scoped>
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1050;
-    backdrop-filter: blur(2px);
-}
-
-.modal-card {
-    background: #ffffff;
-    width: 100%;
-    max-width: 480px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    position: relative;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 20px;
-    border-bottom: 1px solid #f0f0f0;
-}
-
-.modal-header h3 {
-    margin: 0;
-    font-size: 16px;
-    color: #333;
-    font-weight: 600;
-}
-
-.btn-fechar {
-    background: transparent;
-    border: none;
-    font-size: 24px;
-    color: #999;
-    cursor: pointer;
-    line-height: 1;
-    transition: color 0.2s;
-}
-
-.btn-fechar:hover {
-    color: #333;
-}
-
-.modal-body {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.form-group label {
-    font-size: 13px;
-    color: #555;
-    font-weight: 500;
-}
-
-.form-group input[type="text"],
-.form-group select,
-.input-group input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #dcdcdc;
-    border-radius: 6px;
-    font-size: 14px;
-    color: #333;
-    box-sizing: border-box;
-    transition: border-color 0.2s;
-}
-
-.form-group input[type="text"]:focus,
-.input-group input:focus {
-    border-color: #1a73e8;
-    outline: none;
-}
-
-.form-group select:disabled {
-    background-color: #f5f5f5;
-    color: #666;
-    cursor: not-allowed;
-    opacity: 1;
-}
-
-.form-row {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.metade {
-    flex: 1;
-}
-
-.input-group {
-    display: flex;
-    gap: 8px;
-}
-
-.modal-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 20px;
-    border-top: 1px solid #f0f0f0;
-    background: #fafafa;
-}
-
-.acoes-validacao {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.acoes-salvar {
-    display: flex;
-    gap: 12px;
-}
-
-.aviso-validar {
-    font-size: 12px;
-    color: #e74c3c;
-    font-weight: 600;
-}
-
-.btn-validar {
-    background: #fdf2f0;
-    border: 1px solid #fadbd8;
-    color: #c0392b;
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    padding: 6px 12px;
-    border-radius: 6px;
-    transition: background 0.2s;
-}
-
-.btn-validar:hover {
-    background: #fadbd8;
-}
-
-.btn-horarios {
-    background: #f0f4f8;
-    border: 1px solid #c2e7ff;
-    color: #003366;
-    font-weight: 600;
-    font-size: 13px;
-    cursor: pointer;
-    padding: 6px 12px;
-    border-radius: 6px;
-    transition: background 0.2s;
-}
-
-.btn-horarios:hover {
-    background: #eaf1fb;
-}
-
-.btn-cancelar {
-    background: transparent;
-    border: none;
-    color: #1a73e8;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    padding: 8px 16px;
-    border-radius: 6px;
-    transition: background 0.2s;
-}
-
-.btn-cancelar:hover {
-    background: #f0f4f8;
-}
-
-.btn-salvar {
-    background: #1a73e8;
-    border: none;
-    color: #ffffff;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    padding: 8px 24px;
-    border-radius: 6px;
-    transition: background 0.2s;
-}
-
-.btn-salvar:hover:not(:disabled) {
-    background: #1557b0;
-}
-
-.btn-salvar:disabled {
-    background: #a0c1f2;
-    cursor: not-allowed;
-}
-
-.horarios-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #ffffff;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-}
-
-.horarios-lista-container {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-    margin: 0;
-}
-
-.horarios-lista {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.horarios-lista li {
-    background: #f0f4f8;
-    padding: 12px 16px;
-    border-radius: 8px;
-    color: #003366;
-    font-weight: 500;
-    font-size: 14px;
-    text-align: center;
-    border: 1px solid #c2e7ff;
-}
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center; z-index: 1050; backdrop-filter: blur(2px); }
+.modal-card { background: var(--bg-modal); width: 100%; max-width: 480px; border-radius: 12px; box-shadow: var(--shadow-float); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-light); background: var(--bg-primary); }
+.modal-header h3 { margin: 0; font-size: 16px; color: var(--text-primary); font-weight: 600; }
+.btn-fechar { background: transparent; border: none; font-size: 24px; color: var(--text-secondary); cursor: pointer; line-height: 1; transition: color 0.2s; }
+.btn-fechar:hover { color: var(--text-primary); }
+.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; background: var(--bg-primary); }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
+.form-group input[type="text"], .form-group select, .input-group input { width: 100%; padding: 10px; border: 1px solid var(--border-light); background: var(--bg-primary); border-radius: 6px; font-size: 14px; color: var(--text-primary); box-sizing: border-box; transition: border-color 0.2s; }
+.form-group input[type="text"]:focus, .input-group input:focus { border-color: var(--color-brand); outline: none; }
+.form-group select:disabled { background-color: var(--bg-secondary); color: var(--text-secondary); cursor: not-allowed; opacity: 1; }
+.form-row { display: flex; flex-direction: column; gap: 16px; }
+.metade { flex: 1; }
+.input-group { display: flex; gap: 8px; }
+.modal-footer { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-top: 1px solid var(--border-light); background: var(--bg-secondary); }
+.acoes-validacao { display: flex; align-items: center; gap: 10px; }
+.acoes-salvar { display: flex; gap: 12px; }
+.aviso-validar { font-size: 12px; color: var(--color-danger); font-weight: 600; }
+.btn-validar { background: transparent; border: 1px solid var(--color-danger); color: var(--color-danger); font-weight: 600; font-size: 13px; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: background 0.2s; }
+.btn-validar:hover { background: rgba(239, 68, 68, 0.1); }
+.btn-horarios { background: var(--bg-primary); border: 1px solid var(--border-light); color: var(--text-primary); font-weight: 600; font-size: 13px; cursor: pointer; padding: 6px 12px; border-radius: 6px; transition: background 0.2s; }
+.btn-horarios:hover { background: var(--bg-hover); }
+.btn-cancelar { background: transparent; border: none; color: var(--color-brand); font-weight: 600; font-size: 14px; cursor: pointer; padding: 8px 16px; border-radius: 6px; transition: background 0.2s; }
+.btn-cancelar:hover { background: var(--color-brand-light); }
+.btn-salvar { background: var(--color-brand); border: none; color: var(--text-inverse); font-weight: 600; font-size: 14px; cursor: pointer; padding: 8px 24px; border-radius: 6px; transition: background 0.2s; }
+.btn-salvar:hover:not(:disabled) { filter: brightness(0.9); }
+.btn-salvar:disabled { opacity: 0.6; cursor: not-allowed; }
+.horarios-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-primary); z-index: 10; display: flex; flex-direction: column; }
+.horarios-lista-container { flex: 1; overflow-y: auto; padding: 20px; margin: 0; }
+.horarios-lista { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.horarios-lista li { background: var(--bg-secondary); padding: 12px 16px; border-radius: 8px; color: var(--text-primary); font-weight: 500; font-size: 14px; text-align: center; border: 1px solid var(--border-light); }
 </style>
