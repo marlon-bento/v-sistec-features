@@ -1,12 +1,21 @@
+<!--
+========
+Este arquivo representa a visualização em grade (matriz) da agenda.
+Ele cruza múltiplos recursos horizontalmente e intervalos de tempo verticalmente,
+permitindo a comparação de disponibilidade e criação rápida de reservas através da interface customizada.
+========
+-->
 <script setup lang="ts">
 import { computed, onMounted, watch, ref, inject } from 'vue';
 import { useAgenda } from '../composables/useAgenda';
 import ModalReserva from './ModalReserva.vue';
+
 const props = defineProps({
     usaInterceptador: { type: Boolean, default: false },
-    
+    tituloPadrao: { type: String, default: '' }
 });
-const api = inject('api-instance-agenda') as any; // Recebe a instância do v-api-fetch do projeto consumidor
+
+const api = inject('api-instance-agenda') as any;
 const emit = defineEmits(['before-save']);
 const { 
     dadosMatrix, 
@@ -17,13 +26,23 @@ const {
     converterParaUtc 
 } = useAgenda(api);
 
+// Indica se a matriz está buscando e processando dados no momento de montagem ou atualização.
 const carregando = ref(false);
+
+// Armazena a lista de IDs de recursos (em formato string) que estão ativados no filtro da grade.
 const recursosVisiveisIds = ref<string[]>([]);
+
+// Controla a visibilidade do dropdown que permite isolar a exibição de salas/recursos.
 const menuFiltroAberto = ref(false);
 
+// Controla o estado de abertura da modal instanciada para agendar o bloco da tabela.
 const modalAberto = ref(false);
+
+// Armazena os parâmetros extraídos do bloco para fornecer à interface de inserção.
 const dadosParaModal = ref({});
 
+// Recebe nada. Devolve uma Promise assíncrona.
+// É usada para deduzir o range semanal com base no foco de data selecionado, buscar o esqueleto de slots na API e puxar as marcações vigentes.
 const dispararBuscaMatrix = async () => {
     const idAgenda = agendaSelecionada.value;
     if (!idAgenda) return;
@@ -54,15 +73,10 @@ const dispararBuscaMatrix = async () => {
     const strInicio = formatar(dataInicio);
     const strFim = formatar(dataFim);
 
-    // CORREÇÃO: Converter para UTC e forçar o URL Encoding do símbolo "+".
-    // Isso envia ex: "2026-09-10T03:00:00+0000" e impede o LibreBooking de
-    // deduzir o fuso e devolver blocos iniciados às 21:00 do dia anterior.
     const inicioUtc = encodeURIComponent(converterParaUtc(strInicio, '00:00'));
     const fimUtc = encodeURIComponent(converterParaUtc(strFim, '23:59'));
     
     await buscarSlotsMatrix(idAgenda, inicioUtc, fimUtc);
-    
-    // A rota normal de reservas pode não precisar do Encode, mas a de Slots do Librebooking é estrita
     await buscarReservas(`${strInicio}T00:00:00`, `${strFim}T23:59:59`);
     carregando.value = false;
 };
@@ -71,6 +85,7 @@ onMounted(() => { dispararBuscaMatrix(); });
 
 watch([dataSelecionada, agendaSelecionada], () => { dispararBuscaMatrix(); });
 
+// Armazena a matriz reativa com os recursos devolvidos pela requisição que pertencem à data atual iterada.
 const recursosPermitidosNaMatriz = computed(() => {
     if (!dadosMatrix.value?.dates?.[0]?.resources) return [];
     return dadosMatrix.value.dates[0].resources;
@@ -80,19 +95,26 @@ watch(recursosPermitidosNaMatriz, (novosRecursos) => {
     recursosVisiveisIds.value = novosRecursos.map((r: any) => String(r.resourceId));
 }, { immediate: true });
 
+// Recebe nada. Devolve nada.
+// É usada para assinalar a visibilidade de todos os recursos detectados sem a necessidade de cliques isolados.
 const selecionarTodos = () => {
     recursosVisiveisIds.value = recursosPermitidosNaMatriz.value.map((r: any) => String(r.resourceId));
 };
 
+// Recebe nada. Devolve nada.
+// É usada para zerar a lista de visualização, exigindo a demarcação apenas do recurso procurado.
 const limparFiltros = () => {
     recursosVisiveisIds.value = [];
 };
 
+// Recebe uma data contida no padrão string ISO. Devolve a somatória inteira de tempo expressa em minutos.
+// É usada para simplificar e realizar o posicionamento aritmético de células baseando-se em grade decimal.
 const extrairMinutos = (isoStr: string) => {
     const d = new Date(isoStr);
     return d.getHours() * 60 + d.getMinutes();
 };
 
+// Armazena um Set com todos os registros de interrupções, montando uma chave ordenada de minutos absolutos base da grade horizontal.
 const horariosGlobaisEmMinutos = computed(() => {
     if (!dadosMatrix.value?.dates) return [];
     const setMinutos = new Set<number>();
@@ -108,6 +130,7 @@ const horariosGlobaisEmMinutos = computed(() => {
     return Array.from(setMinutos).sort((a, b) => a - b);
 });
 
+// Armazena a tabela unida de propriedades que computa o tamanho visual de cada slot usando como referência base as quebras registradas globalmente.
 const matrizProcessada = computed(() => {
     if (!dadosMatrix.value?.dates || horariosGlobaisEmMinutos.value.length === 0) return [];
     
@@ -144,21 +167,25 @@ const matrizProcessada = computed(() => {
     }).filter((dia: any) => dia !== null);
 });
 
+// Recebe a quantia cumulativa de minutos. Devolve a respectiva anotação horária padronizada HH:MM.
+// É usada para rotular dinamicamente o topo das tabelas da grade de visão.
 const formatarHoraDeMinutos = (minutosTotais: number) => {
     const horas = Math.floor(minutosTotais / 60);
     const minutos = minutosTotais % 60;
     return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
 };
 
+// Recebe a identificação sequencial diária ISO. Devolve um texto capitalizado do dia atual.
+// É usada para seccionar agrupamentos ao delinear novos dias na tabela unificada.
 const formatarData = (isoData: string) => {
-    // CORREÇÃO: Corta a string estritamente nos 10 primeiros caracteres (YYYY-MM-DD)
-    // Isso garante que se a data vier no padrão UTC, ela não vai sofrer shift no front.
     const apenasData = String(isoData).substring(0, 10);
     const [ano, mes, dia] = apenasData.split('-');
     const data = new Date(Number(ano), Number(mes) - 1, Number(dia));
     return data.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
 };
 
+// Recebe a PK da tabela de laboratório e a árvore estruturada da área selecionada. Devolve nada.
+// É usada para processar aberturas de solicitações através dos botões vazados e renderizar o componente auxiliar sobre a tabela.
 const iniciarReservaMatrix = (recursoId: number, slot: any) => {
     if (!slot.isReservable || slot.isReserved) return;
 
@@ -187,13 +214,14 @@ const iniciarReservaMatrix = (recursoId: number, slot: any) => {
     modalAberto.value = true;
 };
 </script>
+
 <template>
   <div class="matriz-container">
     <ModalReserva
       v-model="modalAberto"
       :dados-iniciais="dadosParaModal"
       :usa-interceptador="props.usaInterceptador"
-      @before-save="$emit('before-save', $event)"
+      @before-save="$emit('before-save',$event)"
       @salvo="dispararBuscaMatrix"
     >
       <template #campos-extras>
@@ -293,7 +321,7 @@ const iniciarReservaMatrix = (recursoId: number, slot: any) => {
                     @click="iniciarReservaMatrix(recurso.resourceId, slot)"
                   >
                     <span class="etiqueta-reserva" v-if="slot.isReserved">
-                      {{ slot.reservation?.title || slot.label }}
+                      {{ slot.reservation?.title?.trim() || props.tituloPadrao }}
                     </span>
                   </div>
                 </td>
@@ -311,7 +339,6 @@ const iniciarReservaMatrix = (recursoId: number, slot: any) => {
 </template>
 
 <style scoped>
-
 .matriz-container { width: 100%; height: 100%; background: var(--bg-primary); display: flex; flex-direction: column; }
 .matriz-conteudo { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
 .aviso-vazio { display: flex; flex-direction: column; justify-content: center; align-items: center; flex-grow: 1; color: var(--text-secondary); font-weight: 500; font-size: 1rem; gap: 12px; }
@@ -356,5 +383,4 @@ const iniciarReservaMatrix = (recursoId: number, slot: any) => {
 .reservado { background: var(--color-brand); color: var(--text-inverse); border: 1px solid var(--color-brand); }
 .api-forjada { background: var(--color-success); color: var(--text-inverse); border: 1px solid var(--color-success); }
 .etiqueta-reserva { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%; font-weight: 600; }
-
 </style>

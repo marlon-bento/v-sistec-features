@@ -1,4 +1,4 @@
-<!-- 
+<!--
 ========
 Este arquivo representa o componente de modal para criação e edição de reservas em uma agenda.
 Ele gerencia o formulário de reserva, valida a disponibilidade de horários baseando-se na grade 
@@ -22,19 +22,19 @@ const {
     criarReserva, converterParaUtc, reservasBrutas
 } = useAgenda(api);
 
-// Indica se o formulário está em processo de salvamento.
+// Indica se o formulário está em processo de envio para a API.
 const salvando = ref(false);
 
-// Indica se os horários do formulário precisam ser validados contra a grade disponível.
+// Indica se os horários informados no formulário precisam ser validados contra a grade disponível.
 const precisaValidar = ref(false);
 
-// Controla a visibilidade da listagem de horários disponíveis no modal.
+// Controla a visibilidade da listagem visual de horários disponíveis sobreposta ao modal.
 const exibirHorariosModal = ref(false);
 
-// Armazena a lista de horários formatados que estão disponíveis para reserva.
+// Armazena a lista de horários formatados (em formato legível) que estão disponíveis para reserva na data escolhida.
 const horariosDisponiveisFormatados = ref<string[]>([]);
 
-// Armazena os dados atuais do formulário de reserva preenchidos pelo usuário.
+// Armazena os dados atuais do formulário de reserva manipulados pelo usuário.
 const formReserva = ref({
     resourceId: '',
     title: '',
@@ -44,14 +44,14 @@ const formReserva = ref({
     endTime: ''
 });
 
-// Recebe nada. Retorna nada.
-// Usada para habilitar a flag de validação de horário quando o usuário altera algum campo de data.
+// Recebe nada. Devolve nada.
+// É usada para acionar a flag de validação de horário sempre que o usuário alterar manualmente algum campo de data.
 const marcarComoAlterado = () => {
     precisaValidar.value = true;
 };
 
-// Recebe nada. Retorna nada.
-// Usada para consultar a grade de horários da agenda baseada no recurso e data selecionados e exibi-los no modal.
+// Recebe nada. Devolve nada.
+// É usada para consultar os intervalos da grade da agenda baseados no recurso e data selecionados, listando-os na interface.
 const mostrarHorariosPossiveis = () => {
     if (!formReserva.value.resourceId || !formReserva.value.startDate) {
         alert("Selecione um recurso e uma data para ver os horarios possiveis.");
@@ -88,8 +88,8 @@ const mostrarHorariosPossiveis = () => {
     exibirHorariosModal.value = true;
 };
 
-// Recebe um booleano silencioso (opcional). Retorna nada.
-// Usada para ajustar e corrigir o horário de início e fim da reserva com base no expediente disponível da agenda.
+// Recebe um booleano silencioso (opcional). Devolve nada.
+// É usada para ajustar e corrigir o horário de início e fim da reserva automaticamente, assegurando o alinhamento com a grade reservável da agenda.
 const ajustarHorarios = (silencioso = false) => {
     if (!formReserva.value.resourceId || !formReserva.value.startDate || !formReserva.value.startTime || !formReserva.value.endTime) return;
 
@@ -155,15 +155,15 @@ watch(() => props.modelValue, (aberto) => {
     }
 });
 
-// Recebe nada. Retorna nada.
-// Usada para emitir os eventos de fechamento da janela modal para o componente pai.
+// Recebe nada. Devolve nada.
+// É usada para emitir o evento de cancelamento e fechamento do modal para o componente pai.
 const fecharModal = () => {
     emit('update:modelValue', false);
     emit('cancelado');
 };
 
-// Recebe um objeto contendo os dados organizados da reserva. Retorna uma Promise resolvida ao fim da criação.
-// Usada para disparar o serviço da API e lidar com erros amigavelmente caso a criação falhe.
+// Recebe o payload final de agendamento em formato JSON. Devolve uma Promise.
+// É usada para despachar a requisição final para o serviço de API, finalizando a edição e informando eventuais erros.
 const executarCriacaoAPI = async (payloadParaEnviar: any) => {
     try {
         await criarReserva(payloadParaEnviar);
@@ -181,15 +181,10 @@ const executarCriacaoAPI = async (payloadParaEnviar: any) => {
     }
 };
 
-// Recebe nada. Retorna uma Promise caso proceda com o salvamento na API.
-// Usada para validar todo o preenchimento, checar conflitos de expediente e acionar o salvamento (API ou interceptador).
+// Recebe nada. Devolve uma Promise.
+// É usada para validar conflitos de horários em relação à lista carregada e disparar a lógica de salvamento nativa ou via interceptador.
 const salvarReserva = async () => {
     if (precisaValidar.value) return;
-
-    if (!formReserva.value.title.trim()) {
-        alert("O nome da reserva é obrigatório.");
-        return;
-    }
 
     const inicioNovaReserva = new Date(`${formReserva.value.startDate}T${formReserva.value.startTime}`);
     const fimNovaReserva = new Date(`${formReserva.value.endDate}T${formReserva.value.endTime}`);
@@ -223,7 +218,7 @@ const salvarReserva = async () => {
 
     const payloadBase = {
         resourceId: Number(formReserva.value.resourceId),
-        title: formReserva.value.title,
+        title: formReserva.value.title.trim(),
         startDateTime: converterParaUtc(formReserva.value.startDate, formReserva.value.startTime),
         endDateTime: converterParaUtc(formReserva.value.endDate, formReserva.value.endTime)
     };
@@ -249,7 +244,6 @@ const salvarReserva = async () => {
 </script>
 
 <template>
-  <!-- Todo o restante do template e style segue idêntico -->
   <div class="modal-overlay" v-if="modelValue" @mousedown.self="fecharModal">
     <div class="modal-card">
       <div class="modal-header">
@@ -259,7 +253,7 @@ const salvarReserva = async () => {
 
       <div class="modal-body">
         <div class="form-group">
-          <label>Nome da Reserva</label>
+          <label>Nome da Reserva (opcional)</label>
           <input type="text" v-model="formReserva.title" placeholder="Ex: Treinamento" autofocus />
         </div>
         
