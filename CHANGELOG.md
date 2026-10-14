@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.7](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.6...v1.31.7) (2026-10-14)
+
+
+### Bug Fixes
+
+* agora não é mais necessário mandar nome para reservar ([fed689a](https://github.com/marlon-bento/v-sistec-features/commit/fed689ada7bdde0ead109f21655b1d06f9df2676))
+
 ## [1.31.6](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.5...v1.31.6) (2026-10-08)
 
 
