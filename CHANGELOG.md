@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.9](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.8...v1.31.9) (2026-10-15)
+
+
+### Bug Fixes
+
+* agora é possível ocultar o input de titulo ([2884212](https://github.com/marlon-bento/v-sistec-features/commit/288421263b90ebd8a722980ab0e2aefc014a4803))
+
 ## [1.31.8](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.7...v1.31.8) (2026-10-15)
 
 
