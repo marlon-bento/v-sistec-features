@@ -19,14 +19,15 @@ const props = withDefaults(defineProps<{
     modoLayout?: 'calendario' | 'tabela',
     usaInterceptador?: boolean,
     usuarioLogado?: string,
+    tituloPadrao?: string,
     fetch: any, // Recebe a instância do v-api-fetch do projeto consumidor
-
-
 }>(), {
     modoLayout: 'calendario',
     usaInterceptador: false,
-    usuarioLogado: ''
+    usuarioLogado: '',
+    tituloPadrao: ''
 });
+
 provide('api-instance-agenda', props.fetch); // Fornece a instância do v-api-fetch para os componentes filhos
 
 const emit = defineEmits(['before-save']);
@@ -43,10 +44,15 @@ const calendarioMiniRef = ref<any>(null);
 // Armazena a referência da instância principal do componente AgendaVueCal.
 const agendaVueCalRef = ref<any>(null);
 
+// Executa o carregamento inicial de recursos ao montar o componente na tela.
 onMounted(() => { carregarRecursosEAgendas(); });
 
+// Recebe nada. Devolve nada.
+// É usada para retrair ou expandir a aba esquerda de navegação rápida.
 const alternarMenu = () => { menuAberto.value = !menuAberto.value; };
 
+// Recebe nada. Devolve nada.
+// É usada para devolver o usuário à data atual do sistema nas visualizações principais e no mini-calendário.
 const irParaHoje = () => { 
     const hoje = new Date();
     dataSelecionada.value = hoje; 
@@ -55,18 +61,15 @@ const irParaHoje = () => {
     if (calendarioMiniRef.value) calendarioMiniRef.value.view.goToToday();
 };
 
-
-
-
-
+// Recebe o identificador em string do modo de visualização. Devolve nada.
+// É usada para trocar a apresentação do calendário grande entre visão de dias singulares e a semana expandida.
 const mudarVisao = (novaVisao: string) => { 
     agendaVueCalRef.value?.mudarVisao(novaVisao); 
 };
 </script>
 
 <template>
-  <div  
-  >
+  <div>
     <div class="painel-agenda-unificado">
       <header class="painel-header-topo">
         <HeaderCalendario
@@ -80,7 +83,6 @@ const mudarVisao = (novaVisao: string) => {
           v-else
           :alternarMenu="alternarMenu"
           :irParaHoje="irParaHoje"
-
         />
       </header>
 
@@ -115,6 +117,7 @@ const mudarVisao = (novaVisao: string) => {
             ref="agendaVueCalRef"
             :usa-interceptador="props.usaInterceptador"
             :usuario-logado="props.usuarioLogado"
+            :titulo-padrao="props.tituloPadrao"
             @before-save="$emit('before-save', $event)"
           >
             <template #campos-extras>
@@ -125,6 +128,7 @@ const mudarVisao = (novaVisao: string) => {
           <AgendaMatrix
             v-if="props.modoLayout === 'tabela'"
             :usa-interceptador="props.usaInterceptador"
+            :titulo-padrao="props.tituloPadrao"
             @before-save="$emit('before-save', $event)"
           >
             <template #campos-extras>
@@ -134,18 +138,15 @@ const mudarVisao = (novaVisao: string) => {
         </main>
       </div>
     </div>
-    
-
   </div>
 </template>
+
 <style lang="scss">
 // importa o main.scss
 @use '../assets/scss/main.scss';
-
 </style>
-<style scoped>
-/* Os estilos continuam 100% iguais */
 
+<style scoped>
 .painel-agenda-unificado { 
     background: var(--bg-primary); 
     border-radius: 16px; 
@@ -218,7 +219,6 @@ const mudarVisao = (novaVisao: string) => {
 :deep(.calendario-mini .vuecal__body){ height: 0%!important; }
 :deep(.calendario-mini .vuecal__scrollable-wrap){ background-color: transparent!important; }
 
-
 /* Remove o fundo branco forçado dos dias da semana no mini-calendário */
 :deep(.calendario-mini .vuecal__weekdays-headings),
 :deep(.calendario-mini .vuecal__weekday) {
@@ -226,8 +226,6 @@ const mudarVisao = (novaVisao: string) => {
     border: none !important;
     color: var(--text-secondary) !important;
 }
-
-
 
 :deep(.calendario-mini .vuecal__weekdays-headings) {
     background: transparent !important;
