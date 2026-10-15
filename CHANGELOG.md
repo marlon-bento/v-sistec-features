@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.8](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.7...v1.31.8) (2026-10-15)
+
+
+### Bug Fixes
+
+* faltou adicionar as props no vdataagenda ([332554e](https://github.com/marlon-bento/v-sistec-features/commit/332554e9a9374cec885e69fdc8acbacd6eaf4389))
+
 ## [1.31.7](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.6...v1.31.7) (2026-10-14)
 
 
