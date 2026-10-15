@@ -20,12 +20,14 @@ const props = withDefaults(defineProps<{
     usaInterceptador?: boolean,
     usuarioLogado?: string,
     tituloPadrao?: string,
+    ocultarTituloModal?: boolean,
     fetch: any, // Recebe a instância do v-api-fetch do projeto consumidor
 }>(), {
     modoLayout: 'calendario',
     usaInterceptador: false,
     usuarioLogado: '',
-    tituloPadrao: ''
+    tituloPadrao: '',
+    ocultarTituloModal: false
 });
 
 provide('api-instance-agenda', props.fetch); // Fornece a instância do v-api-fetch para os componentes filhos
@@ -118,6 +120,7 @@ const mudarVisao = (novaVisao: string) => {
             :usa-interceptador="props.usaInterceptador"
             :usuario-logado="props.usuarioLogado"
             :titulo-padrao="props.tituloPadrao"
+            :ocultar-titulo-modal="props.ocultarTituloModal"
             @before-save="$emit('before-save', $event)"
           >
             <template #campos-extras>
@@ -129,6 +132,7 @@ const mudarVisao = (novaVisao: string) => {
             v-if="props.modoLayout === 'tabela'"
             :usa-interceptador="props.usaInterceptador"
             :titulo-padrao="props.tituloPadrao"
+            :ocultar-titulo-modal="props.ocultarTituloModal"
             @before-save="$emit('before-save', $event)"
           >
             <template #campos-extras>

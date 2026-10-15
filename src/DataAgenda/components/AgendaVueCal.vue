@@ -16,7 +16,8 @@ const api = inject('api-instance-agenda') as any
 const props = defineProps({
     usaInterceptador: { type: Boolean, default: false },
     usuarioLogado: { type: String, default: '' },
-    tituloPadrao: { type: String, default: '' }
+    tituloPadrao: { type: String, default: '' },
+    ocultarTituloModal: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['before-save']);
@@ -211,6 +212,7 @@ const horasBloqueadasNativas = computed(() => {
       v-model="modalAberto"
       :dados-iniciais="dadosParaModal"
       :usa-interceptador="usaInterceptador"
+      :ocultar-titulo-modal="props.ocultarTituloModal"
       @before-save="$emit('before-save',$event)"
       @salvo="aoSalvar"
       @cancelado="aoCancelar"

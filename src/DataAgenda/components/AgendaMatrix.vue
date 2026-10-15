@@ -12,7 +12,8 @@ import ModalReserva from './ModalReserva.vue';
 
 const props = defineProps({
     usaInterceptador: { type: Boolean, default: false },
-    tituloPadrao: { type: String, default: '' }
+    tituloPadrao: { type: String, default: '' },
+    ocultarTituloModal: { type: Boolean, default: false }
 });
 
 const api = inject('api-instance-agenda') as any;
@@ -221,6 +222,7 @@ const iniciarReservaMatrix = (recursoId: number, slot: any) => {
       v-model="modalAberto"
       :dados-iniciais="dadosParaModal"
       :usa-interceptador="props.usaInterceptador"
+      :ocultar-titulo-modal="props.ocultarTituloModal"
       @before-save="$emit('before-save',$event)"
       @salvo="dispararBuscaMatrix"
     >

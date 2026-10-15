@@ -12,7 +12,8 @@ const api = inject('api-instance-agenda') as any
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
     dadosIniciais: { type: Object, required: true },
-    usaInterceptador: { type: Boolean, default: false }
+    usaInterceptador: { type: Boolean, default: false },
+    ocultarTituloModal: { type: Boolean, default: false }
 });
 
 const emit = defineEmits(['update:modelValue', 'salvo', 'cancelado', 'before-save']);
@@ -252,7 +253,7 @@ const salvarReserva = async () => {
       </div>
 
       <div class="modal-body">
-        <div class="form-group">
+        <div class="form-group" v-if="!props.ocultarTituloModal">
           <label>Nome da Reserva (opcional)</label>
           <input type="text" v-model="formReserva.title" placeholder="Ex: Treinamento" autofocus />
         </div>
