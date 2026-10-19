@@ -16,6 +16,7 @@ const props = defineProps<{
 
 const { dataSelecionada, visaoAtiva, recursosDisponiveis, recursoSelecionado } = useAgenda(api);
 
+// Devolve a string formatada do mês/ano ou data completa conforme a visão ativa ('day' ou 'week').
 const textoPeriodo = computed(() => {
     if (!dataSelecionada.value) return '';
     const d = new Date(dataSelecionada.value);
@@ -29,7 +30,6 @@ const textoPeriodo = computed(() => {
 </script>
 
 <template>
- 
   <div class="bloco-esquerda">
     <button class="btn-toggle" @click="props.alternarMenu" title="Alternar Menu">
       <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -52,8 +52,6 @@ const textoPeriodo = computed(() => {
         Hoje
       </button>
 
-      
-
       <span class="titulo-periodo">{{ textoPeriodo }}</span>
     </div>
   </div>
@@ -67,8 +65,8 @@ const textoPeriodo = computed(() => {
     <div class="seletor-recurso">
       <label for="recurso-cal">Recurso:</label>
       <select id="recurso-cal" v-model="recursoSelecionado">
-        <option v-for="rec in recursosDisponiveis" :key="rec.id" :value="rec.id">
-          {{ rec.resource_name || rec.name }}
+        <option v-for="rec in recursosDisponiveis" :key="rec.id_recurso" :value="rec.id_recurso">
+          {{ rec.nome_recurso }}
         </option>
       </select>
     </div>

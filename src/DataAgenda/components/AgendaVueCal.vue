@@ -1,8 +1,8 @@
 <!--
 ========
 Este arquivo representa o componente de calendário visual utilizando a biblioteca vue-cal.
-Ele exibe e gerencia os eventos e reservas na interface, permitindo interações como 
-criação, visualização de disponibilidade e navegação entre datas, utilizando um nome padrão para espaços vazios.
+Ele exibe e gerencia os eventos e reservas na interface, permitindo a criação de novos agendamentos,
+a abertura do modal de detalhes ao clicar em reservas existentes e a navegação entre datas.
 ========
 -->
 <script setup lang="ts">
@@ -11,8 +11,10 @@ import { VueCal } from 'vue-cal';
 import 'vue-cal/style.css';
 import { useAgenda } from '../composables/useAgenda';
 import ModalReserva from './ModalReserva.vue';
+import ModalDetalhesReserva from './ModalDetalhesReserva.vue';
 
-const api = inject('api-instance-agenda') as any
+const api = inject('api-instance-agenda') as any;
+
 const props = defineProps({
     usaInterceptador: { type: Boolean, default: false },
     usuarioLogado: { type: String, default: '' },
@@ -21,23 +23,36 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['before-save']);
+
 const {
-    reservasBrutas, recursoSelecionado, dataSelecionada, dataVisao,
-    visaoAtiva, minutosInicio, minutosFim, datasDesabilitadas,
+    reservasBrutas,
+    recursoSelecionado,
+    dataSelecionada,
+    dataVisao,
+    visaoAtiva,
+    minutosInicio,
+    minutosFim,
+    datasDesabilitadas,
     buscarReservas
 } = useAgenda(api);
 
 // Armazena a referência direta à instância do componente vue-cal.
 const calendarioRef = ref<any>(null);
 
-// Controla o estado de visibilidade da janela modal de reservas.
+// Controla o estado de visibilidade da janela modal de criação de reservas.
 const modalAberto = ref(false);
 
-// Armazena a função de resolução interna (Promise) fornecida pelo vue-cal durante a intenção de criação de um evento.
-const resolverCriacaoVueCal = ref<any>(null); 
+// Armazena a função de resolução interna (Promise) fornecida pelo vue-cal durante a criação de um evento.
+const resolverCriacaoVueCal = ref<any>(null);
 
-// Armazena os dados processados resultantes de um clique na grade, formatados para alimentar os campos do modal.
+// Armazena os dados processados resultantes de um clique na grade para alimentar os campos do modal de criação.
 const dadosParaModal = ref({});
+
+// Controla a visibilidade do modal de detalhes de uma reserva já existente.
+const modalDetalhesAberto = ref(false);
+
+// Armazena o objeto bruto da reserva clicada no calendário para exibição detalhada.
+const reservaSelecionadaDetalhes = ref<any>(null);
 
 defineExpose({
     irParaHoje: () => calendarioRef.value?.view?.goToToday(),
@@ -46,8 +61,8 @@ defineExpose({
     mudarVisao: (v: string) => { visaoAtiva.value = v; calendarioRef.value?.view?.switch(v); }
 });
 
-// Recebe um objeto de evento opcional. Devolve nada.
-// É usada para deduzir o período atualmente em exibição no calendário e disparar a requisição de reservas referentes àquelas datas.
+// Recebe um objeto de evento opcional e não devolve retorno.
+// É usada para deduzir o período atualmente em exibição no calendário e buscar as reservas correspondentes na API.
 const atualizarVisualizacao = (evento: any = null) => {
     let dataInicio: Date;
     let dataFim: Date;
@@ -79,7 +94,7 @@ const atualizarVisualizacao = (evento: any = null) => {
     buscarReservas(`${formatar(dataInicio)}T00:00:00`, `${formatar(dataFim)}T23:59:59`);
 };
 
-// Recebe um objeto Date nativo. Devolve uma string estruturada no formato YYYY-MM-DD.
+// Recebe um objeto Date nativo e devolve uma string estruturada no formato YYYY-MM-DD.
 // É usada para adequar instâncias de data ao formato exigido pelos inputs tipo "date" do HTML5.
 const formatarDataInput = (d: Date) => {
     const ano = d.getFullYear();
@@ -88,7 +103,7 @@ const formatarDataInput = (d: Date) => {
     return `${ano}-${mes}-${dia}`;
 };
 
-// Recebe um objeto Date nativo. Devolve uma string estruturada no formato HH:mm.
+// Recebe um objeto Date nativo e devolve uma string estruturada no formato HH:mm.
 // É usada para adequar instâncias de data ao formato exigido pelos inputs tipo "time" do HTML5.
 const formatarHoraInput = (d: Date) => {
     const horas = String(d.getHours()).padStart(2, '0');
@@ -96,8 +111,8 @@ const formatarHoraInput = (d: Date) => {
     return `${horas}:${minutos}`;
 };
 
-// Recebe um objeto contendo os detalhes gerados pela biblioteca e a função finalizadora da promessa. Devolve nada.
-// É usada para congelar a ação de desenho do componente enquanto aciona o modal solicitando os demais dados ao usuário.
+// Recebe um objeto contendo os detalhes gerados pelo vue-cal e a função finalizadora da promessa.
+// É usada para interceptar a criação de evento na grade e abrir o modal com os horários preenchidos.
 const aoCriarEvento = ({ event, resolve }: any) => {
     resolverCriacaoVueCal.value = resolve;
 
@@ -108,19 +123,35 @@ const aoCriarEvento = ({ event, resolve }: any) => {
     if (isNaN(end.getTime())) end = new Date();
 
     dadosParaModal.value = {
-        resourceId: recursoSelecionado.value,
-        title: '',
-        startDate: formatarDataInput(start),
-        startTime: formatarHoraInput(start),
-        endDate: formatarDataInput(end),
-        endTime: formatarHoraInput(end)
+        id_recurso: recursoSelecionado.value,
+        titulo_reserva: '',
+        data_inicio: formatarDataInput(start),
+        hora_inicio: formatarHoraInput(start),
+        data_fim: formatarDataInput(end),
+        hora_fim: formatarHoraInput(end)
     };
 
     modalAberto.value = true;
 };
 
-// Recebe nada. Devolve nada.
-// É usada para destruir a promessa em modo de aprovação (false evita renderização duplicada) e engatilhar nova consulta à API.
+// Recebe o objeto de evento disparado pelo clique em uma reserva no vue-cal e não devolve retorno.
+// É usada para localizar a reserva correspondente em reservasBrutas e abrir o modal de detalhes.
+const aoClicarEvento = (eventoVueCal: any) => {
+    const idClicado = eventoVueCal?.id || eventoVueCal?.event?.id;
+    if (!idClicado) return;
+
+    const encontrada = reservasBrutas.value.find(
+        (r: any) => String(r.codigo_referencia_reserva) === String(idClicado)
+    );
+
+    if (encontrada) {
+        reservaSelecionadaDetalhes.value = encontrada;
+        modalDetalhesAberto.value = true;
+    }
+};
+
+// Não recebe parâmetros e não devolve retorno.
+// É usada para encerrar a promessa pendente do vue-cal e atualizar a grade após salvar uma nova reserva.
 const aoSalvar = () => {
     if (resolverCriacaoVueCal.value) {
         resolverCriacaoVueCal.value(false);
@@ -129,19 +160,19 @@ const aoSalvar = () => {
     atualizarVisualizacao();
 };
 
-// Recebe nada. Devolve nada.
-// É usada para rejeitar silenciosamente a intenção de reserva na biblioteca gráfica, extinguindo o bloco provisório.
+// Não recebe parâmetros e não devolve retorno.
+// É usada para descartar o bloco provisório desenhado no calendário quando o usuário cancela o modal.
 const aoCancelar = () => {
     if (resolverCriacaoVueCal.value) {
-        resolverCriacaoVueCal.value(false); 
+        resolverCriacaoVueCal.value(false);
         resolverCriacaoVueCal.value = null;
     }
 };
 
 type FormatoDataVueCal = `${number}${number}${number}${number}-${number}${number}-${number}${number} ${number}${number}:${number}${number}`;
 
-// Recebe um array contendo as reservas mapeadas da API em padrão ISO 8601. Devolve a coleção re-estruturada para consumo do componente.
-// É usada para adaptar o contrato da API ao que a UI exige, determinando a autoria e aplicando estilos.
+// Recebe a lista de reservas padronizadas da API e devolve a coleção formatada para o componente vue-cal.
+// É usada para converter os horários UTC para o fuso local do navegador e definir o estilo visual conforme a autoria.
 const mapearEventosVisuais = (reservas: any[]) => {
     const formatarDataLocal = (dataIsoUtc: string): FormatoDataVueCal => {
         const d = new Date(dataIsoUtc);
@@ -154,16 +185,20 @@ const mapearEventosVisuais = (reservas: any[]) => {
     };
 
     return reservas.map(reserva => {
-        const emailReserva = reserva.emailAddress || reserva.email || reserva.userName;
-        const ehMeu = Boolean(emailReserva && props.usuarioLogado && emailReserva.toLowerCase() === props.usuarioLogado.toLowerCase());
-        const tituloLimpo = reserva.title ? String(reserva.title).trim() : '';
+        const identificadorAutor = reserva.email_responsavel_reserva || reserva.usuario_responsavel_reserva;
+        const ehMeu = Boolean(
+            identificadorAutor &&
+            props.usuarioLogado &&
+            String(identificadorAutor).toLowerCase() === props.usuarioLogado.toLowerCase()
+        );
+        const tituloLimpo = reserva.titulo_reserva ? String(reserva.titulo_reserva).trim() : '';
 
         return {
-            id: reserva.referenceNumber,
+            id: reserva.codigo_referencia_reserva,
             title: tituloLimpo || props.tituloPadrao,
-            start: formatarDataLocal(reserva.startDate),
-            end: formatarDataLocal(reserva.endDate),
-            resourceId: reserva.resourceId,
+            start: formatarDataLocal(reserva.data_inicio_reserva),
+            end: formatarDataLocal(reserva.data_fim_reserva),
+            id_recurso: reserva.id_recurso,
             draggable: ehMeu,
             resizable: ehMeu,
             deletable: ehMeu,
@@ -172,17 +207,17 @@ const mapearEventosVisuais = (reservas: any[]) => {
     });
 };
 
-// Armazena a matriz final de eventos exibíveis de forma reativa, recriando-se sempre que o conjunto bruto ou seleção altera.
+// Armazena a lista reativa de reservas filtradas exclusivamente para o recurso selecionado no momento.
 const eventosProcessados = computed(() => {
     if (!recursoSelecionado.value) return [];
-    
-    return mapearEventosVisuais(reservasBrutas.value).filter(evento => 
-        Number(evento.resourceId) === Number(recursoSelecionado.value)
+
+    return mapearEventosVisuais(reservasBrutas.value).filter(evento =>
+        Number(evento.id_recurso) === Number(recursoSelecionado.value)
     );
 });
 
-// Recebe uma data fornecida pelo renderizador de cabeçalho. Devolve um verificador booleano.
-// É usada para aplicar classes de destaque na aba correspondente ao dia sob foco de seleção.
+// Recebe uma data do cabeçalho do calendário e devolve um booleano indicando se é a data selecionada.
+// É usada para destacar visualmente o dia ativo no topo da grade.
 const ehDataSelecionada = (data: any) => {
     if (!dataSelecionada.value || !data) return false;
     const dSelecionada = new Date(dataSelecionada.value);
@@ -190,13 +225,13 @@ const ehDataSelecionada = (data: any) => {
     return dCabecalho.toDateString() === dSelecionada.toDateString();
 };
 
-// Recebe a data processada do cabeçalho. Devolve a representação escrita truncada em três letras para o idioma local.
-// É usada para formar a estrutura de identificação do cabeçalho customizado.
+// Recebe um objeto Date e devolve a abreviação de três letras do dia da semana em português.
+// É usada na renderização customizada do cabeçalho dos dias.
 const obterNomeDiaCurto = (data: Date) => {
     return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][data.getDay()];
 };
 
-// Armazena a demarcação estática dos limites do dia (janelas que antecedem e sucedem o expediente), desabilitando-os visualmente.
+// Armazena a configuração de horários fora do expediente para bloqueio visual no componente vue-cal.
 const horasBloqueadasNativas = computed(() => {
     const bloqueios = [
         { from: 0, to: minutosInicio.value, allowEvents: false, class: 'fora-do-expediente' },
@@ -222,6 +257,13 @@ const horasBloqueadasNativas = computed(() => {
       </template>
     </ModalReserva>
 
+    <ModalDetalhesReserva
+      v-model="modalDetalhesAberto"
+      :reserva="reservaSelecionadaDetalhes"
+      :titulo-padrao="props.tituloPadrao"
+      @excluido="atualizarVisualizacao"
+    />
+
     <vue-cal
       ref="calendarioRef"
       class="calendario-principal vuecal--blue-theme"
@@ -245,6 +287,7 @@ const horasBloqueadasNativas = computed(() => {
       @ready="atualizarVisualizacao"
       @view-change="atualizarVisualizacao"
       @event-create="aoCriarEvento"
+      @event-click="aoClicarEvento"
     >
       <template #weekday-heading="{ date }">
         <div
@@ -284,10 +327,10 @@ const horasBloqueadasNativas = computed(() => {
 :deep(.vuecal__special-hours.fora-do-expediente) { background-color: var(--bg-secondary); background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.02) 10px, rgba(0, 0, 0, 0.02) 20px); pointer-events: none; }
 :deep(.vuecal__cell--selected) { background-color: var(--color-brand-light) !important; }
 :deep(.vuecal__cell--today) { background-color: var(--bg-hover) !important; }
-:deep(.vuecal__event) { background-color: var(--color-brand) !important; color: var(--text-inverse) !important; border: 1px solid var(--border-focus) !important; border-radius: 4px; box-shadow: var(--shadow-sm); padding: 4px; transition: all 0.2s ease; }
+:deep(.vuecal__event) { background-color: var(--color-brand) !important; color: var(--text-inverse) !important; border: 1px solid var(--border-focus) !important; border-radius: 4px; box-shadow: var(--shadow-sm); padding: 4px; transition: all 0.2s ease; cursor: pointer !important; }
 :deep(.vuecal__event:hover), :deep(.vuecal__event--focus) { box-shadow: var(--shadow-float); filter: brightness(1.1); }
 :deep(.vuecal__event.reserva-minha) { background-color: var(--color-success) !important; border-color: var(--color-success) !important; color: var(--text-inverse) !important; }
-:deep(.vuecal__event.reserva-bloqueada) { background-color: var(--border-editor) !important; border-color: var(--border-light) !important; color: var(--text-primary) !important; font-weight: bold; opacity: 0.75; cursor: not-allowed !important; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.1) 10px, rgba(0, 0, 0, 0.1) 20px) !important; }
+:deep(.vuecal__event.reserva-bloqueada) { background-color: var(--border-editor) !important; border-color: var(--border-light) !important; color: var(--text-primary) !important; font-weight: bold; opacity: 0.75; cursor: pointer !important; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.1) 10px, rgba(0, 0, 0, 0.1) 20px) !important; }
 :deep(.vuecal__time-column) {
     background-color: var(--bg-primary) !important;
     border-right: 1px solid var(--border-editor) !important;

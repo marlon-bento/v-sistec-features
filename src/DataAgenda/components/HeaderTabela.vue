@@ -15,18 +15,18 @@ const props = defineProps<{
 
 const { dataSelecionada, agendasDisponiveis, agendaSelecionada } = useAgenda(api);
 
+// Calcula e formata o intervalo de 7 dias exibido no cabeçalho do modo tabela.
 const textoPeriodoTabela = computed(() => {
     if (!dataSelecionada.value) return '';
     const inicio = new Date(dataSelecionada.value);
     const fim = new Date(inicio);
     fim.setDate(inicio.getDate() + 6);
-    
+
     const strInicio = inicio.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
     const strFim = fim.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
     return `${strInicio} até ${strFim}`;
 });
 </script>
-
 <template>
   <div class="bloco-esquerda">
     <button class="btn-toggle" @click="props.alternarMenu" title="Alternar Menu">
@@ -50,8 +50,6 @@ const textoPeriodoTabela = computed(() => {
         Hoje
       </button>
 
-      
-
       <span class="titulo-periodo">{{ textoPeriodoTabela }}</span>
     </div>
   </div>
@@ -60,8 +58,8 @@ const textoPeriodoTabela = computed(() => {
     <div class="seletor-recurso">
       <label for="agenda-tab">Agenda:</label>
       <select id="agenda-tab" v-model="agendaSelecionada">
-        <option v-for="agenda in agendasDisponiveis" :key="agenda.id" :value="agenda.id">
-          {{ agenda.nome }}
+        <option v-for="agenda in agendasDisponiveis" :key="agenda.id_agenda" :value="agenda.id_agenda">
+          {{ agenda.nome_agenda }}
         </option>
       </select>
     </div>

@@ -1,14 +1,15 @@
 <!--
 ========
 Este arquivo representa a visualização em grade (matriz) da agenda.
-Ele cruza múltiplos recursos horizontalmente e intervalos de tempo verticalmente,
-permitindo a comparação de disponibilidade e criação rápida de reservas através da interface customizada.
+Ele cruza múltiplos recursos e intervalos de tempo a partir do retorno padronizado datas_matriz,
+permitindo criar novas reservas nos blocos livres ou visualizar detalhes ao clicar nos blocos reservados.
 ========
 -->
 <script setup lang="ts">
 import { computed, onMounted, watch, ref, inject } from 'vue';
 import { useAgenda } from '../composables/useAgenda';
 import ModalReserva from './ModalReserva.vue';
+import ModalDetalhesReserva from './ModalDetalhesReserva.vue';
 
 const props = defineProps({
     usaInterceptador: { type: Boolean, default: false },
@@ -18,41 +19,47 @@ const props = defineProps({
 
 const api = inject('api-instance-agenda') as any;
 const emit = defineEmits(['before-save']);
-const { 
-    dadosMatrix, 
+const {
+    dadosMatrix,
     buscarSlotsMatrix,
     buscarReservas,
-    agendaSelecionada, 
+    agendaSelecionada,
     dataSelecionada,
-    converterParaUtc 
+    converterParaUtc
 } = useAgenda(api);
 
-// Indica se a matriz está buscando e processando dados no momento de montagem ou atualização.
+// Indica se a matriz está buscando e processando dados.
 const carregando = ref(false);
 
-// Armazena a lista de IDs de recursos (em formato string) que estão ativados no filtro da grade.
+// Armazena os IDs (em string) dos recursos visíveis selecionados no filtro.
 const recursosVisiveisIds = ref<string[]>([]);
 
-// Controla a visibilidade do dropdown que permite isolar a exibição de salas/recursos.
+// Controla a abertura do menu dropdown de filtro de salas.
 const menuFiltroAberto = ref(false);
 
-// Controla o estado de abertura da modal instanciada para agendar o bloco da tabela.
+// Controla a abertura do modal de criação de reserva.
 const modalAberto = ref(false);
 
-// Armazena os parâmetros extraídos do bloco para fornecer à interface de inserção.
+// Armazena os dados do slot livre clicado para preencher o modal de criação.
 const dadosParaModal = ref({});
 
-// Recebe nada. Devolve uma Promise assíncrona.
-// É usada para deduzir o range semanal com base no foco de data selecionado, buscar o esqueleto de slots na API e puxar as marcações vigentes.
+// Controla a abertura do modal de detalhes de uma reserva existente.
+const modalDetalhesAberto = ref(false);
+
+// Armazena o objeto da reserva clicada para exibição no modal de detalhes.
+const reservaSelecionadaDetalhes = ref<any>(null);
+
+// Recebe nada e devolve uma Promise.
+// É usada para buscar os slots da matriz e as reservas correspondentes à janela de 7 dias a partir da data selecionada.
 const dispararBuscaMatrix = async () => {
     const idAgenda = agendaSelecionada.value;
     if (!idAgenda) return;
-    
+
     carregando.value = true;
-    
+
     const valorData = dataSelecionada.value || new Date();
     let dataInicio: Date;
-    
+
     if (typeof valorData === 'string') {
         const apenasData = String(valorData).substring(0, 10);
         const [ano, mes, dia] = apenasData.split('-');
@@ -60,23 +67,23 @@ const dispararBuscaMatrix = async () => {
     } else {
         dataInicio = new Date(valorData);
     }
-    
+
     const dataFim = new Date(dataInicio);
     dataFim.setDate(dataInicio.getDate() + 6);
-    
+
     const formatar = (dt: Date) => {
         const ano = dt.getFullYear();
         const mes = String(dt.getMonth() + 1).padStart(2, '0');
         const dia = String(dt.getDate()).padStart(2, '0');
         return `${ano}-${mes}-${dia}`;
     };
-    
+
     const strInicio = formatar(dataInicio);
     const strFim = formatar(dataFim);
 
     const inicioUtc = encodeURIComponent(converterParaUtc(strInicio, '00:00'));
     const fimUtc = encodeURIComponent(converterParaUtc(strFim, '23:59'));
-    
+
     await buscarSlotsMatrix(idAgenda, inicioUtc, fimUtc);
     await buscarReservas(`${strInicio}T00:00:00`, `${strFim}T23:59:59`);
     carregando.value = false;
@@ -86,44 +93,41 @@ onMounted(() => { dispararBuscaMatrix(); });
 
 watch([dataSelecionada, agendaSelecionada], () => { dispararBuscaMatrix(); });
 
-// Armazena a matriz reativa com os recursos devolvidos pela requisição que pertencem à data atual iterada.
+// Extrai a lista de recursos presentes no primeiro dia retornado na matriz.
 const recursosPermitidosNaMatriz = computed(() => {
-    if (!dadosMatrix.value?.dates?.[0]?.resources) return [];
-    return dadosMatrix.value.dates[0].resources;
+    if (!dadosMatrix.value?.datas_matriz?.[0]?.recursos_slot) return [];
+    return dadosMatrix.value.datas_matriz[0].recursos_slot;
 });
 
 watch(recursosPermitidosNaMatriz, (novosRecursos) => {
-    recursosVisiveisIds.value = novosRecursos.map((r: any) => String(r.resourceId));
+    recursosVisiveisIds.value = novosRecursos.map((r: any) => String(r.id_recurso));
 }, { immediate: true });
 
-// Recebe nada. Devolve nada.
-// É usada para assinalar a visibilidade de todos os recursos detectados sem a necessidade de cliques isolados.
+// Marca todos os recursos no filtro de salas.
 const selecionarTodos = () => {
-    recursosVisiveisIds.value = recursosPermitidosNaMatriz.value.map((r: any) => String(r.resourceId));
+    recursosVisiveisIds.value = recursosPermitidosNaMatriz.value.map((r: any) => String(r.id_recurso));
 };
 
-// Recebe nada. Devolve nada.
-// É usada para zerar a lista de visualização, exigindo a demarcação apenas do recurso procurado.
+// Desmarca todos os recursos no filtro de salas.
 const limparFiltros = () => {
     recursosVisiveisIds.value = [];
 };
 
-// Recebe uma data contida no padrão string ISO. Devolve a somatória inteira de tempo expressa em minutos.
-// É usada para simplificar e realizar o posicionamento aritmético de células baseando-se em grade decimal.
+// Recebe uma string ISO e devolve o total de minutos correspondente ao horário local.
 const extrairMinutos = (isoStr: string) => {
     const d = new Date(isoStr);
     return d.getHours() * 60 + d.getMinutes();
 };
 
-// Armazena um Set com todos os registros de interrupções, montando uma chave ordenada de minutos absolutos base da grade horizontal.
+// Monta a lista ordenada de horários (em minutos) para o cabeçalho das colunas da tabela.
 const horariosGlobaisEmMinutos = computed(() => {
-    if (!dadosMatrix.value?.dates) return [];
+    if (!dadosMatrix.value?.datas_matriz) return [];
     const setMinutos = new Set<number>();
 
-    dadosMatrix.value.dates.forEach((dia: any) => {
-        dia.resources.forEach((rec: any) => {
-            rec.slots.forEach((slot: any) => {
-                setMinutos.add(extrairMinutos(slot.startDateTime));
+    dadosMatrix.value.datas_matriz.forEach((dia: any) => {
+        dia.recursos_slot.forEach((rec: any) => {
+            rec.horarios_slot.forEach((slot: any) => {
+                setMinutos.add(extrairMinutos(slot.data_inicio_slot));
             });
         });
     });
@@ -131,25 +135,25 @@ const horariosGlobaisEmMinutos = computed(() => {
     return Array.from(setMinutos).sort((a, b) => a - b);
 });
 
-// Armazena a tabela unida de propriedades que computa o tamanho visual de cada slot usando como referência base as quebras registradas globalmente.
+// Processa os dias, filtra os recursos selecionados e calcula o colspan de cada slot de horário.
 const matrizProcessada = computed(() => {
-    if (!dadosMatrix.value?.dates || horariosGlobaisEmMinutos.value.length === 0) return [];
-    
+    if (!dadosMatrix.value?.datas_matriz || horariosGlobaisEmMinutos.value.length === 0) return [];
+
     const mapaHorarios = horariosGlobaisEmMinutos.value;
 
-    return dadosMatrix.value.dates.map((dia: any) => {
-        const recursosFiltrados = dia.resources.filter((res: any) => 
-            recursosVisiveisIds.value.includes(String(res.resourceId))
+    return dadosMatrix.value.datas_matriz.map((dia: any) => {
+        const recursosFiltrados = dia.recursos_slot.filter((res: any) =>
+            recursosVisiveisIds.value.includes(String(res.id_recurso))
         );
 
         if (recursosFiltrados.length === 0) return null;
 
-        const resourcesComColspan = recursosFiltrados.map((rec: any) => {
-            const slotsCalculados = rec.slots.map((slot: any) => {
-                const inicioMin = extrairMinutos(slot.startDateTime);
-                let fimMin = extrairMinutos(slot.endDateTime);
-                
-                if (fimMin === 0 && new Date(slot.endDateTime) > new Date(slot.startDateTime)) {
+        const recursosComColspan = recursosFiltrados.map((rec: any) => {
+            const slotsCalculados = rec.horarios_slot.map((slot: any) => {
+                const inicioMin = extrairMinutos(slot.data_inicio_slot);
+                let fimMin = extrairMinutos(slot.data_fim_slot);
+
+                if (fimMin === 0 && new Date(slot.data_fim_slot) > new Date(slot.data_inicio_slot)) {
                     fimMin = 24 * 60;
                 }
 
@@ -161,23 +165,21 @@ const matrizProcessada = computed(() => {
                 }
                 return { ...slot, colspan: tamanhoColspan > 0 ? tamanhoColspan : 1 };
             });
-            return { ...rec, slots: slotsCalculados };
+            return { ...rec, horarios_slot: slotsCalculados };
         });
 
-        return { ...dia, resources: resourcesComColspan };
+        return { ...dia, recursos_slot: recursosComColspan };
     }).filter((dia: any) => dia !== null);
 });
 
-// Recebe a quantia cumulativa de minutos. Devolve a respectiva anotação horária padronizada HH:MM.
-// É usada para rotular dinamicamente o topo das tabelas da grade de visão.
+// Recebe minutos totais e devolve a string formatada HH:MM.
 const formatarHoraDeMinutos = (minutosTotais: number) => {
     const horas = Math.floor(minutosTotais / 60);
     const minutos = minutosTotais % 60;
     return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}`;
 };
 
-// Recebe a identificação sequencial diária ISO. Devolve um texto capitalizado do dia atual.
-// É usada para seccionar agrupamentos ao delinear novos dias na tabela unificada.
+// Recebe a string YYYY-MM-DD do dia e devolve o texto por extenso em português.
 const formatarData = (isoData: string) => {
     const apenasData = String(isoData).substring(0, 10);
     const [ano, mes, dia] = apenasData.split('-');
@@ -185,10 +187,16 @@ const formatarData = (isoData: string) => {
     return data.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
 };
 
-// Recebe a PK da tabela de laboratório e a árvore estruturada da área selecionada. Devolve nada.
-// É usada para processar aberturas de solicitações através dos botões vazados e renderizar o componente auxiliar sobre a tabela.
-const iniciarReservaMatrix = (recursoId: number, slot: any) => {
-    if (!slot.isReservable || slot.isReserved) return;
+// Recebe o ID do recurso e o objeto slot clicado.
+// Se estiver reservado, abre o modal de detalhes; se estiver livre e reservável, abre o modal de criação.
+const aoClicarSlotMatrix = (idRecurso: number, slot: any) => {
+    if (slot.reservado_slot && slot.detalhes_reserva) {
+        reservaSelecionadaDetalhes.value = slot.detalhes_reserva;
+        modalDetalhesAberto.value = true;
+        return;
+    }
+
+    if (!slot.reservavel_slot) return;
 
     const extrair = (isoString: string) => {
         const d = new Date(isoString);
@@ -200,16 +208,16 @@ const iniciarReservaMatrix = (recursoId: number, slot: any) => {
         return { data: `${ano}-${mes}-${dia}`, hora: `${horas}:${min}` };
     };
 
-    const inicio = extrair(slot.startDateTime);
-    const fim = extrair(slot.endDateTime);
+    const inicio = extrair(slot.data_inicio_slot);
+    const fim = extrair(slot.data_fim_slot);
 
     dadosParaModal.value = {
-        resourceId: recursoId,
-        title: '',
-        startDate: inicio.data,
-        startTime: inicio.hora,
-        endDate: fim.data,
-        endTime: fim.hora
+        id_recurso: idRecurso,
+        titulo_reserva: '',
+        data_inicio: inicio.data,
+        hora_inicio: inicio.hora,
+        data_fim: fim.data,
+        hora_fim: fim.hora
     };
 
     modalAberto.value = true;
@@ -231,12 +239,19 @@ const iniciarReservaMatrix = (recursoId: number, slot: any) => {
       </template>
     </ModalReserva>
 
+    <ModalDetalhesReserva
+      v-model="modalDetalhesAberto"
+      :reserva="reservaSelecionadaDetalhes"
+      :titulo-padrao="props.tituloPadrao"
+      @excluido="dispararBuscaMatrix"
+    />
+
     <div class="aviso-vazio" v-if="carregando">
       <div class="spinner"></div>
       <span>Processando grade temporal...</span>
     </div>
 
-    <div class="matriz-conteudo" v-else-if="dadosMatrix.dates">
+    <div class="matriz-conteudo" v-else-if="dadosMatrix.datas_matriz">
       <div class="barra-filtros" v-if="recursosPermitidosNaMatriz.length > 0">
         <div class="dropdown-container">
           <button class="btn-dropdown" @click="menuFiltroAberto = !menuFiltroAberto">
@@ -269,16 +284,16 @@ const iniciarReservaMatrix = (recursoId: number, slot: any) => {
               <label
                 class="dropdown-item"
                 v-for="rec in recursosPermitidosNaMatriz"
-                :key="rec.resourceId"
-                :class="{ 'ativo': recursosVisiveisIds.includes(String(rec.resourceId)) }"
+                :key="rec.id_recurso"
+                :class="{ 'ativo': recursosVisiveisIds.includes(String(rec.id_recurso)) }"
               >
                 <input
                   class="checkbox-estiloso"
                   type="checkbox"
-                  :value="String(rec.resourceId)"
+                  :value="String(rec.id_recurso)"
                   v-model="recursosVisiveisIds"
                 />
-                <span>{{ rec.resourceName }}</span>
+                <span>{{ rec.nome_recurso }}</span>
               </label>
             </div>
           </div>
@@ -296,34 +311,34 @@ const iniciarReservaMatrix = (recursoId: number, slot: any) => {
             </tr>
           </thead>
           <tbody>
-            <template v-for="dia in matrizProcessada" :key="dia.date">
+            <template v-for="dia in matrizProcessada" :key="dia.data_slot">
               <tr class="linha-data">
                 <td :colspan="horariosGlobaisEmMinutos.length + 1">
                   <div class="barra-data-full">
-                    <span class="texto-data">{{ formatarData(dia.date) }}</span>
+                    <span class="texto-data">{{ formatarData(dia.data_slot) }}</span>
                   </div>
                 </td>
               </tr>
 
-              <tr v-for="recurso in dia.resources" :key="recurso.resourceId">
-                <td class="coluna-fixa nome-recurso">{{ recurso.resourceName }}</td>
+              <tr v-for="recurso in dia.recursos_slot" :key="recurso.id_recurso">
+                <td class="coluna-fixa nome-recurso">{{ recurso.nome_recurso }}</td>
                 <td
-                  v-for="slot in recurso.slots"
-                  :key="slot.startDateTime"
+                  v-for="slot in recurso.horarios_slot"
+                  :key="slot.data_inicio_slot"
                   :colspan="slot.colspan"
                 >
                   <div
                     class="bloco-tempo"
                     :class="{
-                      'reservado': slot.isReserved,
-                      'bloqueado': !slot.isReservable,
-                      'livre': slot.isReservable && !slot.isReserved,
-                      'api-forjada': slot.reservation?.title?.includes('[API]')
+                      'reservado': slot.reservado_slot,
+                      'bloqueado': !slot.reservavel_slot && !slot.reservado_slot,
+                      'livre': slot.reservavel_slot && !slot.reservado_slot,
+                      'api-forjada': slot.detalhes_reserva?.origem_criacao_reserva === 'API'
                     }"
-                    @click="iniciarReservaMatrix(recurso.resourceId, slot)"
+                    @click="aoClicarSlotMatrix(recurso.id_recurso, slot)"
                   >
-                    <span class="etiqueta-reserva" v-if="slot.isReserved">
-                      {{ slot.reservation?.title?.trim() || props.tituloPadrao }}
+                    <span class="etiqueta-reserva" v-if="slot.reservado_slot">
+                      {{ slot.detalhes_reserva?.titulo_reserva?.trim() || props.tituloPadrao }}
                     </span>
                   </div>
                 </td>
@@ -366,7 +381,6 @@ const iniciarReservaMatrix = (recursoId: number, slot: any) => {
 .dropdown-item.ativo .checkbox-estiloso { background: var(--color-brand); border-color: var(--color-brand); }
 .checkbox-estiloso::before { content: ""; width: 10px; height: 10px; transform: scale(0); transition: 0.12s transform ease-in-out; background-color: var(--text-inverse); clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%); }
 .dropdown-item.ativo .checkbox-estiloso::before { transform: scale(1); }
-
 .tabela-wrapper { flex-grow: 1; overflow: auto; background: var(--bg-secondary); }
 .tabela-premium { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; text-align: center; table-layout: fixed; }
 .tabela-premium th, .tabela-premium td { padding: 3px; min-width: 65px; height: 48px; border-bottom: 1px solid var(--border-light); border-right: 1px solid var(--border-light); }
@@ -382,7 +396,8 @@ const iniciarReservaMatrix = (recursoId: number, slot: any) => {
 .bloqueado { background-color: var(--border-light); background-image: repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(0, 0, 0, 0.08) 8px, rgba(0, 0, 0, 0.08) 16px); cursor: not-allowed; border: 1px solid var(--border-editor); }
 .livre { background-color: transparent; cursor: pointer; }
 .livre:hover { background-color: var(--color-brand-light); box-shadow: inset 0 0 0 1px var(--color-brand); }
-.reservado { background: var(--color-brand); color: var(--text-inverse); border: 1px solid var(--color-brand); }
-.api-forjada { background: var(--color-success); color: var(--text-inverse); border: 1px solid var(--color-success); }
+.reservado { background: var(--color-brand); color: var(--text-inverse); border: 1px solid var(--color-brand); cursor: pointer; }
+.reservado:hover { filter: brightness(1.08); }
+.api-forjada { background: var(--color-success); color: var(--text-inverse); border: 1px solid var(--color-success); cursor: pointer; }
 .etiqueta-reserva { font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%; font-weight: 600; }
 </style>
