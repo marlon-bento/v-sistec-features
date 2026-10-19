@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.10](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.9...v1.31.10) (2026-10-19)
+
+
+### Bug Fixes
+
+* mudanças para atender a nova agenda do crc ([3ecd8d1](https://github.com/marlon-bento/v-sistec-features/commit/3ecd8d103046d20e2315d4eac34823a3ac9629bd))
+
 ## [1.31.9](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.8...v1.31.9) (2026-10-15)
 
 
