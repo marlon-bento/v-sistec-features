@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.11](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.10...v1.31.11) (2026-10-21)
+
+
+### Bug Fixes
+
+* agenda melhorada para possibilidade de ver só um unico recurso ([511a7ef](https://github.com/marlon-bento/v-sistec-features/commit/511a7ef8d27b5a0804ac24088e7d4581a82df060))
+
 ## [1.31.10](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.9...v1.31.10) (2026-10-19)
 
 
