@@ -1,16 +1,19 @@
-<script setup lang="ts">
-/*
+<!--
 ========
 Componente de cabeçalho do modo Tabela, contendo o alternador de menu lateral, 
-controles de navegação semanal e seletor de agendamentos.
+controles de navegação semanal e seletor de agendamentos (que pode ser ocultado no modo de recurso único).
 ========
-*/
+-->
+<script setup lang="ts">
 import { computed, inject } from 'vue';
 import { useAgenda } from '../composables/useAgenda';
-const api = inject('api-instance-agenda') as any
+
+const api = inject('api-instance-agenda') as any;
+
 const props = defineProps<{
     alternarMenu: () => void;
     irParaHoje: () => void;
+    ocultarSeletorAgenda?: boolean;
 }>();
 
 const { dataSelecionada, agendasDisponiveis, agendaSelecionada } = useAgenda(api);
@@ -27,6 +30,7 @@ const textoPeriodoTabela = computed(() => {
     return `${strInicio} até ${strFim}`;
 });
 </script>
+
 <template>
   <div class="bloco-esquerda">
     <button class="btn-toggle" @click="props.alternarMenu" title="Alternar Menu">
@@ -54,7 +58,7 @@ const textoPeriodoTabela = computed(() => {
     </div>
   </div>
 
-  <div class="bloco-direita">
+  <div class="bloco-direita" v-if="!props.ocultarSeletorAgenda">
     <div class="seletor-recurso">
       <label for="agenda-tab">Agenda:</label>
       <select id="agenda-tab" v-model="agendaSelecionada">

@@ -2,7 +2,7 @@
 ========
 O layout raiz que orquestra a interface com cabeçalhos modulares separados.
 Utiliza as propriedades nativas de visão e seleção do Vue 3 para manter tudo em sincronia.
-Atua como o ponto de entrada da biblioteca, repassando as configurações de usuário, layout e o cliente HTTP para os filhos.
+Atua como o ponto de entrada da biblioteca, repassando as configurações de usuário, layout, recurso único opcional e o cliente HTTP para os filhos.
 ========
 -->
 <script setup lang="ts">
@@ -12,25 +12,28 @@ import 'vue-cal/style.css';
 import { useAgenda } from './composables/useAgenda.ts';
 import AgendaVueCal from './components/AgendaVueCal.vue';
 import AgendaMatrix from './components/AgendaMatrix.vue';
+import AgendaMatrixUnico from './components/AgendaMatrixUnico.vue';
 import HeaderCalendario from './components/HeaderCalendario.vue';
 import HeaderTabela from './components/HeaderTabela.vue';
 
 const props = withDefaults(defineProps<{
     modoLayout?: 'calendario' | 'tabela',
+    idRecursoUnico?: number | string | null,
     usaInterceptador?: boolean,
     usuarioLogado?: string,
     tituloPadrao?: string,
     ocultarTituloModal?: boolean,
-    fetch: any, // Recebe a instância do v-api-fetch do projeto consumidor
+    fetch: any,
 }>(), {
     modoLayout: 'calendario',
+    idRecursoUnico: null,
     usaInterceptador: false,
     usuarioLogado: '',
     tituloPadrao: '',
     ocultarTituloModal: false
 });
 
-provide('api-instance-agenda', props.fetch); // Fornece a instância do v-api-fetch para os componentes filhos
+provide('api-instance-agenda', props.fetch);
 
 const emit = defineEmits(['before-save']);
 
@@ -85,6 +88,7 @@ const mudarVisao = (novaVisao: string) => {
           v-else
           :alternarMenu="alternarMenu"
           :irParaHoje="irParaHoje"
+          :ocultarSeletorAgenda="Boolean(props.idRecursoUnico)"
         />
       </header>
 
@@ -128,8 +132,21 @@ const mudarVisao = (novaVisao: string) => {
             </template>
           </AgendaVueCal>
 
+          <AgendaMatrixUnico
+            v-else-if="props.modoLayout === 'tabela' && props.idRecursoUnico"
+            :id-recurso="props.idRecursoUnico"
+            :usa-interceptador="props.usaInterceptador"
+            :titulo-padrao="props.tituloPadrao"
+            :ocultar-titulo-modal="props.ocultarTituloModal"
+            @before-save="$emit('before-save', $event)"
+          >
+            <template #campos-extras>
+              <slot name="campos-extras"></slot>
+            </template>
+          </AgendaMatrixUnico>
+
           <AgendaMatrix
-            v-if="props.modoLayout === 'tabela'"
+            v-else-if="props.modoLayout === 'tabela'"
             :usa-interceptador="props.usaInterceptador"
             :titulo-padrao="props.tituloPadrao"
             :ocultar-titulo-modal="props.ocultarTituloModal"
@@ -144,7 +161,6 @@ const mudarVisao = (novaVisao: string) => {
     </div>
   </div>
 </template>
-
 <style lang="scss">
 // importa o main.scss
 @use '../assets/scss/main.scss';

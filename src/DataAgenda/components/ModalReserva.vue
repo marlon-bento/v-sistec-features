@@ -360,4 +360,27 @@ const salvarReserva = async () => {
 .horarios-lista-container { flex: 1; overflow-y: auto; padding: 20px; margin: 0; }
 .horarios-lista { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
 .horarios-lista li { background: var(--bg-secondary); padding: 12px 16px; border-radius: 8px; color: var(--text-primary); font-weight: 500; font-size: 14px; text-align: center; border: 1px solid var(--border-light); }
+
+
+</style>
+<style>
+/* 
+========
+Estilo global para garantir que o tema dark sobreponha qualquer escopo do componente.
+Força a cor do texto dos botões para branco no dark mode.
+========
+*/
+[data-bs-theme="dark"] .modal-card .btn-salvar,
+[data-bs-theme="dark"] .modal-card .btn-cancelar {
+    color: #ffffff !important;
+
+    /* text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.5); */
+    
+    /* -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.5); */
+    font-weight: bold;
+    
+}
+[data-bs-theme="dark"] .modal-card .btn-salvar{
+  background: color-mix(in srgb, var(--color-brand) 70%, black) !important;
+}
 </style>
