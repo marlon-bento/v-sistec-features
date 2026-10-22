@@ -1,28 +1,31 @@
 <!--
 ========
 O layout raiz que orquestra a interface com cabeçalhos modulares separados.
-Utiliza as propriedades nativas de visão e seleção do Vue 3 para manter tudo em sincronia.
-Atua como o ponto de entrada da biblioteca, repassando as configurações de usuário, layout, recurso único opcional e o cliente HTTP para os filhos.
+Suporta os modos 'calendario', 'tabela' (matriz horizontal) e 'tabela-horario' (grade vertical de horários por turno).
+Repassa as configurações de usuário, layout, recurso único opcional, blocos por agenda e o cliente HTTP para os filhos,
+além de destacar a semana operacional ativa e bloquear dias inativos no minicalendário lateral.
 ========
 -->
 <script setup lang="ts">
-import { ref, onMounted, provide } from 'vue';
+import { ref, computed, onMounted, provide } from 'vue';
 import { VueCal } from 'vue-cal';
 import 'vue-cal/style.css';
 import { useAgenda } from './composables/useAgenda.ts';
 import AgendaVueCal from './components/AgendaVueCal.vue';
 import AgendaMatrix from './components/AgendaMatrix.vue';
 import AgendaMatrixUnico from './components/AgendaMatrixUnico.vue';
+import AgendaTabelaHorario from './components/AgendaTabelaHorario.vue';
 import HeaderCalendario from './components/HeaderCalendario.vue';
 import HeaderTabela from './components/HeaderTabela.vue';
 
 const props = withDefaults(defineProps<{
-    modoLayout?: 'calendario' | 'tabela',
+    modoLayout?: 'calendario' | 'tabela' | 'tabela-horario',
     idRecursoUnico?: number | string | null,
     usaInterceptador?: boolean,
     usuarioLogado?: string,
     tituloPadrao?: string,
     ocultarTituloModal?: boolean,
+    configuracaoBlocos?: any,
     fetch: any,
 }>(), {
     modoLayout: 'calendario',
@@ -30,7 +33,8 @@ const props = withDefaults(defineProps<{
     usaInterceptador: false,
     usuarioLogado: '',
     tituloPadrao: '',
-    ocultarTituloModal: false
+    ocultarTituloModal: false,
+    configuracaoBlocos: null
 });
 
 provide('api-instance-agenda', props.fetch);
@@ -38,7 +42,14 @@ provide('api-instance-agenda', props.fetch);
 const emit = defineEmits(['before-save']);
 
 // Armazena as referências e funções do composable de agenda para manipulação global.
-const { dataSelecionada, dataVisao, carregarRecursosEAgendas } = useAgenda(props.fetch);
+const {
+    dataSelecionada,
+    dataVisao,
+    agendasDisponiveis,
+    agendaSelecionada,
+    datasDesabilitadas,
+    carregarRecursosEAgendas
+} = useAgenda(props.fetch);
 
 // Controla o estado de abertura da barra lateral (menu) contendo o minicalendário.
 const menuAberto = ref(true);
@@ -51,6 +62,80 @@ const agendaVueCalRef = ref<any>(null);
 
 // Executa o carregamento inicial de recursos ao montar o componente na tela.
 onMounted(() => { carregarRecursosEAgendas(); });
+
+// Extrai de forma segura o objeto de data embutido na célula customizada do vue-cal.
+const obterDataDaCelula = (cell: any): Date | null => {
+    if (!cell) return null;
+    if (cell instanceof Date) return cell;
+    if (cell.start) return new Date(cell.start);
+    return null;
+};
+
+// Recebe um objeto Date e devolve a string formatada em YYYY-MM-DD local.
+const formatarDataIsoCurta = (data: Date): string => {
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const dia = String(data.getDate()).padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+};
+
+// Devolve um Set para consulta rápida contendo todas as datas desabilitadas da agenda atual.
+const conjuntoDatasDesabilitadas = computed(() => {
+    return new Set<string>(datasDesabilitadas.value);
+});
+
+// Calcula e devolve um Set com as strings (YYYY-MM-DD) dos dias operacionais que já estão visíveis na grade tabela-horario.
+const datasVisiveisNaSemana = computed(() => {
+    const visiveis = new Set<string>();
+    if (props.modoLayout !== 'tabela-horario' || !dataSelecionada.value || !agendaSelecionada.value) {
+        return visiveis;
+    }
+
+    const agendaObj = agendasDisponiveis.value.find(
+        (a: any) => Number(a.id_agenda) === Number(agendaSelecionada.value)
+    );
+    if (!agendaObj || !agendaObj.detalhes) return visiveis;
+
+    const diaInicioPython = Number(agendaObj.detalhes.dia_inicio_semana_agenda ?? 0);
+    const diasVisiveis = Number(agendaObj.detalhes.dias_visiveis_agenda ?? 6);
+    const diaInicioJs = (diaInicioPython + 1) % 7;
+
+    let dataBase: Date;
+    if (typeof dataSelecionada.value === 'string') {
+        const apenasData = String(dataSelecionada.value).substring(0, 10);
+        const [ano, mes, dia] = apenasData.split('-').map(Number);
+        dataBase = new Date(ano!, mes! - 1, dia!);
+    } else {
+        const d = new Date(dataSelecionada.value);
+        dataBase = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+
+    const diff = (dataBase.getDay() - diaInicioJs + 7) % 7;
+    const inicioSemana = new Date(dataBase);
+    inicioSemana.setDate(dataBase.getDate() - diff);
+
+    for (let i = 0; i < diasVisiveis; i++) {
+        const diaCorrente = new Date(inicioSemana);
+        diaCorrente.setDate(inicioSemana.getDate() + i);
+        visiveis.add(formatarDataIsoCurta(diaCorrente));
+    }
+
+    return visiveis;
+});
+
+// Recebe a célula do minicalendário e devolve true se aquele dia da semana não funcionar na agenda.
+const ehDiaBloqueadoNoMini = (cell: any): boolean => {
+    const data = obterDataDaCelula(cell);
+    if (!data || props.modoLayout !== 'tabela-horario') return false;
+    return conjuntoDatasDesabilitadas.value.has(formatarDataIsoCurta(data));
+};
+
+// Recebe a célula do minicalendário e devolve true se ela já estiver sendo exibida na tabela atual.
+const ehDiaVisivelNaGrade = (cell: any): boolean => {
+    const data = obterDataDaCelula(cell);
+    if (!data || props.modoLayout !== 'tabela-horario') return false;
+    return datasVisiveisNaSemana.value.has(formatarDataIsoCurta(data));
+};
 
 // Recebe nada. Devolve nada.
 // É usada para retrair ou expandir a aba esquerda de navegação rápida.
@@ -99,6 +184,7 @@ const mudarVisao = (novaVisao: string) => {
               <vue-cal
                 ref="calendarioMiniRef"
                 class="calendario-mini vuecal--blue-theme"
+                :class="{ 'modo-mini-tabela-horario': props.modoLayout === 'tabela-horario' }"
                 small
                 active-view="month"
                 :views="['month']"
@@ -106,12 +192,35 @@ const mudarVisao = (novaVisao: string) => {
                 hide-view-selector
                 :click-to-navigate="false"
                 locale="pt-br"
+                :disable-days="props.modoLayout === 'tabela-horario' ? datasDesabilitadas : []"
                 v-model:selected-date="dataSelecionada"
                 :view-date="dataVisao"
                 @update:selected-date="dataVisao = $event"
               >
                 <template #views-bar></template>
                 <template #today-button></template>
+
+                <template #cell-content="{ cell }">
+                  <div
+                    class="vuecal__cell-date"
+                    :class="{
+                      'dia-semana-visivel': ehDiaVisivelNaGrade(cell),
+                      'dia-coluna-inativa': ehDiaBloqueadoNoMini(cell)
+                    }"
+                    @mousedown.stop="
+                      (ehDiaVisivelNaGrade(cell) || ehDiaBloqueadoNoMini(cell))
+                        ? $event.preventDefault()
+                        : null
+                    "
+                    @click.stop="
+                      (!ehDiaVisivelNaGrade(cell) && !ehDiaBloqueadoNoMini(cell))
+                        ? (dataSelecionada = obterDataDaCelula(cell) || dataSelecionada, dataVisao = obterDataDaCelula(cell) || dataVisao)
+                        : null
+                    "
+                  >
+                    {{ cell.content }}
+                  </div>
+                </template>
               </vue-cal>
             </div>
           </div>
@@ -132,12 +241,27 @@ const mudarVisao = (novaVisao: string) => {
             </template>
           </AgendaVueCal>
 
+          <AgendaTabelaHorario
+            v-else-if="props.modoLayout === 'tabela-horario'"
+            :id-recurso-unico="props.idRecursoUnico"
+            :usa-interceptador="props.usaInterceptador"
+            :titulo-padrao="props.tituloPadrao"
+            :ocultar-titulo-modal="props.ocultarTituloModal"
+            :configuracao-blocos="props.configuracaoBlocos"
+            @before-save="$emit('before-save', $event)"
+          >
+            <template #campos-extras>
+              <slot name="campos-extras"></slot>
+            </template>
+          </AgendaTabelaHorario>
+
           <AgendaMatrixUnico
             v-else-if="props.modoLayout === 'tabela' && props.idRecursoUnico"
             :id-recurso="props.idRecursoUnico"
             :usa-interceptador="props.usaInterceptador"
             :titulo-padrao="props.tituloPadrao"
             :ocultar-titulo-modal="props.ocultarTituloModal"
+            :configuracao-blocos="props.configuracaoBlocos"
             @before-save="$emit('before-save', $event)"
           >
             <template #campos-extras>
@@ -150,6 +274,7 @@ const mudarVisao = (novaVisao: string) => {
             :usa-interceptador="props.usaInterceptador"
             :titulo-padrao="props.tituloPadrao"
             :ocultar-titulo-modal="props.ocultarTituloModal"
+            :configuracao-blocos="props.configuracaoBlocos"
             @before-save="$emit('before-save', $event)"
           >
             <template #campos-extras>
@@ -162,7 +287,6 @@ const mudarVisao = (novaVisao: string) => {
   </div>
 </template>
 <style lang="scss">
-// importa o main.scss
 @use '../assets/scss/main.scss';
 </style>
 
@@ -218,10 +342,10 @@ const mudarVisao = (novaVisao: string) => {
 :deep(.calendario-mini .vuecal__heading) { border: none !important; background-color: transparent !important; font-weight: 600; color: var(--text-secondary); padding-bottom: 4px; }
 :deep(.calendario-mini .vuecal__cell) { border: none !important; background-color: transparent !important; height: 32px !important; min-height: 32px !important; aspect-ratio: auto !important; }
 :deep(.calendario-mini .vuecal__cell::before) { display: none !important; content: none !important; }
-:deep(.calendario-mini .vuecal__cell-content) { height: 32px !important; min-height: 32px !important; padding: 0 !important; margin: 0 !important; justify-content: center !important; align-items: center !important; }
-:deep(.calendario-mini .vuecal__cell-date) { width: 24px !important; height: 24px !important; font-size: 12px !important; line-height: 24px !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; margin: 0 auto !important; border-radius: 50% !important; border: 2px solid transparent !important; box-sizing: border-box !important; transition: all 0.2s ease; }
+:deep(.calendario-mini .vuecal__cell-content) { height: 32px !important; min-height: 32px !important; padding: 0 !important; margin: 0 !important; justify-content: center !important; align-items: center !important; width: 100% !important; }
+:deep(.calendario-mini .vuecal__cell-date) { width: 26px !important; height: 26px !important; font-size: 12px !important; line-height: 26px !important; padding: 0 !important; display: flex !important; align-items: center !important; justify-content: center !important; margin: 0 auto !important; border-radius: 50% !important; border: 2px solid transparent !important; box-sizing: border-box !important; transition: all 0.2s ease; cursor: pointer; }
 :deep(.calendario-mini .vuecal__cell--selected) { background-color: transparent !important; }
-:deep(.calendario-mini .vuecal__cell--selected .vuecal__cell-date) { 
+:deep(.calendario-mini:not(.modo-mini-tabela-horario) .vuecal__cell--selected .vuecal__cell-date) { 
     background-color: var(--color-brand) !important; 
     color: var(--text-inverse) !important; 
     border-color: var(--color-brand) !important; 
@@ -229,7 +353,7 @@ const mudarVisao = (novaVisao: string) => {
 :deep(.vuecal__body) { padding: 0; gap: 0; margin: 0; }
 :deep(.calendario-mini .vuecal__cell--today) { background-color: transparent !important; }
 :deep(.calendario-mini .vuecal__cell-date){ background-color: transparent !important; color: var(--text-primary); }
-:deep(.calendario-mini .vuecal__cell--today:not(.vuecal__cell--selected) .vuecal__cell-date) { 
+:deep(.calendario-mini .vuecal__cell--today:not(.vuecal__cell--selected) .vuecal__cell-date:not(.dia-semana-visivel)) { 
     background-color: var(--color-brand-light) !important; 
     border-color: transparent !important; 
     color: var(--color-brand) !important; 
@@ -239,7 +363,33 @@ const mudarVisao = (novaVisao: string) => {
 :deep(.calendario-mini .vuecal__body){ height: 0%!important; }
 :deep(.calendario-mini .vuecal__scrollable-wrap){ background-color: transparent!important; }
 
-/* Remove o fundo branco forçado dos dias da semana no mini-calendário */
+/* Estilização específica para o modo tabela-horario no minicalendário */
+:deep(.calendario-mini.modo-mini-tabela-horario .vuecal__cell--disabled) {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
+
+:deep(.calendario-mini.modo-mini-tabela-horario .vuecal__cell-date.dia-coluna-inativa) {
+    opacity: 0.22 !important;
+    color: var(--text-secondary) !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    text-decoration: line-through;
+}
+
+:deep(.calendario-mini.modo-mini-tabela-horario .vuecal__cell-date.dia-semana-visivel) {
+    background-color: var(--color-brand) !important;
+    color: var(--text-inverse) !important;
+    border-color: var(--color-brand) !important;
+    font-weight: 700 !important;
+    width: 92% !important;
+    border-radius: 6px !important;
+    cursor: default !important;
+    box-shadow: var(--shadow-sm);
+}
+
 :deep(.calendario-mini .vuecal__weekdays-headings),
 :deep(.calendario-mini .vuecal__weekday) {
     background-color: transparent !important;
@@ -253,7 +403,6 @@ const mudarVisao = (novaVisao: string) => {
     border-bottom: 1px solid var(--border-light) !important;
 }
 
-/* Aplica o fundo transparente e a cor correta a cada dia individualmente e seus filhos */
 :deep(.calendario-mini .vuecal__heading),
 :deep(.calendario-mini .vuecal__weekday),
 :deep(.calendario-mini .vuecal__heading *) {
@@ -271,7 +420,6 @@ const mudarVisao = (novaVisao: string) => {
     border-bottom: 1px solid var(--border-light) !important;
 }
 
-/* Garante que os itens individuais e o texto adotem o fundo escuro e texto legível */
 :deep(.calendario-mini .vuecal__heading),
 :deep(.calendario-mini .vuecal__weekday),
 :deep(.calendario-mini .vuecal__weekday-name),

@@ -2,7 +2,7 @@
 ========
 Este arquivo representa a visualização em matriz exclusiva para um único recurso.
 Ele identifica automaticamente a agenda vinculada ao recurso informado via propriedade,
-sincroniza a busca e exibe na grade apenas o recurso especificado, ocultando qualquer barra de filtro.
+sincroniza a busca, repassa a configuração de blocos da agenda e exibe na grade apenas o recurso especificado.
 ========
 -->
 <script setup lang="ts">
@@ -14,7 +14,8 @@ const props = defineProps({
     idRecurso: { type: [Number, String], required: true },
     usaInterceptador: { type: Boolean, default: false },
     tituloPadrao: { type: String, default: '' },
-    ocultarTituloModal: { type: Boolean, default: false }
+    ocultarTituloModal: { type: Boolean, default: false },
+    configuracaoBlocos: { type: [Array, Object], default: null }
 });
 
 const api = inject('api-instance-agenda') as any;
@@ -55,6 +56,7 @@ const idsVisiveis = computed(() => {
     :usa-interceptador="props.usaInterceptador"
     :titulo-padrao="props.tituloPadrao"
     :ocultar-titulo-modal="props.ocultarTituloModal"
+    :configuracao-blocos="props.configuracaoBlocos"
     mensagem-vazio="Recurso não encontrado na grade desta agenda."
     @before-save="$emit('before-save', $event)"
   >

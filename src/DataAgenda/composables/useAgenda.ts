@@ -259,6 +259,18 @@ export function useAgenda(api: any) {
             throw erro;
         }
     };
+
+
+    // Recebe o objeto padronizado da reserva recorrente (com data_limite_repeticao) e envia para a rota em lote.
+    const criarReservaRecorrente = async (payload: any) => {
+        try {
+            const resposta = await api.post('/reservas/recorrentes/', payload);
+            return resposta;
+        } catch (erro) {
+            console.error("Erro na API ao criar reserva recorrente:", erro);
+            throw erro;
+        }
+    };
     return {
         reservasBrutas,
         recursosDisponiveis,
@@ -281,5 +293,6 @@ export function useAgenda(api: any) {
         buscarPeriodosAgenda,
         obterDetalhesReserva,
         excluirReserva,
+        criarReservaRecorrente
     };
 }

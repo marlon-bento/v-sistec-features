@@ -1,8 +1,8 @@
 <!--
 ========
 Este arquivo representa a visualização em matriz para múltiplos recursos com suporte a filtragem.
-Ele utiliza o AgendaMatrixBase para renderizar a grade e gerencia o dropdown de seleção de salas,
-preservando os filtros ativos mesmo quando o usuário altera a data no mini-calendário.
+Ele utiliza o AgendaMatrixBase para renderizar a grade, repassa a configuração de blocos da agenda
+e gerencia o dropdown de seleção de salas preservando os filtros ativos ao mudar a data.
 ========
 -->
 <script setup lang="ts">
@@ -13,7 +13,8 @@ import AgendaMatrixBase from './AgendaMatrixBase.vue';
 const props = defineProps({
     usaInterceptador: { type: Boolean, default: false },
     tituloPadrao: { type: String, default: '' },
-    ocultarTituloModal: { type: Boolean, default: false }
+    ocultarTituloModal: { type: Boolean, default: false },
+    configuracaoBlocos: { type: [Array, Object], default: null }
 });
 
 const api = inject('api-instance-agenda') as any;
@@ -70,6 +71,7 @@ const limparFiltros = () => {
     :usa-interceptador="props.usaInterceptador"
     :titulo-padrao="props.tituloPadrao"
     :ocultar-titulo-modal="props.ocultarTituloModal"
+    :configuracao-blocos="props.configuracaoBlocos"
     mensagem-vazio="Nenhuma sala selecionada."
     @before-save="$emit('before-save', $event)"
   >

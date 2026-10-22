@@ -1,7 +1,7 @@
 <!--
 ========
-Componente de cabeçalho do modo Tabela, contendo o alternador de menu lateral, 
-controles de navegação semanal e seletor de agendamentos (que pode ser ocultado no modo de recurso único).
+Componente de cabeçalho dos modos Tabela e Tabela-Horário, contendo o alternador de menu lateral, 
+controles de navegação semanal alinhados ao início da semana da agenda e seletor de agendas.
 ========
 -->
 <script setup lang="ts">
@@ -18,10 +18,19 @@ const props = defineProps<{
 
 const { dataSelecionada, agendasDisponiveis, agendaSelecionada } = useAgenda(api);
 
-// Calcula e formata o intervalo de 7 dias exibido no cabeçalho do modo tabela.
+// Calcula e formata o intervalo da semana começando no dia inicial configurado na agenda (Segunda-feira por padrão).
 const textoPeriodoTabela = computed(() => {
     if (!dataSelecionada.value) return '';
-    const inicio = new Date(dataSelecionada.value);
+    const dBase = new Date(dataSelecionada.value);
+    const inicio = new Date(dBase.getFullYear(), dBase.getMonth(), dBase.getDate());
+
+    const agendaObj = agendasDisponiveis.value.find((a: any) => Number(a.id_agenda) === Number(agendaSelecionada.value));
+    const diaInicioPython = agendaObj?.detalhes?.dia_inicio_semana_agenda ?? 0;
+    const diaInicioJs = (diaInicioPython + 1) % 7;
+    const diff = (inicio.getDay() - diaInicioJs + 7) % 7;
+
+    inicio.setDate(inicio.getDate() - diff);
+
     const fim = new Date(inicio);
     fim.setDate(inicio.getDate() + 6);
 
