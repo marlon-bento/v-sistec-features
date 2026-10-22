@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.12](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.11...v1.31.12) (2026-10-22)
+
+
+### Bug Fixes
+
+* novo modo de agendamento, agendamento recorrente adicionado, melhoria em separação de componentes, agora é possível arrastar para pegar mais de um horario e mais algumas correções de bugs ([bb9a0b6](https://github.com/marlon-bento/v-sistec-features/commit/bb9a0b6570b271be187f5ec381e05331c9c07a0b))
+
 ## [1.31.11](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.10...v1.31.11) (2026-10-21)
 
 
