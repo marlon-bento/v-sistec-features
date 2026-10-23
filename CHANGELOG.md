@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.14](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.13...v1.31.14) (2026-10-23)
+
+
+### Bug Fixes
+
+* correção de bug de agenda sumindo pra canto direito e não tendo scrol, melhoria de cores para tema dark e ligth ([dc9861b](https://github.com/marlon-bento/v-sistec-features/commit/dc9861b0c8fa1c8d91fce2b03086c24115a6a39d))
+
 ## [1.31.13](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.12...v1.31.13) (2026-10-23)
 
 
