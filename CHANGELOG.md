@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.31.13](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.12...v1.31.13) (2026-10-23)
+
+
+### Bug Fixes
+
+* diminuição de código duplicado, adição de novos slots para modal e correção de bug de modal não poder scrollar ([b983c29](https://github.com/marlon-bento/v-sistec-features/commit/b983c299c01a601c540ea197654acc9afc62e3cd))
+
 ## [1.31.12](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.11...v1.31.12) (2026-10-22)
 
 
