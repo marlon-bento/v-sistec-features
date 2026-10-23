@@ -2,14 +2,25 @@
 ========
 Este arquivo implementa o modelo visual 'tabela-horario' com os turnos na vertical à esquerda,
 colunas de horários seguidas pelos dias da semana e suporte a colunas de horários específicas (como Sábado)
-com altura proporcional, mesclagem vertical de reservas contínuas e seleção vertical via BlocoArrastavel.
+com altura proporcional, mesclagem vertical de reservas contínuas, seleção vertical via BlocoArrastavel
+e exposição da lista contendo o recurso atualmente em exibição.
 ========
 -->
 <script setup lang="ts">
-import { computed, onMounted, watch, ref, inject } from 'vue';
+import { computed, watch, inject } from 'vue';
 import { useAgenda } from '../composables/useAgenda';
 import { useCoresAgenda } from '../composables/useCoresAgenda';
 import { useSelecaoArrasto } from '../composables/useSelecaoArrasto';
+import {
+    SIGLAS_DIAS_JS,
+    TITULOS_DIAS_CABECALHO,
+    extrairDataHoraLocal,
+    extrairHoraFormatada,
+    criarDataLocal,
+    mesclarSlotsReservados,
+    useGradeSemanal,
+    useSincronizarRecursoUnico
+} from '../composables/useGradeCompartilhada';
 import BlocoArrastavel from './BlocoArrastavel.vue';
 import ModalReserva from './ModalReserva.vue';
 import ModalDetalhesReserva from './ModalDetalhesReserva.vue';
@@ -35,63 +46,64 @@ const props = defineProps<{
 }>();
 
 const api = inject('api-instance-agenda') as any;
-const emit = defineEmits(['before-save']);
+defineEmits(['before-save']);
+
+const { agendaSelecionada, recursosDisponiveis, recursoSelecionado } = useAgenda(api);
+const { theme, obterCoresBloco } = useCoresAgenda();
+
+useSincronizarRecursoUnico(api, () => props.idRecursoUnico);
 
 const {
     dadosMatrix,
-    buscarSlotsMatrix,
-    buscarReservas,
-    agendasDisponiveis,
-    agendaSelecionada,
-    recursosDisponiveis,
-    recursoSelecionado,
-    dataSelecionada,
-    converterParaUtc
-} = useAgenda(api);
+    carregando,
+    modalAberto,
+    dadosParaModal,
+    modalDetalhesAberto,
+    reservaSelecionadaDetalhes,
+    obterBlocosDoDia,
+    dispararBuscaSemanal
+} = useGradeSemanal(api, () => props.configuracaoBlocos);
 
-const { theme, obterCoresBloco } = useCoresAgenda();
+// Quando a agenda muda no seletor e não há idRecursoUnico fixo, garante que o recursoSelecionado pertença à agenda ativa.
+watch(agendaSelecionada, (novoIdAgenda) => {
+    if (!novoIdAgenda || props.idRecursoUnico) return;
+    const pertence = recursosDisponiveis.value.some(
+        (r: any) => Number(r.id_recurso) === Number(recursoSelecionado.value) && Number(r.id_agenda) === Number(novoIdAgenda)
+    );
+    if (!pertence) {
+        const primeiroDaAgenda = recursosDisponiveis.value.find(
+            (r: any) => Number(r.id_agenda) === Number(novoIdAgenda)
+        );
+        if (primeiroDaAgenda) {
+            recursoSelecionado.value = Number(primeiroDaAgenda.id_recurso);
+        }
+    }
+});
 
-// Mapeamento das siglas dos dias da semana conforme índice do Date.getDay() (0=DOM a 6=SAB).
-const SIGLAS_DIAS_JS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
+const recursosDaAgendaAtual = computed(() => {
+    if (!agendaSelecionada.value) return recursosDisponiveis.value;
+    return recursosDisponiveis.value.filter(
+        (r: any) => Number(r.id_agenda) === Number(agendaSelecionada.value)
+    );
+});
 
-// Mapeamento dos títulos de cabeçalho de cada dia da semana conforme índice do Date.getDay().
-const TITULOS_DIAS_CABECALHO = [
-    'DOMINGO',
-    '2ª FEIRA',
-    '3ª FEIRA',
-    '4ª FEIRA',
-    '5ª FEIRA',
-    '6ª FEIRA',
-    'SÁBADO'
-];
+const idRecursoAtivo = computed(() => {
+    if (props.idRecursoUnico) return Number(props.idRecursoUnico);
+    if (recursoSelecionado.value) return Number(recursoSelecionado.value);
+    const primeiro = recursosDaAgendaAtual.value[0];
+    return primeiro ? Number(primeiro.id_recurso) : null;
+});
 
-// Indica se os dados da grade estão sendo carregados da API.
-const carregando = ref(false);
+const recursosEmExibicao = computed(() => {
+    if (!idRecursoAtivo.value) return [];
+    const encontrado = recursosDisponiveis.value.find(
+        (r: any) => Number(r.id_recurso) === Number(idRecursoAtivo.value)
+    );
+    return encontrado ? [encontrado] : [];
+});
 
-// Controla a abertura do modal de criação de reserva.
-const modalAberto = ref(false);
+defineExpose({ recursosEmExibicao });
 
-// Armazena os dados preenchidos pela seleção na grade para enviar ao modal de criação.
-const dadosParaModal = ref({});
-
-// Controla a abertura do modal de detalhes de uma reserva existente.
-const modalDetalhesAberto = ref(false);
-
-// Armazena a reserva selecionada ao clicar em um bloco ocupado.
-const reservaSelecionadaDetalhes = ref<any>(null);
-
-// Recebe uma string ISO UTC e devolve objeto com data (YYYY-MM-DD) e hora (HH:MM) locais.
-const extrairDataHoraLocal = (isoString: string) => {
-    const d = new Date(isoString);
-    const ano = d.getFullYear();
-    const mes = String(d.getMonth() + 1).padStart(2, '0');
-    const dia = String(d.getDate()).padStart(2, '0');
-    const horas = String(d.getHours()).padStart(2, '0');
-    const min = String(d.getMinutes()).padStart(2, '0');
-    return { data: `${ano}-${mes}-${dia}`, hora: `${horas}:${min}` };
-};
-
-// Instância do controlador genérico de arrasto configurada para operar nas colunas verticais de cada dia.
 const controladorArrastoVertical = useSelecaoArrasto({
     aoClicarItemIndisponivel: (celula) => {
         if (celula?.reservado_slot && celula?.detalhes_reserva) {
@@ -121,165 +133,10 @@ const controladorArrastoVertical = useSelecaoArrasto({
     }
 });
 
-// Sincroniza o recurso e a agenda caso o componente tenha recebido a propriedade idRecursoUnico.
-const sincronizarRecursoUnico = () => {
-    if (!props.idRecursoUnico || recursosDisponiveis.value.length === 0) return;
-
-    const encontrado = recursosDisponiveis.value.find(
-        (r: any) => Number(r.id_recurso) === Number(props.idRecursoUnico)
-    );
-
-    if (encontrado) {
-        recursoSelecionado.value = Number(encontrado.id_recurso);
-        if (encontrado.id_agenda && agendaSelecionada.value !== encontrado.id_agenda) {
-            agendaSelecionada.value = encontrado.id_agenda;
-        }
-    }
-};
-
-watch([() => props.idRecursoUnico, recursosDisponiveis], () => {
-    sincronizarRecursoUnico();
-}, { immediate: true });
-
-// Quando a agenda muda no seletor e não há idRecursoUnico fixo, garante que o recursoSelecionado pertença à agenda ativa.
-watch(agendaSelecionada, (novoIdAgenda) => {
-    if (!novoIdAgenda || props.idRecursoUnico) return;
-    const pertence = recursosDisponiveis.value.some(
-        (r: any) => Number(r.id_recurso) === Number(recursoSelecionado.value) && Number(r.id_agenda) === Number(novoIdAgenda)
-    );
-    if (!pertence) {
-        const primeiroDaAgenda = recursosDisponiveis.value.find(
-            (r: any) => Number(r.id_agenda) === Number(novoIdAgenda)
-        );
-        if (primeiroDaAgenda) {
-            recursoSelecionado.value = Number(primeiroDaAgenda.id_recurso);
-        }
-    }
-});
-
-// Calcula a data de início da semana (Segunda-feira por padrão) com base na data selecionada.
-const obterInicioDaSemana = (dataRef: Date, idAgenda: number | null) => {
-    const d = new Date(dataRef.getFullYear(), dataRef.getMonth(), dataRef.getDate());
-    const agendaObj = agendasDisponiveis.value.find((a: any) => Number(a.id_agenda) === Number(idAgenda));
-    const diaInicioPython = agendaObj?.detalhes?.dia_inicio_semana_agenda ?? 0;
-    const diaInicioJs = (diaInicioPython + 1) % 7;
-    const diff = (d.getDay() - diaInicioJs + 7) % 7;
-    d.setDate(d.getDate() - diff);
-    return d;
-};
-
-// Busca os slots da matriz e as reservas para os 7 dias da semana ordenada.
-const dispararBuscaGrade = async () => {
-    const idAgenda = agendaSelecionada.value;
-    if (!idAgenda) return;
-
-    carregando.value = true;
-
-    const valorData = dataSelecionada.value || new Date();
-    let dataBase: Date;
-
-    if (typeof valorData === 'string') {
-        const apenasData = String(valorData).substring(0, 10);
-        const [ano, mes, dia] = apenasData.split('-');
-        dataBase = new Date(Number(ano), Number(mes) - 1, Number(dia));
-    } else {
-        dataBase = new Date(valorData);
-    }
-
-    const dataInicio = obterInicioDaSemana(dataBase, idAgenda);
-    const dataFim = new Date(dataInicio);
-    dataFim.setDate(dataInicio.getDate() + 6);
-
-    const formatar = (dt: Date) => {
-        const ano = dt.getFullYear();
-        const mes = String(dt.getMonth() + 1).padStart(2, '0');
-        const dia = String(dt.getDate()).padStart(2, '0');
-        return `${ano}-${mes}-${dia}`;
-    };
-
-    const strInicio = formatar(dataInicio);
-    const strFim = formatar(dataFim);
-
-    const inicioUtc = encodeURIComponent(converterParaUtc(strInicio, '00:00'));
-    const fimUtc = encodeURIComponent(converterParaUtc(strFim, '23:59'));
-
-    await buscarSlotsMatrix(idAgenda, inicioUtc, fimUtc);
-    await buscarReservas(`${strInicio}T00:00:00`, `${strFim}T23:59:59`);
-    carregando.value = false;
-};
-
-onMounted(() => {
-    dispararBuscaGrade();
-});
-
-watch([dataSelecionada, agendaSelecionada], () => {
-    dispararBuscaGrade();
-});
-
-// Devolve a lista de recursos pertencentes à agenda selecionada para o seletor de salas.
-const recursosDaAgendaAtual = computed(() => {
-    if (!agendaSelecionada.value) return recursosDisponiveis.value;
-    return recursosDisponiveis.value.filter(
-        (r: any) => Number(r.id_agenda) === Number(agendaSelecionada.value)
-    );
-});
-
-// Devolve o ID numérico do recurso ativo que está sendo exibido na grade.
-const idRecursoAtivo = computed(() => {
-    if (props.idRecursoUnico) return Number(props.idRecursoUnico);
-    if (recursoSelecionado.value) return Number(recursoSelecionado.value);
-    const primeiro = recursosDaAgendaAtual.value[0];
-    return primeiro ? Number(primeiro.id_recurso) : null;
-});
-
-// Recebe uma string ISO UTC e devolve a hora local formatada em HH:MM.
-const extrairHoraFormatada = (isoStr: string) => {
-    const d = new Date(isoStr);
-    const horas = String(d.getHours()).padStart(2, '0');
-    const minutos = String(d.getMinutes()).padStart(2, '0');
-    return `${horas}:${minutos}`;
-};
-
-// Recebe uma string YYYY-MM-DD e devolve o objeto Date local.
-const criarDataLocal = (isoData: string) => {
-    const apenasData = String(isoData).substring(0, 10);
-    const [ano, mes, dia] = apenasData.split('-');
-    return new Date(Number(ano), Number(mes) - 1, Number(dia));
-};
-
-// Localiza a configuração de blocos enviada via prop para a agenda selecionada no momento.
-const configuracaoAgendaAtual = computed(() => {
-    if (!props.configuracaoBlocos || !agendaSelecionada.value) return null;
-    const idAtual = Number(agendaSelecionada.value);
-
-    if (Array.isArray(props.configuracaoBlocos)) {
-        return props.configuracaoBlocos.find((c: any) => Number(c.id_agenda) === idAtual) || null;
-    }
-
-    if (typeof props.configuracaoBlocos === 'object') {
-        if (Number(props.configuracaoBlocos.id_agenda) === idAtual) {
-            return props.configuracaoBlocos;
-        }
-        if (props.configuracaoBlocos[idAtual]) {
-            return props.configuracaoBlocos[idAtual];
-        }
-    }
-    return null;
-});
-
 // Processa a lista de horários de um grupo de dias e gera os metadados de cada linha (bloco lateral, cor e bordas de subdivisão).
 const mapearLinhasComBlocos = (horariosBase: { horaInicio: string; horaFim: string }[], siglaDia: string) => {
     const total = horariosBase.length;
-    const cfg = configuracaoAgendaAtual.value;
-
-    let listaBlocos: any[] | null = null;
-    if (cfg) {
-        if (cfg.por_dia && cfg.por_dia[siglaDia]) {
-            listaBlocos = cfg.por_dia[siglaDia];
-        } else if (Array.isArray(cfg.blocos)) {
-            listaBlocos = cfg.blocos;
-        }
-    }
+    const listaBlocos = obterBlocosDoDia(siglaDia);
 
     const metadadosLinhas: MetadadoLinha[] = horariosBase.map((h) => ({
         horaInicio: h.horaInicio,
@@ -302,8 +159,6 @@ const mapearLinhasComBlocos = (horariosBase: { horaInicio: string; horaFim: stri
     listaBlocos.forEach((blocoCfg: any, idxBloco: number) => {
         if (cursor >= total) return;
         const qtdSolicitada = Number(blocoCfg.quantidade) || 0;
-        if (qtdSolicitada <= 0) return;
-
         const qtdReal = Math.min(qtdSolicitada, total - cursor);
         if (qtdReal <= 0) return;
 
@@ -331,37 +186,27 @@ const mapearLinhasComBlocos = (horariosBase: { horaInicio: string; horaFim: stri
             let consumido = 0;
             subLista.forEach((tam: number) => {
                 if (consumido >= qtdReal) return;
-                const tamEfetivo = Math.min(Number(tam) || 1, qtdReal - consumido);
-                consumido += tamEfetivo;
+                consumido += Math.min(Number(tam) || 1, qtdReal - consumido);
                 const metaFimSub = metadadosLinhas[cursor + consumido - 1];
-                if (metaFimSub) {
-                    metaFimSub.fimDeSubbloco = true;
-                }
+                if (metaFimSub) metaFimSub.fimDeSubbloco = true;
             });
         } else if (subFixo > 0) {
             let consumido = 0;
             while (consumido < qtdReal) {
-                const tamEfetivo = Math.min(subFixo, qtdReal - consumido);
-                consumido += tamEfetivo;
+                consumido += Math.min(subFixo, qtdReal - consumido);
                 const metaFimSub = metadadosLinhas[cursor + consumido - 1];
-                if (metaFimSub) {
-                    metaFimSub.fimDeSubbloco = true;
-                }
+                if (metaFimSub) metaFimSub.fimDeSubbloco = true;
             }
         }
 
         const metaFimPrincipal = metadadosLinhas[cursor + qtdReal - 1];
-        if (metaFimPrincipal) {
-            metaFimPrincipal.fimDeBlocoPrincipal = true;
-        }
+        if (metaFimPrincipal) metaFimPrincipal.fimDeBlocoPrincipal = true;
         cursor += qtdReal;
     });
 
     if (cursor < total) {
         const restante = total - cursor;
-        const idxExtra = listaBlocos.length;
-        
-        const { corFundo, corBorda } = obterCoresBloco(idxExtra);
+        const { corFundo, corBorda } = obterCoresBloco(listaBlocos.length);
 
         const metaRestante = metadadosLinhas[cursor];
         if (metaRestante) {
@@ -379,15 +224,13 @@ const mapearLinhasComBlocos = (horariosBase: { horaInicio: string; horaFim: stri
         }
 
         const metaUltimo = metadadosLinhas[total - 1];
-        if (metaUltimo) {
-            metaUltimo.fimDeBlocoPrincipal = true;
-        }
+        if (metaUltimo) metaUltimo.fimDeBlocoPrincipal = true;
     }
 
     return { temColunaTurno: true, linhas: metadadosLinhas };
 };
 
-// Constrói a estrutura completa de grupos de colunas (ex: 2ª a 6ª feira + coluna de Horas e Sábado separados) e calcula o rowspan das reservas.
+// Constrói a estrutura completa de grupos de colunas e calcula o rowspan das reservas.
 const estruturaGradeHorario = computed(() => {
     if (!dadosMatrix.value?.datas_matriz || !idRecursoAtivo.value) {
         return { grupos: [], maxLinhas: 0, temColunaTurnoPrincipal: false };
@@ -430,57 +273,11 @@ const estruturaGradeHorario = computed(() => {
             });
         }
 
-        const grupo = gruposPorAssinatura.get(assinatura);
-
-        // Calcula a mesclagem vertical (rowspan) para reservas que ocupam múltiplos horários consecutivos.
-        const celulasProcessadas: any[] = [];
-        let i = 0;
-        while (i < slotsReservaveis.length) {
-            const slotAtual = slotsReservaveis[i];
-            const codRef = slotAtual?.detalhes_reserva?.codigo_referencia_reserva;
-
-            if (slotAtual?.reservado_slot && codRef) {
-                let span = 1;
-                while (
-                    i + span < slotsReservaveis.length &&
-                    slotsReservaveis[i + span]?.reservado_slot &&
-                    slotsReservaveis[i + span]?.detalhes_reserva?.codigo_referencia_reserva === codRef
-                ) {
-                    span++;
-                }
-
-                celulasProcessadas.push({
-                    ...slotAtual,
-                    indiceLinha: i,
-                    rowspan: span,
-                    ocultaPorRowspan: false
-                });
-
-                for (let k = 1; k < span; k++) {
-                    celulasProcessadas.push({
-                        ...slotsReservaveis[i + k],
-                        indiceLinha: i + k,
-                        rowspan: 1,
-                        ocultaPorRowspan: true
-                    });
-                }
-                i += span;
-            } else {
-                celulasProcessadas.push({
-                    ...slotAtual,
-                    indiceLinha: i,
-                    rowspan: 1,
-                    ocultaPorRowspan: false
-                });
-                i++;
-            }
-        }
-
-        grupo.dias.push({
+        gruposPorAssinatura.get(assinatura).dias.push({
             data_slot: dia.data_slot,
             tituloDia,
             dataCurta,
-            celulas: celulasProcessadas
+            celulas: mesclarSlotsReservados(slotsReservaveis, 'rowspan')
         });
     });
 
@@ -504,10 +301,10 @@ const estruturaGradeHorario = computed(() => {
       :usa-interceptador="props.usaInterceptador"
       :ocultar-titulo-modal="props.ocultarTituloModal"
       @before-save="$emit('before-save', $event)"
-      @salvo="dispararBuscaGrade"
+      @salvo="dispararBuscaSemanal"
     >
-      <template #campos-extras>
-        <slot name="campos-extras"></slot>
+      <template v-for="(_, nomeSlot) in $slots" :key="nomeSlot" #[nomeSlot]="slotProps">
+        <slot :name="nomeSlot" v-bind="slotProps ?? {}"></slot>
       </template>
     </ModalReserva>
 
@@ -515,7 +312,7 @@ const estruturaGradeHorario = computed(() => {
       v-model="modalDetalhesAberto"
       :reserva="reservaSelecionadaDetalhes"
       :titulo-padrao="props.tituloPadrao"
-      @excluido="dispararBuscaGrade"
+      @excluido="dispararBuscaSemanal"
     />
 
     <div class="aviso-vazio" v-if="carregando">
@@ -654,246 +451,45 @@ const estruturaGradeHorario = computed(() => {
 </template>
 
 <style scoped>
-.tabela-horario-container {
-    width: 100%;
-    height: 100%;
-    background: var(--bg-primary);
-    display: flex;
-    flex-direction: column;
-    user-select: none;
-}
+.tabela-horario-container { width: 100%; height: 100%; background: var(--bg-primary); display: flex; flex-direction: column; user-select: none; }
+.horario-conteudo { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.barra-topo-recurso { display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: var(--bg-primary); border-bottom: 1px solid var(--border-light); font-size: 13.5px; font-weight: 600; color: var(--text-primary); flex-shrink: 0; }
+.barra-topo-recurso select { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-light); background: var(--bg-secondary); color: var(--text-primary); font-weight: 600; cursor: pointer; }
+.dica-arrasto { margin-left: auto; font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+.grade-scroll-wrapper { flex-grow: 1; overflow: auto; padding: 16px; background: var(--bg-primary); }
+.tabela-estilo-puc { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12.5px; text-align: center; }
 
-.horario-conteudo {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
-}
+.th-canto-vazio { width: 36px; min-width: 36px; max-width: 36px; background: transparent !important; border: none !important; }
+.th-col-horas { width: 78px; min-width: 78px; max-width: 78px; }
+.th-cabecalho-padrao { background-color: #0066B3 !important; color: #FFFFFF !important; font-weight: 800; padding: 8px 6px; border: 1px solid #005291; letter-spacing: 0.4px; position: sticky; top: 0; z-index: 4; }
+.th-cabecalho-especifico { background-color: #808080 !important; color: #FFFFFF !important; font-weight: 800; padding: 8px 6px; border: 1px solid #666666; letter-spacing: 0.4px; position: sticky; top: 0; z-index: 4; }
+.th-dia-nome { font-size: 13px; line-height: 1.2; }
+.th-dia-data { font-size: 10.5px; font-weight: 600; opacity: 0.9; }
 
-.barra-topo-recurso {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 20px;
-    background: var(--bg-primary);
-    border-bottom: 1px solid var(--border-light);
-    font-size: 13.5px;
-    font-weight: 600;
-    color: var(--text-primary);
-    flex-shrink: 0;
-}
-
-.barra-topo-recurso select {
-    padding: 6px 12px;
-    border-radius: 6px;
-    border: 1px solid var(--border-light);
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.dica-arrasto {
-    margin-left: auto;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-secondary);
-}
-
-.grade-scroll-wrapper {
-    flex-grow: 1;
-    overflow: auto;
-    padding: 16px;
-    background: var(--bg-primary);
-}
-
-.tabela-estilo-puc {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-    font-size: 12.5px;
-    text-align: center;
-}
-
-.th-canto-vazio {
-    width: 36px;
-    min-width: 36px;
-    max-width: 36px;
-    background: transparent !important;
-    border: none !important;
-}
-
-.th-col-horas {
-    width: 78px;
-    min-width: 78px;
-    max-width: 78px;
-}
-
-.th-cabecalho-padrao {
-    background-color: #0066B3 !important;
-    color: #FFFFFF !important;
-    font-weight: 800;
-    padding: 8px 6px;
-    border: 1px solid #005291;
-    letter-spacing: 0.4px;
-    position: sticky;
-    top: 0;
-    z-index: 4;
-}
-
-.th-cabecalho-especifico {
-    background-color: #808080 !important;
-    color: #FFFFFF !important;
-    font-weight: 800;
-    padding: 8px 6px;
-    border: 1px solid #666666;
-    letter-spacing: 0.4px;
-    position: sticky;
-    top: 0;
-    z-index: 4;
-}
-
-.th-dia-nome {
-    font-size: 13px;
-    line-height: 1.2;
-}
-
-.th-dia-data {
-    font-size: 10.5px;
-    font-weight: 600;
-    opacity: 0.9;
-}
-
-.td-turno-vertical {
-    width: 36px;
-    min-width: 36px;
-    max-width: 36px;
-    border: 1.5px solid;
-    padding: 4px 0;
-    vertical-align: middle;
-    text-align: center;
-    color: #111827 !important;
-}
-
-.texto-turno-vertical {
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    font-weight: 800;
-    font-size: 13.5px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    margin: 0 auto;
-    white-space: nowrap;
-}
-
-.td-celula-horas {
-    border: 1px solid;
-    padding: 4px 2px;
-    height: 40px;
-    color: #111827 !important;
-    font-weight: 700;
-    font-size: 11.5px;
-}
-
-.horas-empilhadas {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    line-height: 1.15;
-}
-
-.td-slot-agendavel {
-    border: 1px solid;
-    padding: 4px 6px;
-    height: 40px;
-    cursor: pointer;
-    transition: filter 0.12s ease, box-shadow 0.12s ease;
-    vertical-align: middle;
-    color: #111827 !important;
-}
-
-.td-slot-agendavel:hover {
-    filter: brightness(0.93);
-    box-shadow: inset 0 0 0 1.5px var(--color-brand);
-}
-
-.slot-selecionado-arrasto {
-    box-shadow: inset 0 0 0 2px var(--color-brand) !important;
-}
-
+.td-turno-vertical { width: 36px; min-width: 36px; max-width: 36px; border: 1.5px solid; padding: 4px 0; vertical-align: middle; text-align: center; color: #111827 !important; }
+.texto-turno-vertical { writing-mode: vertical-rl; transform: rotate(180deg); font-weight: 800; font-size: 13.5px; letter-spacing: 1px; text-transform: uppercase; margin: 0 auto; white-space: nowrap; }
+.td-celula-horas { border: 1px solid; padding: 4px 2px; height: 40px; color: #111827 !important; font-weight: 700; font-size: 11.5px; }
+.horas-empilhadas { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; }
+.td-slot-agendavel { border: 1px solid; padding: 4px 6px; height: 40px; cursor: pointer; transition: filter 0.12s ease, box-shadow 0.12s ease; vertical-align: middle; color: #111827 !important; }
+.td-slot-agendavel:hover { filter: brightness(0.93); box-shadow: inset 0 0 0 1.5px var(--color-brand); }
+.slot-selecionado-arrasto { box-shadow: inset 0 0 0 2px var(--color-brand) !important; }
 .slot-ocupado {
     font-weight: 700;
-    /* Define uma cor de fundo cinza clara para destacar do resto do turno */
     background-color: #e5e7eb !important; 
-    /* Cria o efeito de listrinhas diagonais */
-    background-image: repeating-linear-gradient(
-        45deg,
-        rgba(0, 0, 0, 0.06),
-        rgba(0, 0, 0, 0.06) 10px,
-        transparent 10px,
-        transparent 20px
-    ) !important;
+    background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.06) 10px, transparent 10px, transparent 20px) !important;
 }
 
-.conteudo-slot-horario {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-}
-
-.titulo-reserva-grade {
-    font-size: 12px;
-    font-weight: 700;
-    color: #111827;
-    line-height: 1.25;
-    word-break: break-word;
-}
-
-.borda-subbloco {
-    border-bottom-width: 2px !important;
-}
-
-.borda-bloco-principal {
-    border-bottom-width: 2.5px !important;
-}
-
-.td-espaco-vazio-relativo {
-    background: transparent !important;
-    border: none !important;
-    pointer-events: none;
-}
-
-.aviso-vazio {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    flex-grow: 1;
-    color: var(--text-secondary);
-    font-weight: 500;
-    font-size: 1rem;
-    gap: 12px;
-}
-
-.spinner {
-    width: 32px;
-    height: 32px;
-    border: 3px solid var(--border-light);
-    border-top-color: var(--color-brand);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
+.conteudo-slot-horario { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+.titulo-reserva-grade { font-size: 12px; font-weight: 700; color: #111827; line-height: 1.25; word-break: break-word; }
+.borda-subbloco { border-bottom-width: 2px !important; }
+.borda-bloco-principal { border-bottom-width: 2.5px !important; }
+.td-espaco-vazio-relativo { background: transparent !important; border: none !important; pointer-events: none; }
+.aviso-vazio { display: flex; flex-direction: column; justify-content: center; align-items: center; flex-grow: 1; color: var(--text-secondary); font-weight: 500; font-size: 1rem; gap: 12px; }
+.spinner { width: 32px; height: 32px; border: 3px solid var(--border-light); border-top-color: var(--color-brand); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>
 
 <style>
-/* CSS injetado globalmente para os blocos da tabela horário escurecerem o texto no dark theme */
 [data-bs-theme="dark"] .td-turno-vertical,
 [data-bs-theme="dark"] .texto-turno-vertical,
 [data-bs-theme="dark"] .td-celula-horas,
@@ -905,12 +501,6 @@ const estruturaGradeHorario = computed(() => {
 
 [data-bs-theme="dark"] .slot-ocupado {
     background-color: #374151 !important;
-    background-image: repeating-linear-gradient(
-        45deg,
-        rgba(255, 255, 255, 0.03),
-        rgba(255, 255, 255, 0.03) 10px,
-        transparent 10px,
-        transparent 20px
-    ) !important;
+    background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.03) 10px, transparent 10px, transparent 20px) !important;
 }
 </style>

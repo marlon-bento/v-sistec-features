@@ -2,12 +2,14 @@
 ========
 Este arquivo representa o componente de modal para criação e edição de reservas em uma agenda.
 Ele gerencia o formulário de reserva, valida a disponibilidade de horários baseando-se na grade 
-do recurso selecionado, permite ativar repetição semanal até uma data limite e salva os dados na API.
+do recurso selecionado, permite ativar repetição semanal até uma data limite, disponibiliza slots
+individuais para cada seção do formulário e salva os dados na API.
 ========
 -->
 <script setup lang="ts">
 import { ref, computed, watch, inject } from 'vue';
 import { useAgenda } from '../composables/useAgenda';
+import { criarDataLocal } from '../composables/useGradeCompartilhada';
 
 const api = inject('api-instance-agenda') as any;
 const props = defineProps({
@@ -24,25 +26,13 @@ const {
     criarReserva, criarReservaRecorrente, converterParaUtc, reservasBrutas
 } = useAgenda(api);
 
-// Indica se o formulário está em processo de salvamento na API.
 const salvando = ref(false);
-
-// Indica se o usuário alterou manualmente algum horário e precisa revalidar contra a grade.
 const precisaValidar = ref(false);
-
-// Controla se os inputs manuais de data/hora (Início e Fim) estão visíveis na tela.
 const mostrarAjusteHorario = ref(false);
-
-// Controla se a reserva será repetida semanalmente até uma data limite.
 const repetirReserva = ref(false);
-
-// Controla a exibição da sobreposição que lista os blocos disponíveis do dia.
 const exibirHorariosModal = ref(false);
-
-// Armazena as strings de blocos disponíveis para exibição ao usuário.
 const horariosDisponiveisFormatados = ref<string[]>([]);
 
-// Armazena o estado dos campos do formulário do modal.
 const formReserva = ref({
     id_recurso: '',
     titulo_reserva: '',
@@ -53,38 +43,31 @@ const formReserva = ref({
     data_limite_repeticao: ''
 });
 
-// Devolve o nome do dia da semana e a data formatada (ex: "Quarta-feira, 21/10/2026").
-const textoDiaSelecionado = computed(() => {
-    if (!formReserva.value.data_inicio) return 'Data não definida';
-    const partes = formReserva.value.data_inicio.split('-').map(Number);
-    if (partes.length !== 3) return formReserva.value.data_inicio;
-    const dt = new Date(partes[0]!, partes[1]! - 1, partes[2]!);
-    if (isNaN(dt.getTime())) return formReserva.value.data_inicio;
+const dataInicioLocal = computed(() => {
+    if (!formReserva.value.data_inicio || formReserva.value.data_inicio.split('-').length !== 3) return null;
+    const dt = criarDataLocal(formReserva.value.data_inicio);
+    return isNaN(dt.getTime()) ? null : dt;
+});
 
-    const diaSemana = dt.toLocaleDateString('pt-BR', { weekday: 'long' });
+const textoDiaSelecionado = computed(() => {
+    if (!dataInicioLocal.value) return formReserva.value.data_inicio || 'Data não definida';
+    const diaSemana = dataInicioLocal.value.toLocaleDateString('pt-BR', { weekday: 'long' });
     const diaSemanaCap = diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1);
-    const dataBr = dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const dataBr = dataInicioLocal.value.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     return `${diaSemanaCap}, ${dataBr}`;
 });
 
-// Devolve apenas o nome do dia da semana atual para exibir na dica de recorrência.
 const nomeDiaSemana = computed(() => {
-    if (!formReserva.value.data_inicio) return 'semana';
-    const partes = formReserva.value.data_inicio.split('-').map(Number);
-    if (partes.length !== 3) return 'semana';
-    const dt = new Date(partes[0]!, partes[1]! - 1, partes[2]!);
-    if (isNaN(dt.getTime())) return 'semana';
-    return dt.toLocaleDateString('pt-BR', { weekday: 'long' });
+    return dataInicioLocal.value ? dataInicioLocal.value.toLocaleDateString('pt-BR', { weekday: 'long' }) : 'semana';
 });
 
-// Devolve a frase amigável explicando de qual horário até qual horário o agendamento vai.
 const textoIntervaloHorario = computed(() => {
-    const hIni = formReserva.value.hora_inicio || '--:--';
-    const hFim = formReserva.value.hora_fim || '--:--';
-    return `Das ${hIni} até as ${hFim}`;
+    return `Das ${formReserva.value.hora_inicio || '--:--'} até as ${formReserva.value.hora_fim || '--:--'}`;
 });
 
-// Sincroniza a data_fim com a data_inicio e marca que houve edição manual para revalidação.
+const alternarAjusteHorario = () => { mostrarAjusteHorario.value = !mostrarAjusteHorario.value; };
+const definirRepetirReserva = (valor: boolean) => { repetirReserva.value = valor; };
+
 const marcarComoAlterado = () => {
     if (formReserva.value.data_inicio) {
         formReserva.value.data_fim = formReserva.value.data_inicio;
@@ -95,33 +78,44 @@ const marcarComoAlterado = () => {
     precisaValidar.value = true;
 };
 
-// Consulta os blocos reserváveis do dia selecionado em periodos_agenda e exibe na tela.
+const converterHoraParaMinutos = (horaStr: string) => {
+    const [h, m] = horaStr.split(':').map(Number) as [number, number];
+    return h * 60 + m;
+};
+
+// Localiza e ordena os períodos reserváveis do dia selecionado na agenda vinculada ao recurso.
+const obterPeriodosReservaveisDoDia = () => {
+    if (!formReserva.value.id_recurso || !dataInicioLocal.value) return null;
+
+    const recurso = recursosDisponiveis.value.find((r: any) => Number(r.id_recurso) === Number(formReserva.value.id_recurso));
+    const agenda = agendasDisponiveis.value.find((a: any) => Number(a.id_agenda) === Number(recurso?.id_agenda));
+    const periodosAgenda = agenda?.detalhes?.periodos_agenda;
+    if (!periodosAgenda) return null;
+
+    const diaDaSemanaPython = (dataInicioLocal.value.getDay() + 6) % 7;
+    const periodosDoDia = periodosAgenda[diaDaSemanaPython] || [];
+
+    return periodosDoDia
+        .filter((s: any) => s.reservavel_periodo)
+        .map((s: any) => ({
+            ...s,
+            inicioMin: converterHoraParaMinutos(s.hora_inicio_periodo),
+            fimMin: converterHoraParaMinutos(s.hora_fim_periodo)
+        }))
+        .sort((a: any, b: any) => a.inicioMin - b.inicioMin);
+};
+
 const mostrarHorariosPossiveis = () => {
     if (!formReserva.value.id_recurso || !formReserva.value.data_inicio) {
         alert("Selecione um recurso e uma data para ver os horários possíveis.");
         return;
     }
 
-    const recurso = recursosDisponiveis.value.find((r: any) => Number(r.id_recurso) === Number(formReserva.value.id_recurso));
-    const idAg = recurso?.id_agenda;
-    const agenda = agendasDisponiveis.value.find((a: any) => Number(a.id_agenda) === Number(idAg));
-
-    if (!agenda || !agenda.detalhes || !agenda.detalhes.periodos_agenda) {
+    const slotsReservaveis = obterPeriodosReservaveisDoDia();
+    if (!slotsReservaveis) {
         alert("Nenhuma grade de horários encontrada.");
         return;
     }
-
-    const inicioDate = new Date(`${formReserva.value.data_inicio}T00:00:00`);
-    const diaDaSemanaPython = (inicioDate.getDay() + 6) % 7;
-    const periodosDoDia = agenda.detalhes.periodos_agenda[diaDaSemanaPython] || [];
-
-    const slotsReservaveis = periodosDoDia
-        .filter((s: any) => s.reservavel_periodo)
-        .sort((a: any, b: any) => {
-            const [hA, mA] = a.hora_inicio_periodo.split(':').map(Number) as [number, number];
-            const [hB, mB] = b.hora_inicio_periodo.split(':').map(Number) as [number, number];
-            return (hA * 60 + mA) - (hB * 60 + mB);
-        });
 
     if (slotsReservaveis.length === 0) {
         alert("Nenhum horário disponível para este dia na grade.");
@@ -132,57 +126,32 @@ const mostrarHorariosPossiveis = () => {
     exibirHorariosModal.value = true;
 };
 
-// Ajusta os horários de início e fim informados para que englobem o bloco reservável completo da agenda.
 const ajustarHorarios = (silencioso = false) => {
     if (!formReserva.value.id_recurso || !formReserva.value.data_inicio || !formReserva.value.hora_inicio || !formReserva.value.hora_fim) return;
 
-    const recurso = recursosDisponiveis.value.find((r: any) => Number(r.id_recurso) === Number(formReserva.value.id_recurso));
-    const idAg = recurso?.id_agenda;
-    const agenda = agendasDisponiveis.value.find((a: any) => Number(a.id_agenda) === Number(idAg));
-
-    if (!agenda || !agenda.detalhes || !agenda.detalhes.periodos_agenda) return;
-
-    const inicioDate = new Date(`${formReserva.value.data_inicio}T00:00:00`);
-    const diaDaSemanaPython = (inicioDate.getDay() + 6) % 7;
-    const periodosDoDia = agenda.detalhes.periodos_agenda[diaDaSemanaPython] || [];
-
-    const slotsReservaveis = periodosDoDia
-        .filter((s: any) => s.reservavel_periodo)
-        .map((s: any) => {
-            const [hI, mI] = s.hora_inicio_periodo.split(':').map(Number) as [number, number];
-            const [hF, mF] = s.hora_fim_periodo.split(':').map(Number) as [number, number];
-            return { inicio: hI * 60 + mI, fim: hF * 60 + mF };
-        })
-        .sort((a: any, b: any) => a.inicio - b.inicio);
+    const slotsReservaveis = obterPeriodosReservaveisDoDia();
+    if (!slotsReservaveis) return;
 
     if (slotsReservaveis.length === 0) {
         if (!silencioso) alert("Nenhum horário disponível para este dia na grade.");
         return;
     }
 
-    const [hI, mI] = formReserva.value.hora_inicio.split(':').map(Number) as [number, number];
-    const [hF, mF] = formReserva.value.hora_fim.split(':').map(Number) as [number, number];
-    const minInicio = hI * 60 + mI;
-    const minFim = hF * 60 + mF;
+    const minInicio = converterHoraParaMinutos(formReserva.value.hora_inicio);
+    const minFim = converterHoraParaMinutos(formReserva.value.hora_fim);
 
-    let blocoInicio = [...slotsReservaveis].reverse().find(b => b.inicio <= minInicio);
-    if (!blocoInicio) blocoInicio = slotsReservaveis[0];
-    const novoInicioMin = blocoInicio.inicio;
+    const invertidos = [...slotsReservaveis].reverse();
+    const blocoInicio = invertidos.find(b => b.inicioMin <= minInicio) || slotsReservaveis[0];
+    const blocoFim = invertidos.find(b => b.inicioMin < minFim) || slotsReservaveis[0];
 
-    let blocoFim = [...slotsReservaveis].reverse().find(b => b.inicio < minFim);
-    if (!blocoFim) blocoFim = slotsReservaveis[0];
-    let novoFimMin = blocoFim.fim;
-
-    if (novoFimMin <= novoInicioMin) {
-        novoFimMin = blocoInicio.fim;
-    }
+    const novoInicioMin = blocoInicio.inicioMin;
+    const novoFimMin = blocoFim.fimMin <= novoInicioMin ? blocoInicio.fimMin : blocoFim.fimMin;
 
     const formatarMin = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 
     formReserva.value.hora_inicio = formatarMin(novoInicioMin);
     formReserva.value.hora_fim = formatarMin(novoFimMin);
     formReserva.value.data_fim = formReserva.value.data_inicio;
-
     precisaValidar.value = false;
 
     if (!silencioso) {
@@ -210,13 +179,11 @@ watch(() => props.modelValue, (aberto) => {
     }
 });
 
-// Emite os eventos para fechar o modal.
 const fecharModal = () => {
     emit('update:modelValue', false);
     emit('cancelado');
 };
 
-// Envia o payload de criação (única ou recorrente) para a API e trata possíveis erros HTTP retornados pelo backend.
 const executarCriacaoAPI = async (payloadParaEnviar: any) => {
     try {
         if (repetirReserva.value) {
@@ -241,7 +208,6 @@ const executarCriacaoAPI = async (payloadParaEnviar: any) => {
     }
 };
 
-// Valida os campos, checa colisões locais e dispara a gravação da reserva com o contrato em português.
 const salvarReserva = async () => {
     if (precisaValidar.value) return;
 
@@ -301,16 +267,14 @@ const salvarReserva = async () => {
 
     if (props.usaInterceptador) {
         emit('before-save', {
-            payloadBase: payloadBase,
+            payloadBase,
             dadosReserva: { ...formReserva.value, repetir_reserva: repetirReserva.value },
             proceed: (novoPayloadModificado: any) => {
                 executarCriacaoAPI(novoPayloadModificado || payloadBase);
             },
             abort: (callbackAcaoCustomizada?: Function) => {
                 salvando.value = false;
-                if (typeof callbackAcaoCustomizada === 'function') {
-                    callbackAcaoCustomizada();
-                }
+                if (typeof callbackAcaoCustomizada === 'function') callbackAcaoCustomizada();
             }
         });
     } else {
@@ -328,82 +292,134 @@ const salvarReserva = async () => {
       </div>
 
       <div class="modal-body">
-        <div class="form-group" v-if="!props.ocultarTituloModal">
-          <label>Nome da Reserva (opcional)</label>
-          <input type="text" v-model="formReserva.titulo_reserva" placeholder="Ex: Treinamento" autofocus />
-        </div>
+        <slot
+          name="topo-modal"
+          :dados-reserva="formReserva"
+          :texto-dia-selecionado="textoDiaSelecionado"
+          :texto-intervalo-horario="textoIntervaloHorario"
+        ></slot>
 
-        <div class="form-group">
-          <label>Calendário / Recurso</label>
-          <select v-model="formReserva.id_recurso" disabled>
-            <option v-for="rec in recursosDisponiveis" :key="rec.id_recurso" :value="rec.id_recurso">
-              {{ rec.nome_recurso }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Card de resumo do período selecionado com botão para abrir ajuste de horário -->
-        <div class="resumo-horario-box">
-          <div class="resumo-horario-textos">
-            <span class="resumo-label">Período selecionado</span>
-            <div class="resumo-dia">{{ textoDiaSelecionado }}</div>
-            <div class="resumo-horas">{{ textoIntervaloHorario }}</div>
-          </div>
-
-          <button
-            type="button"
-            class="btn-toggle-ajuste"
-            @click="mostrarAjusteHorario = !mostrarAjusteHorario"
+        <slot
+          name="visualizacao-dados"
+          :dados-reserva="formReserva"
+          :recursos-disponiveis="recursosDisponiveis"
+          :texto-dia-selecionado="textoDiaSelecionado"
+          :texto-intervalo-horario="textoIntervaloHorario"
+          :nome-dia-semana="nomeDiaSemana"
+          :repetir-reserva="repetirReserva"
+          :definir-repetir-reserva="definirRepetirReserva"
+          :mostrar-ajuste-horario="mostrarAjusteHorario"
+          :alternar-ajuste-horario="alternarAjusteHorario"
+          :precisa-validar="precisaValidar"
+          :marcar-como-alterado="marcarComoAlterado"
+          :ajustar-horarios="ajustarHorarios"
+        >
+          <slot
+            name="campo-nome"
+            :dados-reserva="formReserva"
+            :recursos-disponiveis="recursosDisponiveis"
+            :ocultar-titulo-modal="props.ocultarTituloModal"
           >
-            {{ mostrarAjusteHorario ? 'Ocultar ajuste' : 'Ajustar horário' }}
-          </button>
-        </div>
-
-        <!-- Seção expansível com Início e Fim lado a lado -->
-        <div class="painel-ajuste-horario" v-if="mostrarAjusteHorario">
-          <div class="form-group">
-            <label>Data do Agendamento</label>
-            <input type="date" v-model="formReserva.data_inicio" @input="marcarComoAlterado" />
-          </div>
-
-          <div class="form-row-lado-a-lado">
-            <div class="form-group metade">
-              <label>Início</label>
-              <input type="time" v-model="formReserva.hora_inicio" @input="marcarComoAlterado" />
+            <div class="form-group" v-if="!props.ocultarTituloModal">
+              <label>Nome da Reserva (opcional)</label>
+              <input type="text" v-model="formReserva.titulo_reserva" placeholder="Ex: Treinamento" autofocus />
             </div>
 
-            <div class="form-group metade">
-              <label>Fim</label>
-              <input type="time" v-model="formReserva.hora_fim" @input="marcarComoAlterado" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Opção de Agendamento Recorrente -->
-        <div class="recorrencia-box">
-          <label class="recorrencia-toggle">
-            <input type="checkbox" v-model="repetirReserva" />
-            <span class="recorrencia-titulo">Repetir agendamento semanalmente</span>
-          </label>
-
-          <div class="recorrencia-detalhes" v-if="repetirReserva">
             <div class="form-group">
-              <label>Repetir até o dia:</label>
-              <input
-                type="date"
-                v-model="formReserva.data_limite_repeticao"
-                :min="formReserva.data_inicio"
-              />
+              <label>Calendário / Recurso</label>
+              <select v-model="formReserva.id_recurso" disabled>
+                <option v-for="rec in recursosDisponiveis" :key="rec.id_recurso" :value="rec.id_recurso">
+                  {{ rec.nome_recurso }}
+                </option>
+              </select>
             </div>
-            <span class="recorrencia-dica">
-              O agendamento será replicado toda <strong>{{ nomeDiaSemana }}</strong> das
-              <strong>{{ formReserva.hora_inicio }}</strong> às <strong>{{ formReserva.hora_fim }}</strong> até a data selecionada.
-            </span>
-          </div>
-        </div>
+          </slot>
+
+          <slot
+            name="campo-horario"
+            :dados-reserva="formReserva"
+            :texto-dia-selecionado="textoDiaSelecionado"
+            :texto-intervalo-horario="textoIntervaloHorario"
+            :mostrar-ajuste-horario="mostrarAjusteHorario"
+            :alternar-ajuste-horario="alternarAjusteHorario"
+            :precisa-validar="precisaValidar"
+            :marcar-como-alterado="marcarComoAlterado"
+            :ajustar-horarios="ajustarHorarios"
+          >
+            <div class="resumo-horario-box">
+              <div class="resumo-horario-textos">
+                <span class="resumo-label">Período selecionado</span>
+                <div class="resumo-dia">{{ textoDiaSelecionado }}</div>
+                <div class="resumo-horas">{{ textoIntervaloHorario }}</div>
+              </div>
+
+              <button
+                type="button"
+                class="btn-toggle-ajuste"
+                @click="alternarAjusteHorario"
+              >
+                {{ mostrarAjusteHorario ? 'Ocultar ajuste' : 'Ajustar horário' }}
+              </button>
+            </div>
+
+            <div class="painel-ajuste-horario" v-if="mostrarAjusteHorario">
+              <div class="form-group">
+                <label>Data do Agendamento</label>
+                <input type="date" v-model="formReserva.data_inicio" @input="marcarComoAlterado" />
+              </div>
+
+              <div class="form-row-lado-a-lado">
+                <div class="form-group metade">
+                  <label>Início</label>
+                  <input type="time" v-model="formReserva.hora_inicio" @input="marcarComoAlterado" />
+                </div>
+
+                <div class="form-group metade">
+                  <label>Fim</label>
+                  <input type="time" v-model="formReserva.hora_fim" @input="marcarComoAlterado" />
+                </div>
+              </div>
+            </div>
+          </slot>
+
+          <slot
+            name="campo-recorrencia"
+            :dados-reserva="formReserva"
+            :repetir-reserva="repetirReserva"
+            :definir-repetir-reserva="definirRepetirReserva"
+            :nome-dia-semana="nomeDiaSemana"
+          >
+            <div class="recorrencia-box">
+              <label class="recorrencia-toggle">
+                <input type="checkbox" v-model="repetirReserva" />
+                <span class="recorrencia-titulo">Repetir agendamento semanalmente</span>
+              </label>
+
+              <div class="recorrencia-detalhes" v-if="repetirReserva">
+                <div class="form-group">
+                  <label>Repetir até o dia:</label>
+                  <input
+                    type="date"
+                    v-model="formReserva.data_limite_repeticao"
+                    :min="formReserva.data_inicio"
+                  />
+                </div>
+                <span class="recorrencia-dica">
+                  O agendamento será replicado toda <strong>{{ nomeDiaSemana }}</strong> das
+                  <strong>{{ formReserva.hora_inicio }}</strong> às <strong>{{ formReserva.hora_fim }}</strong> até a data selecionada.
+                </span>
+              </div>
+            </div>
+          </slot>
+        </slot>
 
         <div class="area-customizada">
-          <slot name="campos-extras"></slot>
+          <slot
+            name="campos-extras"
+            :dados-reserva="formReserva"
+            :texto-dia-selecionado="textoDiaSelecionado"
+            :texto-intervalo-horario="textoIntervaloHorario"
+          ></slot>
         </div>
       </div>
 
@@ -443,13 +459,13 @@ const salvarReserva = async () => {
 </template>
 
 <style scoped>
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center; z-index: 1050; backdrop-filter: blur(2px); }
-.modal-card { background: var(--bg-modal); width: 100%; max-width: 500px; border-radius: 12px; box-shadow: var(--shadow-float); display: flex; flex-direction: column; overflow: hidden; position: relative; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-light); background: var(--bg-primary); }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; padding: 16px; box-sizing: border-box; background: rgba(0, 0, 0, 0.4); display: flex; align-items: center; justify-content: center; z-index: 1050; backdrop-filter: blur(2px); }
+.modal-card { background: var(--bg-modal); width: 100%; max-width: 500px; max-height: calc(100vh - 32px); border-radius: 12px; box-shadow: var(--shadow-float); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border-light); background: var(--bg-primary); flex-shrink: 0; }
 .modal-header h3 { margin: 0; font-size: 16px; color: var(--text-primary); font-weight: 600; }
 .btn-fechar { background: transparent; border: none; font-size: 24px; color: var(--text-secondary); cursor: pointer; line-height: 1; transition: color 0.2s; }
 .btn-fechar:hover { color: var(--text-primary); }
-.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; background: var(--bg-primary); }
+.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; background: var(--bg-primary); flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-group label { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
 .form-group input[type="text"],
@@ -458,130 +474,23 @@ const salvarReserva = async () => {
 .form-group select { width: 100%; padding: 10px; border: 1px solid var(--border-light); background: var(--bg-primary); border-radius: 6px; font-size: 14px; color: var(--text-primary); box-sizing: border-box; transition: border-color 0.2s; }
 .form-group input:focus { border-color: var(--color-brand); outline: none; }
 .form-group select:disabled { background-color: var(--bg-secondary); color: var(--text-secondary); cursor: not-allowed; opacity: 1; }
-
-.resumo-horario-box {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px 14px;
-    border-radius: 8px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-light);
-}
-
-.resumo-horario-textos {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.resumo-label {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    color: var(--text-secondary);
-}
-
-.resumo-dia {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.resumo-horas {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--color-brand);
-}
-
-.btn-toggle-ajuste {
-    background: var(--bg-primary);
-    border: 1px solid var(--border-light);
-    color: var(--text-primary);
-    font-weight: 600;
-    font-size: 12.5px;
-    padding: 7px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.2s;
-}
-
-.btn-toggle-ajuste:hover {
-    background: var(--bg-hover);
-    border-color: var(--color-brand);
-    color: var(--color-brand);
-}
-
-.painel-ajuste-horario {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 12px 14px;
-    border-radius: 8px;
-    background: var(--bg-secondary);
-    border: 1px dashed var(--border-light);
-}
-
-.form-row-lado-a-lado {
-    display: flex;
-    flex-direction: row;
-    gap: 12px;
-}
-
-.metade {
-    flex: 1;
-    min-width: 0;
-}
-
-.recorrencia-box {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 12px 14px;
-    border-radius: 8px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-light);
-}
-
-.recorrencia-toggle {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    user-select: none;
-}
-
-.recorrencia-toggle input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--color-brand);
-    cursor: pointer;
-}
-
-.recorrencia-titulo {
-    font-size: 13.5px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.recorrencia-detalhes {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding-top: 6px;
-    border-top: 1px solid var(--border-light);
-}
-
-.recorrencia-dica {
-    font-size: 12px;
-    color: var(--text-secondary);
-    line-height: 1.4;
-}
-
-.modal-footer { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-top: 1px solid var(--border-light); background: var(--bg-secondary); }
+.resumo-horario-box { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-light); flex-shrink: 0; }
+.resumo-horario-textos { display: flex; flex-direction: column; gap: 2px; }
+.resumo-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-secondary); }
+.resumo-dia { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.resumo-horas { font-size: 13px; font-weight: 600; color: var(--color-brand); }
+.btn-toggle-ajuste { background: var(--bg-primary); border: 1px solid var(--border-light); color: var(--text-primary); font-weight: 600; font-size: 12.5px; padding: 7px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+.btn-toggle-ajuste:hover { background: var(--bg-hover); border-color: var(--color-brand); color: var(--color-brand); }
+.painel-ajuste-horario { display: flex; flex-direction: column; gap: 12px; padding: 12px 14px; border-radius: 8px; background: var(--bg-secondary); border: 1px dashed var(--border-light); flex-shrink: 0; }
+.form-row-lado-a-lado { display: flex; flex-direction: row; gap: 12px; }
+.metade { flex: 1; min-width: 0; }
+.recorrencia-box { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-light); flex-shrink: 0; }
+.recorrencia-toggle { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+.recorrencia-toggle input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--color-brand); cursor: pointer; }
+.recorrencia-titulo { font-size: 13.5px; font-weight: 600; color: var(--text-primary); }
+.recorrencia-detalhes { display: flex; flex-direction: column; gap: 8px; padding-top: 6px; border-top: 1px solid var(--border-light); }
+.recorrencia-dica { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
+.modal-footer { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-top: 1px solid var(--border-light); background: var(--bg-secondary); flex-shrink: 0; }
 .acoes-validacao { display: flex; align-items: center; gap: 10px; }
 .acoes-salvar { display: flex; gap: 12px; }
 .aviso-validar { font-size: 12px; color: var(--color-danger); font-weight: 600; }
@@ -594,8 +503,8 @@ const salvarReserva = async () => {
 .btn-salvar { background: var(--color-brand); border: none; color: var(--text-inverse); font-weight: 600; font-size: 14px; cursor: pointer; padding: 8px 24px; border-radius: 6px; transition: background 0.2s; }
 .btn-salvar:hover:not(:disabled) { filter: brightness(0.9); }
 .btn-salvar:disabled { opacity: 0.6; cursor: not-allowed; }
-.horarios-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-primary); z-index: 10; display: flex; flex-direction: column; }
-.horarios-lista-container { flex: 1; overflow-y: auto; padding: 20px; margin: 0; }
+.horarios-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-primary); z-index: 10; display: flex; flex-direction: column; overflow: hidden; }
+.horarios-lista-container { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 20px; margin: 0; }
 .horarios-lista { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
 .horarios-lista li { background: var(--bg-secondary); padding: 12px 16px; border-radius: 8px; color: var(--text-primary); font-weight: 500; font-size: 14px; text-align: center; border: 1px solid var(--border-light); }
 </style>

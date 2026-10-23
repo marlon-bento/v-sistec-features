@@ -2,7 +2,8 @@
 ========
 Este arquivo representa o componente de calendário visual utilizando a biblioteca vue-cal.
 Ele exibe e gerencia os eventos e reservas na interface, permitindo a criação de novos agendamentos,
-a abertura do modal de detalhes ao clicar em reservas existentes e a navegação entre datas.
+a abertura do modal de detalhes ao clicar em reservas existentes, a navegação entre datas e a exposição
+da lista contendo o recurso atualmente em exibição.
 ========
 -->
 <script setup lang="ts">
@@ -10,6 +11,7 @@ import { ref, computed, inject } from 'vue';
 import { VueCal } from 'vue-cal';
 import 'vue-cal/style.css';
 import { useAgenda } from '../composables/useAgenda';
+import { extrairDataHoraLocal, formatarDataIso } from '../composables/useGradeCompartilhada';
 import ModalReserva from './ModalReserva.vue';
 import ModalDetalhesReserva from './ModalDetalhesReserva.vue';
 
@@ -22,10 +24,11 @@ const props = defineProps({
     ocultarTituloModal: { type: Boolean, default: false }
 });
 
-const emit = defineEmits(['before-save']);
+defineEmits(['before-save']);
 
 const {
     reservasBrutas,
+    recursosDisponiveis,
     recursoSelecionado,
     dataSelecionada,
     dataVisao,
@@ -36,38 +39,34 @@ const {
     buscarReservas
 } = useAgenda(api);
 
-// Armazena a referência direta à instância do componente vue-cal.
 const calendarioRef = ref<any>(null);
-
-// Controla o estado de visibilidade da janela modal de criação de reservas.
 const modalAberto = ref(false);
-
-// Armazena a função de resolução interna (Promise) fornecida pelo vue-cal durante a criação de um evento.
 const resolverCriacaoVueCal = ref<any>(null);
-
-// Armazena os dados processados resultantes de um clique na grade para alimentar os campos do modal de criação.
 const dadosParaModal = ref({});
-
-// Controla a visibilidade do modal de detalhes de uma reserva já existente.
 const modalDetalhesAberto = ref(false);
-
-// Armazena o objeto bruto da reserva clicada no calendário para exibição detalhada.
 const reservaSelecionadaDetalhes = ref<any>(null);
 
+const recursosEmExibicao = computed(() => {
+    if (!recursoSelecionado.value) return [];
+    const encontrado = recursosDisponiveis.value.find(
+        (r: any) => Number(r.id_recurso) === Number(recursoSelecionado.value)
+    );
+    return encontrado ? [encontrado] : [];
+});
+
 defineExpose({
+    recursosEmExibicao,
     irParaHoje: () => calendarioRef.value?.view?.goToToday(),
     periodoAnterior: () => calendarioRef.value?.view?.previous(),
     periodoProximo: () => calendarioRef.value?.view?.next(),
     mudarVisao: (v: string) => { visaoAtiva.value = v; calendarioRef.value?.view?.switch(v); }
 });
 
-// Recebe um objeto de evento opcional e não devolve retorno.
-// É usada para deduzir o período atualmente em exibição no calendário e buscar as reservas correspondentes na API.
 const atualizarVisualizacao = (evento: any = null) => {
     let dataInicio: Date;
     let dataFim: Date;
 
-    if (evento && evento.startDate && evento.endDate) {
+    if (evento?.startDate && evento?.endDate) {
         dataInicio = new Date(evento.startDate);
         dataFim = new Date(evento.endDate);
     } else {
@@ -84,35 +83,9 @@ const atualizarVisualizacao = (evento: any = null) => {
         }
     }
 
-    const formatar = (d: Date) => {
-        const ano = d.getFullYear();
-        const mes = String(d.getMonth() + 1).padStart(2, '0');
-        const dia = String(d.getDate()).padStart(2, '0');
-        return `${ano}-${mes}-${dia}`;
-    };
-
-    buscarReservas(`${formatar(dataInicio)}T00:00:00`, `${formatar(dataFim)}T23:59:59`);
+    buscarReservas(`${formatarDataIso(dataInicio)}T00:00:00`, `${formatarDataIso(dataFim)}T23:59:59`);
 };
 
-// Recebe um objeto Date nativo e devolve uma string estruturada no formato YYYY-MM-DD.
-// É usada para adequar instâncias de data ao formato exigido pelos inputs tipo "date" do HTML5.
-const formatarDataInput = (d: Date) => {
-    const ano = d.getFullYear();
-    const mes = String(d.getMonth() + 1).padStart(2, '0');
-    const dia = String(d.getDate()).padStart(2, '0');
-    return `${ano}-${mes}-${dia}`;
-};
-
-// Recebe um objeto Date nativo e devolve uma string estruturada no formato HH:mm.
-// É usada para adequar instâncias de data ao formato exigido pelos inputs tipo "time" do HTML5.
-const formatarHoraInput = (d: Date) => {
-    const horas = String(d.getHours()).padStart(2, '0');
-    const minutos = String(d.getMinutes()).padStart(2, '0');
-    return `${horas}:${minutos}`;
-};
-
-// Recebe um objeto contendo os detalhes gerados pelo vue-cal e a função finalizadora da promessa.
-// É usada para interceptar a criação de evento na grade e abrir o modal com os horários preenchidos.
 const aoCriarEvento = ({ event, resolve }: any) => {
     resolverCriacaoVueCal.value = resolve;
 
@@ -122,20 +95,21 @@ const aoCriarEvento = ({ event, resolve }: any) => {
     if (isNaN(start.getTime())) start = new Date();
     if (isNaN(end.getTime())) end = new Date();
 
+    const inicio = extrairDataHoraLocal(start.toISOString());
+    const fim = extrairDataHoraLocal(end.toISOString());
+
     dadosParaModal.value = {
         id_recurso: recursoSelecionado.value,
         titulo_reserva: '',
-        data_inicio: formatarDataInput(start),
-        hora_inicio: formatarHoraInput(start),
-        data_fim: formatarDataInput(end),
-        hora_fim: formatarHoraInput(end)
+        data_inicio: inicio.data,
+        hora_inicio: inicio.hora,
+        data_fim: fim.data,
+        hora_fim: fim.hora
     };
 
     modalAberto.value = true;
 };
 
-// Recebe o objeto de evento disparado pelo clique em uma reserva no vue-cal e não devolve retorno.
-// É usada para localizar a reserva correspondente em reservasBrutas e abrir o modal de detalhes.
 const aoClicarEvento = (eventoVueCal: any) => {
     const idClicado = eventoVueCal?.id || eventoVueCal?.event?.id;
     if (!idClicado) return;
@@ -150,88 +124,56 @@ const aoClicarEvento = (eventoVueCal: any) => {
     }
 };
 
-// Não recebe parâmetros e não devolve retorno.
-// É usada para encerrar a promessa pendente do vue-cal e atualizar a grade após salvar uma nova reserva.
-const aoSalvar = () => {
+const encerrarCriacaoProvisoria = () => {
     if (resolverCriacaoVueCal.value) {
         resolverCriacaoVueCal.value(false);
         resolverCriacaoVueCal.value = null;
     }
-    atualizarVisualizacao();
 };
 
-// Não recebe parâmetros e não devolve retorno.
-// É usada para descartar o bloco provisório desenhado no calendário quando o usuário cancela o modal.
-const aoCancelar = () => {
-    if (resolverCriacaoVueCal.value) {
-        resolverCriacaoVueCal.value(false);
-        resolverCriacaoVueCal.value = null;
-    }
+const aoSalvar = () => {
+    encerrarCriacaoProvisoria();
+    atualizarVisualizacao();
 };
 
 type FormatoDataVueCal = `${number}${number}${number}${number}-${number}${number}-${number}${number} ${number}${number}:${number}${number}`;
 
-// Recebe a lista de reservas padronizadas da API e devolve a coleção formatada para o componente vue-cal.
-// É usada para converter os horários UTC para o fuso local do navegador e definir o estilo visual conforme a autoria.
-const mapearEventosVisuais = (reservas: any[]) => {
-    const formatarDataLocal = (dataIsoUtc: string): FormatoDataVueCal => {
-        const d = new Date(dataIsoUtc);
-        const ano = d.getFullYear();
-        const mes = String(d.getMonth() + 1).padStart(2, '0');
-        const dia = String(d.getDate()).padStart(2, '0');
-        const horas = String(d.getHours()).padStart(2, '0');
-        const minutos = String(d.getMinutes()).padStart(2, '0');
-        return `${ano}-${mes}-${dia} ${horas}:${minutos}` as FormatoDataVueCal;
-    };
-
-    return reservas.map(reserva => {
-        const identificadorAutor = reserva.email_responsavel_reserva || reserva.usuario_responsavel_reserva;
-        const ehMeu = Boolean(
-            identificadorAutor &&
-            props.usuarioLogado &&
-            String(identificadorAutor).toLowerCase() === props.usuarioLogado.toLowerCase()
-        );
-        const tituloLimpo = reserva.titulo_reserva ? String(reserva.titulo_reserva).trim() : '';
-
-        return {
-            id: reserva.codigo_referencia_reserva,
-            title: tituloLimpo || props.tituloPadrao,
-            start: formatarDataLocal(reserva.data_inicio_reserva),
-            end: formatarDataLocal(reserva.data_fim_reserva),
-            id_recurso: reserva.id_recurso,
-            draggable: ehMeu,
-            resizable: ehMeu,
-            deletable: ehMeu,
-            class: ehMeu ? 'reserva-minha' : 'reserva-bloqueada'
-        };
-    });
-};
-
-// Armazena a lista reativa de reservas filtradas exclusivamente para o recurso selecionado no momento.
 const eventosProcessados = computed(() => {
     if (!recursoSelecionado.value) return [];
 
-    return mapearEventosVisuais(reservasBrutas.value).filter(evento =>
-        Number(evento.id_recurso) === Number(recursoSelecionado.value)
-    );
+    return reservasBrutas.value
+        .filter(reserva => Number(reserva.id_recurso) === Number(recursoSelecionado.value))
+        .map(reserva => {
+            const identificadorAutor = reserva.email_responsavel_reserva || reserva.usuario_responsavel_reserva;
+            const ehMeu = Boolean(
+                identificadorAutor &&
+                props.usuarioLogado &&
+                String(identificadorAutor).toLowerCase() === props.usuarioLogado.toLowerCase()
+            );
+            const ini = extrairDataHoraLocal(reserva.data_inicio_reserva);
+            const fim = extrairDataHoraLocal(reserva.data_fim_reserva);
+
+            return {
+                id: reserva.codigo_referencia_reserva,
+                title: String(reserva.titulo_reserva || '').trim() || props.tituloPadrao,
+                start: `${ini.data} ${ini.hora}` as FormatoDataVueCal,
+                end: `${fim.data} ${fim.hora}` as FormatoDataVueCal,
+                id_recurso: reserva.id_recurso,
+                draggable: ehMeu,
+                resizable: ehMeu,
+                deletable: ehMeu,
+                class: ehMeu ? 'reserva-minha' : 'reserva-bloqueada'
+            };
+        });
 });
 
-// Recebe uma data do cabeçalho do calendário e devolve um booleano indicando se é a data selecionada.
-// É usada para destacar visualmente o dia ativo no topo da grade.
 const ehDataSelecionada = (data: any) => {
     if (!dataSelecionada.value || !data) return false;
-    const dSelecionada = new Date(dataSelecionada.value);
-    const dCabecalho = new Date(data);
-    return dCabecalho.toDateString() === dSelecionada.toDateString();
+    return new Date(data).toDateString() === new Date(dataSelecionada.value).toDateString();
 };
 
-// Recebe um objeto Date e devolve a abreviação de três letras do dia da semana em português.
-// É usada na renderização customizada do cabeçalho dos dias.
-const obterNomeDiaCurto = (data: Date) => {
-    return ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][data.getDay()];
-};
+const obterNomeDiaCurto = (data: Date) => ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][data.getDay()];
 
-// Armazena a configuração de horários fora do expediente para bloqueio visual no componente vue-cal.
 const horasBloqueadasNativas = computed(() => {
     const bloqueios = [
         { from: 0, to: minutosInicio.value, allowEvents: false, class: 'fora-do-expediente' },
@@ -242,76 +184,71 @@ const horasBloqueadasNativas = computed(() => {
 </script>
 
 <template>
-  <div class="wrapper-calendario">
-    <ModalReserva
-      v-model="modalAberto"
-      :dados-iniciais="dadosParaModal"
-      :usa-interceptador="usaInterceptador"
-      :ocultar-titulo-modal="props.ocultarTituloModal"
-      @before-save="$emit('before-save',$event)"
-      @salvo="aoSalvar"
-      @cancelado="aoCancelar"
-    >
-      <template #campos-extras>
-        <slot name="campos-extras"></slot>
-      </template>
-    </ModalReserva>
-
-    <ModalDetalhesReserva
-      v-model="modalDetalhesAberto"
-      :reserva="reservaSelecionadaDetalhes"
-      :titulo-padrao="props.tituloPadrao"
-      @excluido="atualizarVisualizacao"
-    />
-
-    <vue-cal
-      ref="calendarioRef"
-      class="calendario-principal vuecal--blue-theme"
-      :events="eventosProcessados"
-      v-model:active-view="visaoAtiva"
-      v-model:selected-date="dataSelecionada"
-      v-model:view-date="dataVisao"
-      @update:view-date="dataVisao = $event"
-      :views="['day', 'week']"
-      :hide-view-selector="true"
-      :hide-title-bar="true"
-      :click-to-navigate="false"
-      locale="pt-br"
-      :time-from="minutosInicio"
-      :time-to="minutosFim"
-      :disable-days="datasDesabilitadas"
-      :special-hours="horasBloqueadasNativas"
-      :snap-to-interval="15"
-      :start-week-on-sunday="true"
-      :editable-events="{ drag: true, resize: true, delete: true, create: true }"
-      @ready="atualizarVisualizacao"
-      @view-change="atualizarVisualizacao"
-      @event-create="aoCriarEvento"
-      @event-click="aoClicarEvento"
-    >
-      <template #weekday-heading="{ date }">
-        <div
-          class="cabecalho-dia-customizado"
-          @click="dataSelecionada = date; dataVisao = date"
-          style="cursor: pointer;"
+    <div class="wrapper-calendario">
+        <ModalReserva
+            v-model="modalAberto"
+            :dados-iniciais="dadosParaModal"
+            :usa-interceptador="usaInterceptador"
+            :ocultar-titulo-modal="props.ocultarTituloModal"
+            @before-save="$emit('before-save', $event)"
+            @salvo="aoSalvar"
+            @cancelado="encerrarCriacaoProvisoria"
         >
-          <span class="nome-dia">{{ obterNomeDiaCurto(date) }}</span>
-          <span
-            class="numero-dia"
-            :class="{ 'dia-hoje': date.toDateString() === new Date().toDateString(), 'dia-selecionado': ehDataSelecionada(date) }"
-          >
-            {{ date.getDate() }}
-          </span>
-        </div>
-      </template>
-    </vue-cal>
-  </div>
+            <template v-for="(_, nomeSlot) in $slots" :key="nomeSlot" #[nomeSlot]="slotProps">
+                <slot :name="nomeSlot" v-bind="slotProps ?? {}"></slot>
+            </template>
+        </ModalReserva>
+
+        <ModalDetalhesReserva
+            v-model="modalDetalhesAberto"
+            :reserva="reservaSelecionadaDetalhes"
+            :titulo-padrao="props.tituloPadrao"
+            @excluido="atualizarVisualizacao"
+        />
+
+        <vue-cal
+            ref="calendarioRef"
+            class="calendario-principal vuecal--blue-theme"
+            :events="eventosProcessados"
+            v-model:active-view="visaoAtiva"
+            v-model:selected-date="dataSelecionada"
+            v-model:view-date="dataVisao"
+            @update:view-date="dataVisao = $event"
+            :views="['day', 'week']"
+            :hide-view-selector="true"
+            :hide-title-bar="true"
+            :click-to-navigate="false"
+            locale="pt-br"
+            :time-from="minutosInicio"
+            :time-to="minutosFim"
+            :disable-days="datasDesabilitadas"
+            :special-hours="horasBloqueadasNativas"
+            :snap-to-interval="15"
+            :start-week-on-sunday="true"
+            :editable-events="{ drag: true, resize: true, delete: true, create: true }"
+            @ready="atualizarVisualizacao"
+            @view-change="atualizarVisualizacao"
+            @event-create="aoCriarEvento"
+            @event-click="aoClicarEvento"
+        >
+            <template #weekday-heading="{ date }">
+                <div class="cabecalho-dia-customizado" @click="dataSelecionada = date; dataVisao = date" style="cursor: pointer;">
+                    <span class="nome-dia">{{ obterNomeDiaCurto(date) }}</span>
+                    <span
+                        class="numero-dia"
+                        :class="{ 'dia-hoje': date.toDateString() === new Date().toDateString(), 'dia-selecionado': ehDataSelecionada(date) }"
+                    >
+                        {{ date.getDate() }}
+                    </span>
+                </div>
+            </template>
+        </vue-cal>
+    </div>
 </template>
 
 <style scoped>
 .wrapper-calendario { display: flex; flex-direction: column; flex-grow: 1; height: 100%; overflow: hidden; background: var(--bg-primary); }
 .calendario-principal { --vuecal-weekday-bar-size: 75px !important; background: var(--bg-primary); flex-grow: 1; height: 100%; overflow: hidden; border-radius: 0 !important; border: none !important; box-shadow: none !important; }
-
 :deep(.vuecal__header), :deep(.vuecal__title-bar) { display: none !important; }
 :deep(.vuecal__weekdays-headings) { border-bottom: 1px solid var(--border-light); background-color: var(--bg-primary); color: var(--text-primary); }
 :deep(.vuecal__weekday) { background-color: var(--bg-primary); justify-content: center; border-right: 1px solid var(--border-light); padding: 0; }
@@ -331,28 +268,10 @@ const horasBloqueadasNativas = computed(() => {
 :deep(.vuecal__event:hover), :deep(.vuecal__event--focus) { box-shadow: var(--shadow-float); filter: brightness(1.1); }
 :deep(.vuecal__event.reserva-minha) { background-color: var(--color-success) !important; border-color: var(--color-success) !important; color: var(--text-inverse) !important; }
 :deep(.vuecal__event.reserva-bloqueada) { background-color: var(--border-editor) !important; border-color: var(--border-light) !important; color: var(--text-primary) !important; font-weight: bold; opacity: 0.75; cursor: pointer !important; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.1) 10px, rgba(0, 0, 0, 0.1) 20px) !important; }
-:deep(.vuecal__time-column) {
-    background-color: var(--bg-primary) !important;
-    border-right: 1px solid var(--border-editor) !important;
-}
-:deep(.vuecal__time-cell) {
-    color: var(--text-secondary) !important;
-}
-:deep(.vuecal__time-cell-line::before),
-:deep(.vuecal__cell::before) {
-    border-color: var(--border-editor) !important;
-}
-:deep(.vuecal__cell) {
-    background-color: transparent !important;
-    border-right: 1px solid var(--border-editor) !important;
-}
-:deep(.vuecal__now-line) {
-    color: var(--text-primary) !important;
-}
-:deep(.vuecal__now-line span) {
-    color: var(--text-primary) !important;
-}
-:deep(.vuecal__cell::before) {
-    border-color: var(--border-light) !important;
-}
+:deep(.vuecal__time-column) { background-color: var(--bg-primary) !important; border-right: 1px solid var(--border-editor) !important; }
+:deep(.vuecal__time-cell) { color: var(--text-secondary) !important; }
+:deep(.vuecal__time-cell-line::before) { border-color: var(--border-editor) !important; }
+:deep(.vuecal__cell) { background-color: transparent !important; border-right: 1px solid var(--border-editor) !important; }
+:deep(.vuecal__now-line), :deep(.vuecal__now-line span) { color: var(--text-primary) !important; }
+:deep(.vuecal__cell::before) { border-color: var(--border-light) !important; }
 </style>

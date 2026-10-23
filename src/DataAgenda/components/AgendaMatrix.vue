@@ -1,8 +1,9 @@
 <!--
 ========
 Este arquivo representa a visualização em matriz para múltiplos recursos com suporte a filtragem.
-Ele utiliza o AgendaMatrixBase para renderizar a grade, repassa a configuração de blocos da agenda
-e gerencia o dropdown de seleção de salas preservando os filtros ativos ao mudar a data.
+Ele utiliza o AgendaMatrixBase para renderizar a grade, repassa a configuração de blocos da agenda,
+gerencia o dropdown de seleção de salas preservando os filtros ativos ao mudar a data e expõe a lista
+de recursos atualmente em exibição (já filtrada).
 ========
 -->
 <script setup lang="ts">
@@ -18,26 +19,18 @@ const props = defineProps({
 });
 
 const api = inject('api-instance-agenda') as any;
-const emit = defineEmits(['before-save']);
+defineEmits(['before-save']);
 
-const { dadosMatrix, agendaSelecionada } = useAgenda(api);
+const { dadosMatrix, agendaSelecionada, recursosDisponiveis } = useAgenda(api);
 
-// Armazena os IDs (em string) dos recursos visíveis selecionados no filtro.
 const recursosVisiveisIds = ref<string[]>([]);
-
-// Armazena o ID da última agenda cujo filtro foi inicializado para evitar reset ao mudar apenas a data.
 const idAgendaFiltroInicializado = ref<number | null>(null);
-
-// Controla a abertura do menu dropdown de filtro de salas.
 const menuFiltroAberto = ref(false);
 
-// Extrai a lista de recursos presentes no primeiro dia retornado na matriz.
 const recursosPermitidosNaMatriz = computed(() => {
-    if (!dadosMatrix.value?.datas_matriz?.[0]?.recursos_slot) return [];
-    return dadosMatrix.value.datas_matriz[0].recursos_slot;
+    return dadosMatrix.value?.datas_matriz?.[0]?.recursos_slot || [];
 });
 
-// Observa os recursos da matriz e inicializa o filtro apenas quando a agenda muda ou na primeira carga.
 watch(recursosPermitidosNaMatriz, (novosRecursos) => {
     if (novosRecursos.length === 0) {
         recursosVisiveisIds.value = [];
@@ -54,15 +47,31 @@ watch(recursosPermitidosNaMatriz, (novosRecursos) => {
     }
 }, { immediate: true });
 
-// Marca todos os recursos disponíveis no filtro de salas.
+const recursosEmExibicao = computed(() => {
+    if (recursosVisiveisIds.value.length === 0) return [];
+
+    return recursosPermitidosNaMatriz.value
+        .filter((recMatriz: any) => recursosVisiveisIds.value.includes(String(recMatriz.id_recurso)))
+        .map((recMatriz: any) => {
+            return recursosDisponiveis.value.find(
+                (r: any) => Number(r.id_recurso) === Number(recMatriz.id_recurso)
+            ) || {
+                id_recurso: recMatriz.id_recurso,
+                nome_recurso: recMatriz.nome_recurso,
+                id_agenda: agendaSelecionada.value
+            };
+        });
+});
+
 const selecionarTodos = () => {
     recursosVisiveisIds.value = recursosPermitidosNaMatriz.value.map((r: any) => String(r.id_recurso));
 };
 
-// Desmarca todos os recursos no filtro de salas.
 const limparFiltros = () => {
     recursosVisiveisIds.value = [];
 };
+
+defineExpose({ recursosEmExibicao });
 </script>
 
 <template>
@@ -73,7 +82,7 @@ const limparFiltros = () => {
     :ocultar-titulo-modal="props.ocultarTituloModal"
     :configuracao-blocos="props.configuracaoBlocos"
     mensagem-vazio="Nenhuma sala selecionada."
-    @before-save="$emit('before-save', $event)"
+    @before-save="$emit('before-save',$event)"
   >
     <template #topo>
       <div class="barra-filtros" v-if="recursosPermitidosNaMatriz.length > 0">
@@ -125,8 +134,8 @@ const limparFiltros = () => {
       </div>
     </template>
 
-    <template #campos-extras>
-      <slot name="campos-extras"></slot>
+    <template v-for="(_, nomeSlot) in $slots" :key="nomeSlot" #[nomeSlot]="slotProps">
+      <slot :name="nomeSlot" v-bind="slotProps ?? {}"></slot>
     </template>
   </AgendaMatrixBase>
 </template>
