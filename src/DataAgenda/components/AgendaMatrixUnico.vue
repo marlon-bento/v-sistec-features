@@ -7,6 +7,7 @@ e expõe a lista contendo o recurso atualmente em exibição.
 ========
 -->
 <script setup lang="ts">
+defineSlots<{ [key: string]: any }>();
 import { computed, inject } from 'vue';
 import { useAgenda } from '../composables/useAgenda';
 import { useSincronizarRecursoUnico } from '../composables/useGradeCompartilhada';

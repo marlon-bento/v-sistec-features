@@ -7,6 +7,7 @@ de recursos atualmente em exibição (já filtrada).
 ========
 -->
 <script setup lang="ts">
+defineSlots<{ [key: string]: any }>();
 import { computed, watch, ref, inject } from 'vue';
 import { useAgenda } from '../composables/useAgenda';
 import AgendaMatrixBase from './AgendaMatrixBase.vue';

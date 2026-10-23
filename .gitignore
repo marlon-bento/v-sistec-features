@@ -22,3 +22,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# para ignorar arquivos de estrutura de pastas, como estrutura-DataAgenda.txt,
+estrutura-*.txt

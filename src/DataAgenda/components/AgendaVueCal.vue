@@ -7,6 +7,7 @@ da lista contendo o recurso atualmente em exibição.
 ========
 -->
 <script setup lang="ts">
+defineSlots<{ [key: string]: any }>();
 import { ref, computed, inject } from 'vue';
 import { VueCal } from 'vue-cal';
 import 'vue-cal/style.css';
