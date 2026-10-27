@@ -6,8 +6,9 @@ import { fileURLToPath, URL } from 'node:url'
 export default defineConfig({
   plugins: [
     vue(),
+    // 
     dts({
-      rollupTypes: true,
+      rollupTypes: false,
       outDir: 'dist',
       tsconfigPath: './tsconfig.app.json',
     }) 

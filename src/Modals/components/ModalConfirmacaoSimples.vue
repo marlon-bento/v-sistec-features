@@ -83,9 +83,8 @@ BotaoFechar, controle nativo de eventos e slots para botões extras.
 </template>
 
 <script setup lang="ts">
-import { computed, useSlots, watch, onUnmounted } from "vue";
+import { computed, useSlots, watch, onUnmounted, type Slots } from "vue";
 import BotaoFechar from "./BotaoFechar.vue";
-
 // Tipagem explícita dos slots do modal simples
 defineSlots<{
     default?: (props: {}) => any;
@@ -96,7 +95,8 @@ defineSlots<{
 }>();
 
 // Instância de slots para checagem no template
-const slots = useSlots();
+const slots: Slots = useSlots();
+
 
 // Propriedades de configuração do modal simples compacto
 const props = defineProps({

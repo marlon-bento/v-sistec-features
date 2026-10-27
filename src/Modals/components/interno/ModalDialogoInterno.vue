@@ -116,7 +116,7 @@ clique no overlay e estilização compatível com o ModalReserva e Tabler.
 </template>
 
 <script setup lang="ts">
-import { computed, useSlots, watch, onUnmounted } from "vue";
+import { computed, useSlots, watch, onUnmounted, type Slots } from "vue";
 import BotaoFechar from "../BotaoFechar.vue";
 
 // Interface do escopo fornecido aos slots do rodapé
@@ -139,7 +139,7 @@ defineSlots<{
 }>();
 
 // Acesso tipado aos slots recebidos pelo componente
-const slots = useSlots();
+const slots: Slots = useSlots();
 
 // Propriedades estruturais repassadas pelos componentes filhos especializados
 const props = defineProps({
