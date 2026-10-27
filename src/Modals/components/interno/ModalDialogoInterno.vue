@@ -2,7 +2,7 @@
 ========
 Componente base interno para modais de diálogo, alerta e decisão.
 Construído sem dependência de Bootstrap, utilizando Teleport, controle nativo de tecla ESC,
-clique no overlay e estilização compatível com o ModalReserva e Tabler.
+clique no overlay, emissão de evento de abertura e estilização compatível com o ModalReserva e Tabler.
 ========
 -->
 <template>
@@ -169,7 +169,7 @@ const props = defineProps({
 });
 
 // Eventos padrões de ciclo de vida e decisão do modal
-const emit = defineEmits(["update:modelValue", "confirmar", "cancelar", "fechar"]);
+const emit = defineEmits(["update:modelValue", "abriu", "confirmar", "cancelar", "fechar"]);
 
 // Controla a visibilidade do modal sincronizada com o v-model
 const exibirModal = computed({
@@ -221,10 +221,13 @@ function aoPressionarTecla(evento: KeyboardEvent) {
     }
 }
 
-// Observa a abertura do modal para registrar ou remover o listener da tecla ESC
+// Observa a abertura do modal para emitir o evento de abertura e gerenciar o listener da tecla ESC
 watch(
     exibirModal,
     (aberto) => {
+        if (aberto) {
+            emit("abriu");
+        }
         if (typeof window === "undefined") return;
         if (aberto) {
             window.addEventListener("keydown", aoPressionarTecla);

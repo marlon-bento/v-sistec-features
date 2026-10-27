@@ -22,6 +22,7 @@ Configura automaticamente o tema vermelho e o ícone de triângulo de alerta.
         :fechar-ao-confirmar="fecharAoConfirmar"
         :desabilitar-confirmar="desabilitarConfirmar"
         :carregando="carregando"
+        @abriu="emit('abriu')"
         @confirmar="emit('confirmar')"
         @cancelar="emit('cancelar')"
         @fechar="emit('fechar')"
@@ -106,7 +107,7 @@ const props = defineProps({
 });
 
 // Eventos repassados ao componente pai
-const emit = defineEmits(["update:modelValue", "confirmar", "cancelar", "fechar"]);
+const emit = defineEmits(["update:modelValue", "abriu", "confirmar", "cancelar", "fechar"]);
 
 // Liga o estado do v-model ao componente interno
 const exibirModal = computed({

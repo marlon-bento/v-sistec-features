@@ -22,6 +22,7 @@ Configura automaticamente o tema verde e o ícone de verificação concluída.
         :fechar-ao-confirmar="fecharAoConfirmar"
         :desabilitar-confirmar="desabilitarConfirmar"
         :carregando="carregando"
+        @abriu="emit('abriu')"
         @confirmar="emit('confirmar')"
         @cancelar="emit('cancelar')"
         @fechar="emit('fechar')"
@@ -106,7 +107,7 @@ const props = defineProps({
 });
 
 // Eventos emitidos para o componente pai
-const emit = defineEmits(["update:modelValue", "confirmar", "cancelar", "fechar"]);
+const emit = defineEmits(["update:modelValue", "abriu", "confirmar", "cancelar", "fechar"]);
 
 // Sincroniza o v-model com o estado do modal
 const exibirModal = computed({

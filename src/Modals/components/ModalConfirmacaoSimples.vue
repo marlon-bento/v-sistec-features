@@ -2,7 +2,7 @@
 ========
 Componente de modal de confirmação simples e compacto.
 Segue o layout minimalista alinhado à esquerda sem dependência do Bootstrap, utilizando
-BotaoFechar, controle nativo de eventos e slots para botões extras.
+BotaoFechar, controle nativo de eventos, emissão de @abriu e slots para botões extras.
 ========
 -->
 <template>
@@ -85,6 +85,7 @@ BotaoFechar, controle nativo de eventos e slots para botões extras.
 <script setup lang="ts">
 import { computed, useSlots, watch, onUnmounted, type Slots } from "vue";
 import BotaoFechar from "./BotaoFechar.vue";
+
 // Tipagem explícita dos slots do modal simples
 defineSlots<{
     default?: (props: {}) => any;
@@ -96,7 +97,6 @@ defineSlots<{
 
 // Instância de slots para checagem no template
 const slots: Slots = useSlots();
-
 
 // Propriedades de configuração do modal simples compacto
 const props = defineProps({
@@ -124,7 +124,7 @@ const props = defineProps({
 });
 
 // Eventos emitidos pelo modal
-const emit = defineEmits(["update:modelValue", "confirmar", "cancelar", "fechar"]);
+const emit = defineEmits(["update:modelValue", "abriu", "confirmar", "cancelar", "fechar"]);
 
 // Sincroniza a visibilidade com o v-model
 const exibirModal = computed({
@@ -176,10 +176,13 @@ function aoPressionarTecla(evento: KeyboardEvent) {
     }
 }
 
-// Registra e limpa o listener da tecla ESC conforme abertura do modal
+// Emite @abriu e registra ou limpa o listener da tecla ESC conforme abertura do modal
 watch(
     exibirModal,
     (aberto) => {
+        if (aberto) {
+            emit("abriu");
+        }
         if (typeof window === "undefined") return;
         if (aberto) {
             window.addEventListener("keydown", aoPressionarTecla);

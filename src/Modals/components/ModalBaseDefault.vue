@@ -2,7 +2,7 @@
 ========
 Componente de modal base padrão para formulários, tabelas e conteúdos extensos.
 Segue a arquitetura e estilização do ModalReserva utilizando Vue e Tabler, com cabeçalho,
-botão de fechar padronizado, barra de status superior e rodapé customizável.
+botão de fechar padronizado, barra de status superior, rodapé customizável e evento @abriu.
 ========
 -->
 <template>
@@ -132,7 +132,7 @@ const props = defineProps({
 });
 
 // Emissores de eventos para controle externo
-const emit = defineEmits(["update:modelValue", "confirmar", "cancelar", "fechar"]);
+const emit = defineEmits(["update:modelValue", "abriu", "confirmar", "cancelar", "fechar"]);
 
 // Resolve o tamanho priorizando a propriedade em português
 const tamanhoCalculado = computed(() => props.tamanho || props.size);
@@ -187,10 +187,13 @@ function aoPressionarTecla(evento: KeyboardEvent) {
     }
 }
 
-// Monitora o estado de abertura para ativar ou remover o evento de teclado
+// Monitora o estado de abertura para disparar @abriu e ativar ou remover o evento de teclado
 watch(
     exibirModal,
     (aberto) => {
+        if (aberto) {
+            emit("abriu");
+        }
         if (typeof window === "undefined") return;
         if (aberto) {
             window.addEventListener("keydown", aoPressionarTecla);

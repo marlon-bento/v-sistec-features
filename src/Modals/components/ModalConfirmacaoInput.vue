@@ -23,6 +23,7 @@ de confirmação, emitindo o texto digitado no evento @confirmar.
         :fechar-ao-confirmar="false"
         :desabilitar-confirmar="botaoDesabilitado"
         :carregando="carregando"
+        @abriu="emit('abriu')"
         @confirmar="dispararConfirmacao"
         @cancelar="emit('cancelar')"
         @fechar="emit('fechar')"
@@ -149,6 +150,7 @@ const props = defineProps({
 // Eventos emitidos (confirmar envia o texto digitado como parâmetro)
 const emit = defineEmits<{
     (e: "update:modelValue", valor: boolean): void;
+    (e: "abriu"): void;
     (e: "confirmar", textoDigitado: string): void;
     (e: "cancelar"): void;
     (e: "fechar"): void;
