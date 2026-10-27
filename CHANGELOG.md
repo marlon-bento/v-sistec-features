@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.32.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.32.0...v1.32.1) (2026-10-27)
+
+
+### Bug Fixes
+
+* adicionando emmit de abriu nos modais ([36adc6d](https://github.com/marlon-bento/v-sistec-features/commit/36adc6d487ef74a14cea523942a4b23c9a8ba72f))
+
 # [1.32.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.14...v1.32.0) (2026-10-27)
 
 
