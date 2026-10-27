@@ -1,8 +1,7 @@
 /*
 ==========================================================================
 Plugin principal do Sistec atualizado.
-Realiza a configuração global das dependências e registra manualmente todos 
-os componentes e diretivas do bootstrap-vue-next na aplicação consumidora
+Realiza a configuração global das dependências na aplicação consumidora
 através de iteração.
 ==========================================================================
 */
@@ -16,9 +15,6 @@ import '../assets/v-required-style.css';
 import Toast, { type PluginOptions as ToastPluginOptions } from "vue-toastification";
 import "vue-toastification/dist/index.css";
 
-import { createBootstrap } from 'bootstrap-vue-next';
-import * as ComponentesBootstrap from 'bootstrap-vue-next/components';
-import * as DiretivasBootstrap from 'bootstrap-vue-next/directives';
 
 import { DATA_TABLE_CONFIG, type DataTableGlobalConfig } from '@/DatatableVue/config/datatableConfig';
 
@@ -55,15 +51,7 @@ const SistecPlugin = {
     const configuracaoTabela = opcoes.dataTable || {};
     app.provide(DATA_TABLE_CONFIG, configuracaoTabela);
 
-    app.use(createBootstrap());
-
-    for (const [nomeComponente, componente] of Object.entries(ComponentesBootstrap)) {
-      app.component(nomeComponente, componente as any);
-    }
-
-    for (const [nomeDiretiva, diretiva] of Object.entries(DiretivasBootstrap)) {
-      app.directive(nomeDiretiva, diretiva as any);
-    }
+    
   }
 };
 
