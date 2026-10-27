@@ -1,5 +1,15 @@
 # Changelog
 
+# [1.32.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.14...v1.32.0) (2026-10-27)
+
+
+### Features
+
+* adicionados modals predefinidos ([bd32e4e](https://github.com/marlon-bento/v-sistec-features/commit/bd32e4ec2432d3e63b1bdac74cef8a92dc1fe3b5))
+* adicionados modals predefinidos ([9766e5a](https://github.com/marlon-bento/v-sistec-features/commit/9766e5afb9d71a85fe4ea9ec05e53eaa384832c4))
+* adicionados modals predefinidos ([148c0f4](https://github.com/marlon-bento/v-sistec-features/commit/148c0f44ad2c2c081335bf2e3319e3456c4d9845))
+* adicionados modals predefinidos ([31955eb](https://github.com/marlon-bento/v-sistec-features/commit/31955eb48197db9b971c5a88953cc1a5bf82c0f1))
+
 ## [1.31.14](https://github.com/marlon-bento/v-sistec-features/compare/v1.31.13...v1.31.14) (2026-10-23)
 
 

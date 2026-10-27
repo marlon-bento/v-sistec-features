@@ -1,7 +1,7 @@
 {
   "name": "v-sistec-features",
   "private": false,
-  "version": "1.31.14",
+  "version": "1.32.0",
   "author": "Márlon Bento Azevedo (https://github.com/marlon-bento)",
   "repository": {
     "type": "git",
@@ -31,7 +31,7 @@
       "import": "./dist/vDataAgenda.js",
       "types": "./dist/vDataAgenda.d.ts"
     },
-    "./Modals":{
+    "./Modals": {
       "import": "./dist/Modals.js",
       "types": "./dist/Modals.d.ts"
     },
