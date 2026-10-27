@@ -1,41 +1,34 @@
-import type { App } from 'vue';
-/*esse é o plugin que vai configurar as partes excenciais de todas as aplicações
-* do sistec
-*
-* Observações:
-* import de tabler-themes deve ser feito depois do tabler.min.css ou não funcionará
-* 
-* até o momento as funções são
-* - importar o css e js do tabler
-* - disponibilizar o tabler globalmente como window.bootstrap 
-* (as novas versões do tabler não incluem mais o bootstrap, então isso foi necessário)
-* 
-* - futuras funções podem ser adicionadas aqui
-* - como adicionar componentes globais
-* - adicionar diretivas globais
-* - adicionar filtros globais
-* - adicionar mixins globais
-* - adicionar propriedades globais
-* 
-* para usar o plugin, basta fazer app.use(SistecPlugin) na aplicação vue
+/*
+==========================================================================
+Plugin principal do Sistec atualizado.
+Realiza a configuração global das dependências e registra manualmente todos 
+os componentes e diretivas do bootstrap-vue-next na aplicação consumidora
+através de iteração.
+==========================================================================
 */
 
-// Configurações do Tabler
+import type { App } from 'vue';
 import '@tabler/core/dist/css/tabler.min.css';
-import '@tabler/core/dist/css/tabler-themes.min.css'
+import '@tabler/core/dist/css/tabler-themes.min.css';
 import * as Tabler from '@tabler/core/dist/js/tabler.min.js';
-import vRequired from "v-required"
-import '../assets/v-required-style.css'
+import vRequired from "v-required";
+import '../assets/v-required-style.css';
 import Toast, { type PluginOptions as ToastPluginOptions } from "vue-toastification";
 import "vue-toastification/dist/index.css";
 
+import { createBootstrap } from 'bootstrap-vue-next';
+import * as ComponentesBootstrap from 'bootstrap-vue-next/components';
+import * as DiretivasBootstrap from 'bootstrap-vue-next/directives';
+
 import { DATA_TABLE_CONFIG, type DataTableGlobalConfig } from '@/DatatableVue/config/datatableConfig';
-export interface SistecOptions {
-  dataTable?: DataTableGlobalConfig; // Configurações opcionais da tabela
-  toast?: ToastPluginOptions;        // Configurações opcionais do Toast
+
+export interface OpcoesSistec {
+  dataTable?: DataTableGlobalConfig;
+  toast?: ToastPluginOptions;
 }
 
-const defaultToastOptions: ToastPluginOptions = {
+// Configuração padrão base para mesclar com as opções recebidas pelo plugin
+const opcoesPadraoToast: ToastPluginOptions = {
   transition: "Vue-Toastification__bounce",
   maxToasts: 20,
   newestOnTop: true,
@@ -43,23 +36,35 @@ const defaultToastOptions: ToastPluginOptions = {
 };
 
 const SistecPlugin = {
-  // até o momento não usamos opções nem o app, mas deixei aqui caso precise no futuro
-  install: (app: App, options: SistecOptions = {}) => {
-    // Disponibiliza o Tabler globalmente
+  /*
+  Função: install
+  Recebe: aplicativo (instância do Vue), opcoes (configurações do usuário)
+  Devolve: Nada
+  Por que é usada: Injeta os plugins, configurações e varre os objetos de 
+  componentes e diretivas do Bootstrap para registrá-los um por um no 
+  escopo global.
+  */
+  install: (app: App, opcoes: OpcoesSistec = {}) => {
     (window as any).bootstrap = Tabler;
 
-
-
-    // futuros upgrades podem ser feitos aqui
-    // Ex: app.component('MeuComponente', MeuComponente);
     app.directive('required', vRequired);
-    // Aqui um merge: Opções do usuário > Padrão do Sistec
-    const finalToastOptions = { ...defaultToastOptions, ...options.toast };
-    app.use(Toast, finalToastOptions);
-    // CONFIGURAÇÃO DO DATATABLE
-    // Se o usuário passou configurações goblais de tabela, fazemos o provide AQUI.
-    const tableConfig = options.dataTable || {}; 
-    app.provide(DATA_TABLE_CONFIG, tableConfig);
+
+    const opcoesFinaisToast = { ...opcoesPadraoToast, ...opcoes.toast };
+    app.use(Toast, opcoesFinaisToast);
+
+    const configuracaoTabela = opcoes.dataTable || {};
+    app.provide(DATA_TABLE_CONFIG, configuracaoTabela);
+
+    app.use(createBootstrap());
+
+    for (const [nomeComponente, componente] of Object.entries(ComponentesBootstrap)) {
+      app.component(nomeComponente, componente as any);
+    }
+
+    for (const [nomeDiretiva, diretiva] of Object.entries(DiretivasBootstrap)) {
+      app.directive(nomeDiretiva, diretiva as any);
+    }
   }
 };
+
 export { SistecPlugin };

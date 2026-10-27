@@ -31,6 +31,10 @@
       "import": "./dist/vDataAgenda.js",
       "types": "./dist/vDataAgenda.d.ts"
     },
+    "./Modals":{
+      "import": "./dist/Modals.js",
+      "types": "./dist/Modals.d.ts"
+    },
     "./Pagination": {
       "import": "./dist/Pagination.js",
       "types": "./dist/Pagination.d.ts"

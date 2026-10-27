@@ -29,6 +29,7 @@ export default defineConfig({
         iframeCommunicator: path.resolve(__dirname, 'src/iframeCommunicator/index.ts'),
         Pagination: path.resolve(__dirname, 'src/Pagination/index.ts'),
         toast: path.resolve(__dirname, 'src/toast/index.ts'),
+        Modals: path.resolve(__dirname, 'src/Modals/index.ts'),
       },
       // O nome é menos importante aqui, mas pode ser mantido
       name: 'VSistecFeatures',
