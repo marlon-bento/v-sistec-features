@@ -22,15 +22,23 @@ import HeaderCalendario from './components/HeaderCalendario.vue';
 import HeaderTabela from './components/HeaderTabela.vue';
 
 const props = withDefaults(defineProps<{
-  modoLayout?: 'calendario' | 'tabela' | 'tabela-horario',
-  idRecursoUnico?: number | string | null,
-  usaInterceptador?: boolean,
-  usuarioLogado?: string,
-  tituloPadrao?: string,
-  ocultarTituloModal?: boolean,
-  configuracaoBlocos?: any,
-  fetch: any,
+  tituloObrigatorio?: boolean;
+  labelTituloModal?: string;
+  placeholderTituloModal?: string;
+  mensagemErroTitulo?: string;
+  modoLayout?: 'calendario' | 'tabela' | 'tabela-horario';
+  idRecursoUnico?: number | string | null;
+  usaInterceptador?: boolean;
+  usuarioLogado?: string;
+  tituloPadrao?: string;
+  ocultarTituloModal?: boolean;
+  configuracaoBlocos?: any;
+  fetch: any;
 }>(), {
+  tituloObrigatorio: false,
+  labelTituloModal: 'Nome da Reserva',
+  placeholderTituloModal: 'Ex: Treinamento',
+  mensagemErroTitulo: '',
   modoLayout: 'calendario',
   idRecursoUnico: null,
   usaInterceptador: false,
@@ -40,8 +48,19 @@ const props = withDefaults(defineProps<{
   configuracaoBlocos: null
 });
 
+const emit = defineEmits(['before-save']);
 provide('api-instance-agenda', props.fetch);
-defineEmits(['before-save']);
+
+// Agrupa as configurações de título do modal para injeção direta nos subcomponentes do ModalReserva.
+const configModalAgenda = computed(() => ({
+  tituloObrigatorio: props.tituloObrigatorio,
+  labelTituloModal: props.labelTituloModal,
+  placeholderTituloModal: props.placeholderTituloModal,
+  mensagemErroTitulo: props.mensagemErroTitulo,
+  ocultarTituloModal: props.ocultarTituloModal
+}));
+
+provide('config-modal-agenda', configModalAgenda);
 
 const {
   dataSelecionada,
@@ -200,7 +219,7 @@ const mudarVisao = (novaVisao: string) => {
 
         <main class="area-calendario">
           <component :is="componenteModeloAtivo" ref="modeloAtivoRef" v-bind="propriedadesModeloAtivo"
-            @before-save="$emit('before-save', $event)">
+            @before-save="$emit('before-save',$event)">
             <template v-for="(_, nomeSlot) in $slots" :key="nomeSlot" #[nomeSlot]="slotProps">
               <slot :name="nomeSlot" v-bind="slotProps ?? {}"></slot>
             </template>
@@ -271,7 +290,6 @@ const mudarVisao = (novaVisao: string) => {
 .area-calendario {
   flex: 1;
   min-width: 0;
-  /* Fundamental para evitar o vazamento horizontal no layout principal */
   min-height: 0;
   overflow: hidden;
   background-color: var(--bg-primary);

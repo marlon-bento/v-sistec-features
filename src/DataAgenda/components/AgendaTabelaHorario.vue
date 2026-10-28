@@ -62,7 +62,8 @@ const {
   modalDetalhesAberto,
   reservaSelecionadaDetalhes,
   obterBlocosDoDia,
-  dispararBuscaSemanal
+  dispararBuscaSemanal,
+  abrirEdicaoDeReserva
 } = useGradeSemanal(api, () => props.configuracaoBlocos);
 
 // Quando a agenda muda no seletor e não há idRecursoUnico fixo, garante que o recursoSelecionado pertença à agenda ativa.
@@ -304,8 +305,13 @@ const estruturaGradeHorario = computed(() => {
       </template>
     </ModalReserva>
 
-    <ModalDetalhesReserva v-model="modalDetalhesAberto" :reserva="reservaSelecionadaDetalhes"
-      :titulo-padrao="props.tituloPadrao" @excluido="dispararBuscaSemanal" />
+    <ModalDetalhesReserva
+      v-model="modalDetalhesAberto"
+      :reserva="reservaSelecionadaDetalhes"
+      :titulo-padrao="props.tituloPadrao"
+      @editar="abrirEdicaoDeReserva"
+      @excluido="dispararBuscaSemanal"
+    />
 
     <div class="aviso-vazio" v-if="carregando">
       <div class="spinner"></div>

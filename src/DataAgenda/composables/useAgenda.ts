@@ -1,8 +1,8 @@
 /*
 ========
 Este arquivo encapsula o estado global reativo e a comunicação HTTP com a API nativa de agendamento.
-Ele gerencia a busca de recursos, detalhes de agendas, matriz de slots, listagem e criação de reservas,
-utilizando a nomenclatura padronizada em português do backend.
+Ele gerencia a busca de recursos, detalhes de agendas, matriz de slots, listagem, criação, edição,
+desvinculação de grupo e exclusão (individual ou em lote) de reservas, utilizando a nomenclatura padronizada em português do backend.
 ========
 */
 import { ref, watch } from 'vue';
@@ -224,6 +224,30 @@ export function useAgenda(api: any) {
         }
     };
 
+    // Recebe o código de referência da reserva e o payload de atualização (data_inicio_reserva, data_fim_reserva, titulo_reserva, payload).
+    // Devolve a reserva atualizada pela API (aplicando a edição ao grupo de recorrência se estiver vinculada, ou individualmente se desvinculada).
+    const editarReserva = async (codigoReferenciaReserva: string, payload: any) => {
+        try {
+            const resposta = await api.put(`/reservas/${codigoReferenciaReserva}/`, payload);
+            return resposta.data || resposta;
+        } catch (erro) {
+            console.error("Erro na API ao editar reserva:", erro);
+            throw erro;
+        }
+    };
+
+    // Recebe o código de referência da reserva e solicita a remoção definitiva do vínculo com o grupo de recorrência.
+    // Devolve os dados atualizados da reserva agora independente.
+    const desvincularReservaGrupo = async (codigoReferenciaReserva: string) => {
+        try {
+            const resposta = await api.post(`/reservas/${codigoReferenciaReserva}/desvincular/`, {});
+            return resposta.data || resposta;
+        } catch (erro) {
+            console.error("Erro na API ao desvincular reserva do grupo:", erro);
+            throw erro;
+        }
+    };
+
     // Recebe o ID da agenda e armazena seus períodos em periodsAgenda.
     // É usada para consultar isoladamente os períodos configurados em uma agenda.
     const buscarPeriodosAgenda = async (idAgenda: number | string) => {
@@ -236,6 +260,7 @@ export function useAgenda(api: any) {
             periodsAgenda.value = [];
         }
     };
+
     // Recebe o código de referência único da reserva e devolve os dados completos vindos da API.
     // É usada ao clicar em uma reserva existente para exibir todas as informações no modal de detalhes.
     const obterDetalhesReserva = async (codigoReferenciaReserva: string) => {
@@ -248,18 +273,18 @@ export function useAgenda(api: any) {
         }
     };
 
-    // Recebe o código de referência único da reserva e solicita o seu cancelamento na API.
-    // É usada pelo modal de detalhes quando o usuário deseja excluir o agendamento.
-    const excluirReserva = async (codigoReferenciaReserva: string) => {
+    // Recebe o código de referência único da reserva e a flag opcional cancelarGrupo.
+    // Solicita o cancelamento individual ou de todo o lote recorrente na API.
+    const excluirReserva = async (codigoReferenciaReserva: string, cancelarGrupo = false) => {
         try {
-            const resposta = await api.delete(`/reservas/${codigoReferenciaReserva}/`);
+            const sufixoQuery = cancelarGrupo ? '?cancelar_grupo=true' : '';
+            const resposta = await api.delete(`/reservas/${codigoReferenciaReserva}/${sufixoQuery}`);
             return resposta;
         } catch (erro) {
             console.error("Erro ao excluir reserva:", erro);
             throw erro;
         }
     };
-
 
     // Recebe o objeto padronizado da reserva recorrente (com data_limite_repeticao) e envia para a rota em lote.
     const criarReservaRecorrente = async (payload: any) => {
@@ -271,6 +296,7 @@ export function useAgenda(api: any) {
             throw erro;
         }
     };
+
     return {
         reservasBrutas,
         recursosDisponiveis,
@@ -288,6 +314,8 @@ export function useAgenda(api: any) {
         buscarReservas,
         buscarSlotsMatrix,
         criarReserva,
+        editarReserva,
+        desvincularReservaGrupo,
         converterParaUtc,
         periodsAgenda,
         buscarPeriodosAgenda,

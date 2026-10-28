@@ -12,12 +12,17 @@ import { ref, computed, inject } from 'vue';
 import { VueCal } from 'vue-cal';
 import 'vue-cal/style.css';
 import { useAgenda } from '../composables/useAgenda';
-import { extrairDataHoraLocal, formatarDataIso } from '../composables/useGradeCompartilhada';
+import { extrairDataHoraLocal, formatarDataIso, montarDadosModalParaEdicao } from '../composables/useGradeCompartilhada';
 import ModalReserva from './ModalReserva.vue';
 import ModalDetalhesReserva from './ModalDetalhesReserva.vue';
 
 const api = inject('api-instance-agenda') as any;
-
+const abrirEdicaoDeReserva = (reserva: any) => {
+    if (!reserva) return;
+    modalDetalhesAberto.value = false;
+    dadosParaModal.value = montarDadosModalParaEdicao(reserva);
+    modalAberto.value = true;
+};
 const props = defineProps({
     usaInterceptador: { type: Boolean, default: false },
     usuarioLogado: { type: String, default: '' },
@@ -204,6 +209,7 @@ const horasBloqueadasNativas = computed(() => {
             v-model="modalDetalhesAberto"
             :reserva="reservaSelecionadaDetalhes"
             :titulo-padrao="props.tituloPadrao"
+            @editar="abrirEdicaoDeReserva"
             @excluido="atualizarVisualizacao"
         />
 

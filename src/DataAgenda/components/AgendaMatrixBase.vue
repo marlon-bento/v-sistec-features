@@ -52,7 +52,8 @@ const {
     modalDetalhesAberto,
     reservaSelecionadaDetalhes,
     obterBlocosDoDia,
-    dispararBuscaSemanal
+    dispararBuscaSemanal,
+    abrirEdicaoDeReserva
 } = useGradeSemanal(api, () => props.configuracaoBlocos);
 
 const controladorArrastoHorizontal = useSelecaoArrasto({
@@ -302,6 +303,7 @@ const formatarData = (isoData: string) => {
       v-model="modalDetalhesAberto"
       :reserva="reservaSelecionadaDetalhes"
       :titulo-padrao="props.tituloPadrao"
+      @editar="abrirEdicaoDeReserva"
       @excluido="dispararBuscaSemanal"
     />
 

@@ -1,7 +1,7 @@
 // ============================================================================
 // Composable utilitário que centraliza cálculos de datas semanais, formatação
-// de horários, busca de matriz na API, mesclagem de reservas contínuas e
-// sincronização de recurso único entre os diferentes modelos de agenda.
+// de horários, busca de matriz na API, mesclagem de reservas contínuas,
+// abertura do modal em modo de edição e sincronização de recurso único.
 // ============================================================================
 
 import { ref, computed, watch, onMounted } from 'vue';
@@ -114,6 +114,26 @@ export const mesclarSlotsReservados = (slotsBrutos: any[], chaveSpan: 'colspan' 
     return celulasMescladas;
 };
 
+// Recebe o objeto de uma reserva existente e devolve a estrutura formatada para abrir o ModalReserva em modo de edição.
+export const montarDadosModalParaEdicao = (reserva: any) => {
+    const inicio = extrairDataHoraLocal(reserva.data_inicio_reserva);
+    const fim = extrairDataHoraLocal(reserva.data_fim_reserva);
+
+    return {
+        modo_edicao: true,
+        codigo_referencia_reserva: reserva.codigo_referencia_reserva,
+        grupo_recorrencia_reserva: reserva.grupo_recorrencia_reserva || null,
+        datas_grupo_recorrencia_reserva: reserva.datas_grupo_recorrencia_reserva || [],
+        id_recurso: Number(reserva.id_recurso),
+        titulo_reserva: reserva.titulo_reserva || '',
+        data_inicio: inicio.data,
+        hora_inicio: inicio.hora,
+        data_fim: fim.data,
+        hora_fim: fim.hora,
+        payload: reserva.payload
+    };
+};
+
 // Gerencia o ciclo de busca semanal da matriz, estados de modais e configuração de blocos por agenda.
 export function useGradeSemanal(api: any, obterConfiguracaoBlocos?: () => any) {
     const {
@@ -155,6 +175,14 @@ export function useGradeSemanal(api: any, obterConfiguracaoBlocos?: () => any) {
         carregando.value = false;
     };
 
+    // Fecha o modal de detalhes e abre o modal de reserva preenchido no modo de edição.
+    const abrirEdicaoDeReserva = (reserva: any) => {
+        if (!reserva) return;
+        modalDetalhesAberto.value = false;
+        dadosParaModal.value = montarDadosModalParaEdicao(reserva);
+        modalAberto.value = true;
+    };
+
     onMounted(dispararBuscaSemanal);
     watch([dataSelecionada, agendaSelecionada], dispararBuscaSemanal);
 
@@ -191,7 +219,8 @@ export function useGradeSemanal(api: any, obterConfiguracaoBlocos?: () => any) {
         reservaSelecionadaDetalhes,
         configuracaoAgendaAtual,
         obterBlocosDoDia,
-        dispararBuscaSemanal
+        dispararBuscaSemanal,
+        abrirEdicaoDeReserva
     };
 }
 
