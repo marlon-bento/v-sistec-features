@@ -5,18 +5,15 @@ controles de navegação semanal alinhados ao início da semana da agenda e sele
 ========
 -->
 <script setup lang="ts">
-import { computed, inject } from 'vue';
+import { computed } from 'vue';
 import { useAgenda } from '../composables/useAgenda';
-
-const api = inject('api-instance-agenda') as any;
 
 const props = defineProps<{
     alternarMenu: () => void;
     irParaHoje: () => void;
-    ocultarSeletorAgenda?: boolean;
 }>();
 
-const { dataSelecionada, agendasDisponiveis, agendaSelecionada } = useAgenda(api);
+const { configEntrada, dataSelecionada, agendasDisponiveis, agendaSelecionada } = useAgenda();
 
 // Calcula e formata o intervalo da semana começando no dia inicial configurado na agenda (Segunda-feira por padrão).
 const textoPeriodoTabela = computed(() => {
@@ -67,7 +64,7 @@ const textoPeriodoTabela = computed(() => {
     </div>
   </div>
 
-  <div class="bloco-direita" v-if="!props.ocultarSeletorAgenda">
+  <div class="bloco-direita" v-if="!configEntrada.idRecursoUnico">
     <div class="seletor-recurso">
       <label for="agenda-tab">Agenda:</label>
       <select id="agenda-tab" v-model="agendaSelecionada">

@@ -1,28 +1,17 @@
 <!--
 ========
 Este arquivo representa a visualização em matriz para múltiplos recursos com suporte a filtragem.
-Ele utiliza o AgendaMatrixBase para renderizar a grade, repassa a configuração de blocos da agenda,
-gerencia o dropdown de seleção de salas preservando os filtros ativos ao mudar a data e expõe a lista
-de recursos atualmente em exibição (já filtrada).
+Ele utiliza o AgendaMatrixBase para renderizar a grade, gerencia o dropdown de seleção de salas
+preservando os filtros ativos ao mudar a data e expõe a lista de recursos atualmente em exibição.
 ========
 -->
 <script setup lang="ts">
 defineSlots<{ [key: string]: any }>();
-import { computed, watch, ref, inject } from 'vue';
+import { computed, watch, ref } from 'vue';
 import { useAgenda } from '../composables/useAgenda';
 import AgendaMatrixBase from './AgendaMatrixBase.vue';
 
-const props = defineProps({
-    usaInterceptador: { type: Boolean, default: false },
-    tituloPadrao: { type: String, default: '' },
-    ocultarTituloModal: { type: Boolean, default: false },
-    configuracaoBlocos: { type: [Array, Object], default: null }
-});
-
-const api = inject('api-instance-agenda') as any;
-defineEmits(['before-save']);
-
-const { dadosMatrix, agendaSelecionada, recursosDisponiveis } = useAgenda(api);
+const { dadosMatrix, agendaSelecionada, recursosDisponiveis } = useAgenda();
 
 const recursosVisiveisIds = ref<string[]>([]);
 const idAgendaFiltroInicializado = ref<number | null>(null);
@@ -78,12 +67,7 @@ defineExpose({ recursosEmExibicao });
 <template>
   <AgendaMatrixBase
     :ids-recursos-visiveis="recursosVisiveisIds"
-    :usa-interceptador="props.usaInterceptador"
-    :titulo-padrao="props.tituloPadrao"
-    :ocultar-titulo-modal="props.ocultarTituloModal"
-    :configuracao-blocos="props.configuracaoBlocos"
     mensagem-vazio="Nenhuma sala selecionada."
-    @before-save="$emit('before-save',$event)"
   >
     <template #topo>
       <div class="barra-filtros" v-if="recursosPermitidosNaMatriz.length > 0">

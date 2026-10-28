@@ -2,17 +2,16 @@
 ========
 O layout raiz que orquestra a interface com cabeçalhos modulares separados.
 Suporta os modos 'calendario', 'tabela' (matriz horizontal) e 'tabela-horario' (grade vertical de horários por turno).
-Repassa as configurações de usuário, layout, recurso único opcional, blocos por agenda e o cliente HTTP para os filhos,
-além de destacar a semana operacional ativa, bloquear dias inativos no minicalendário lateral e expor a lista de
-recursos atualmente em exibição no modelo ativo.
+Provê o contexto isolado da agenda para toda a árvore de componentes filhos, permitindo múltiplos calendários
+independentes na mesma página sem necessidade de repasse manual de propriedades (prop drilling).
 ========
 -->
 <script setup lang="ts">
 defineSlots<{ [key: string]: any }>();
-import { ref, computed, onMounted, provide } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { VueCal } from 'vue-cal';
 import 'vue-cal/style.css';
-import { useAgenda } from './composables/useAgenda';
+import { proverContextoAgenda } from './composables/useAgenda';
 import { calcularDataInicioSemana, formatarDataIso } from './composables/useGradeCompartilhada';
 import AgendaVueCal from './components/AgendaVueCal.vue';
 import AgendaMatrix from './components/AgendaMatrix.vue';
@@ -49,19 +48,8 @@ const props = withDefaults(defineProps<{
 });
 
 const emit = defineEmits(['before-save']);
-provide('api-instance-agenda', props.fetch);
 
-// Agrupa as configurações de título do modal para injeção direta nos subcomponentes do ModalReserva.
-const configModalAgenda = computed(() => ({
-  tituloObrigatorio: props.tituloObrigatorio,
-  labelTituloModal: props.labelTituloModal,
-  placeholderTituloModal: props.placeholderTituloModal,
-  mensagemErroTitulo: props.mensagemErroTitulo,
-  ocultarTituloModal: props.ocultarTituloModal
-}));
-
-provide('config-modal-agenda', configModalAgenda);
-
+// Cria e provê o contexto isolado da agenda para esta instância.
 const {
   dataSelecionada,
   dataVisao,
@@ -69,7 +57,7 @@ const {
   agendaSelecionada,
   datasDesabilitadas,
   carregarRecursosEAgendas
-} = useAgenda(props.fetch);
+} = proverContextoAgenda(props, emit);
 
 const menuAberto = ref(true);
 const calendarioMiniRef = ref<any>(null);
@@ -84,25 +72,6 @@ const componenteModeloAtivo = computed(() => {
   if (props.modoLayout === 'tabela-horario') return AgendaTabelaHorario;
   if (props.modoLayout === 'tabela' && props.idRecursoUnico) return AgendaMatrixUnico;
   return AgendaMatrix;
-});
-
-const propriedadesModeloAtivo = computed(() => {
-  const base = {
-    usaInterceptador: props.usaInterceptador,
-    tituloPadrao: props.tituloPadrao,
-    ocultarTituloModal: props.ocultarTituloModal
-  };
-
-  if (props.modoLayout === 'calendario') {
-    return { ...base, usuarioLogado: props.usuarioLogado };
-  }
-  if (props.modoLayout === 'tabela-horario') {
-    return { ...base, idRecursoUnico: props.idRecursoUnico, configuracaoBlocos: props.configuracaoBlocos };
-  }
-  if (props.modoLayout === 'tabela' && props.idRecursoUnico) {
-    return { ...base, idRecurso: props.idRecursoUnico, configuracaoBlocos: props.configuracaoBlocos };
-  }
-  return { ...base, configuracaoBlocos: props.configuracaoBlocos };
 });
 
 const recursosEmExibicao = computed(() => modeloAtivoRef.value?.recursosEmExibicao ?? []);
@@ -177,11 +146,18 @@ const mudarVisao = (novaVisao: string) => {
   <div>
     <div class="painel-agenda-unificado">
       <header class="painel-header-topo">
-        <HeaderCalendario v-if="props.modoLayout === 'calendario'" :alternarMenu="alternarMenu" :irParaHoje="irParaHoje"
-          :mudarVisao="mudarVisao" />
+        <HeaderCalendario
+          v-if="props.modoLayout === 'calendario'"
+          :alternarMenu="alternarMenu"
+          :irParaHoje="irParaHoje"
+          :mudarVisao="mudarVisao"
+        />
 
-        <HeaderTabela v-else :alternarMenu="alternarMenu" :irParaHoje="irParaHoje"
-          :ocultarSeletorAgenda="Boolean(props.idRecursoUnico)" />
+        <HeaderTabela
+          v-else
+          :alternarMenu="alternarMenu"
+          :irParaHoje="irParaHoje"
+        />
       </header>
 
       <div class="corpo-principal">
@@ -218,8 +194,7 @@ const mudarVisao = (novaVisao: string) => {
         </aside>
 
         <main class="area-calendario">
-          <component :is="componenteModeloAtivo" ref="modeloAtivoRef" v-bind="propriedadesModeloAtivo"
-            @before-save="$emit('before-save',$event)">
+          <component :is="componenteModeloAtivo" ref="modeloAtivoRef">
             <template v-for="(_, nomeSlot) in $slots" :key="nomeSlot" #[nomeSlot]="slotProps">
               <slot :name="nomeSlot" v-bind="slotProps ?? {}"></slot>
             </template>

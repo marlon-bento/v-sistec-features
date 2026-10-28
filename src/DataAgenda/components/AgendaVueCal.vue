@@ -1,14 +1,14 @@
 <!--
 ========
 Este arquivo representa o componente de calendário visual utilizando a biblioteca vue-cal.
-Ele exibe e gerencia os eventos e reservas na interface, permitindo a criação de novos agendamentos,
-a abertura do modal de detalhes ao clicar em reservas existentes, a navegação entre datas e a exposição
-da lista contendo o recurso atualmente em exibição.
+Ele exibe e gerencia os eventos e reservas na interface, lendo as configurações globais diretamente
+do useAgenda, permitindo a criação de novos agendamentos, a abertura do modal de detalhes ao clicar em
+reservas existentes e a exposição da lista contendo o recurso atualmente em exibição.
 ========
 -->
 <script setup lang="ts">
 defineSlots<{ [key: string]: any }>();
-import { ref, computed, inject } from 'vue';
+import { ref, computed } from 'vue';
 import { VueCal } from 'vue-cal';
 import 'vue-cal/style.css';
 import { useAgenda } from '../composables/useAgenda';
@@ -16,23 +16,8 @@ import { extrairDataHoraLocal, formatarDataIso, montarDadosModalParaEdicao } fro
 import ModalReserva from './ModalReserva.vue';
 import ModalDetalhesReserva from './ModalDetalhesReserva.vue';
 
-const api = inject('api-instance-agenda') as any;
-const abrirEdicaoDeReserva = (reserva: any) => {
-    if (!reserva) return;
-    modalDetalhesAberto.value = false;
-    dadosParaModal.value = montarDadosModalParaEdicao(reserva);
-    modalAberto.value = true;
-};
-const props = defineProps({
-    usaInterceptador: { type: Boolean, default: false },
-    usuarioLogado: { type: String, default: '' },
-    tituloPadrao: { type: String, default: '' },
-    ocultarTituloModal: { type: Boolean, default: false }
-});
-
-defineEmits(['before-save']);
-
 const {
+    configEntrada,
     reservasBrutas,
     recursosDisponiveis,
     recursoSelecionado,
@@ -43,7 +28,7 @@ const {
     minutosFim,
     datasDesabilitadas,
     buscarReservas
-} = useAgenda(api);
+} = useAgenda();
 
 const calendarioRef = ref<any>(null);
 const modalAberto = ref(false);
@@ -51,6 +36,13 @@ const resolverCriacaoVueCal = ref<any>(null);
 const dadosParaModal = ref({});
 const modalDetalhesAberto = ref(false);
 const reservaSelecionadaDetalhes = ref<any>(null);
+
+const abrirEdicaoDeReserva = (reserva: any) => {
+    if (!reserva) return;
+    modalDetalhesAberto.value = false;
+    dadosParaModal.value = montarDadosModalParaEdicao(reserva);
+    modalAberto.value = true;
+};
 
 const recursosEmExibicao = computed(() => {
     if (!recursoSelecionado.value) return [];
@@ -153,15 +145,15 @@ const eventosProcessados = computed(() => {
             const identificadorAutor = reserva.email_responsavel_reserva || reserva.usuario_responsavel_reserva;
             const ehMeu = Boolean(
                 identificadorAutor &&
-                props.usuarioLogado &&
-                String(identificadorAutor).toLowerCase() === props.usuarioLogado.toLowerCase()
+                configEntrada.usuarioLogado &&
+                String(identificadorAutor).toLowerCase() === configEntrada.usuarioLogado.toLowerCase()
             );
             const ini = extrairDataHoraLocal(reserva.data_inicio_reserva);
             const fim = extrairDataHoraLocal(reserva.data_fim_reserva);
 
             return {
                 id: reserva.codigo_referencia_reserva,
-                title: String(reserva.titulo_reserva || '').trim() || props.tituloPadrao,
+                title: String(reserva.titulo_reserva || '').trim() || configEntrada.tituloPadrao,
                 start: `${ini.data} ${ini.hora}` as FormatoDataVueCal,
                 end: `${fim.data} ${fim.hora}` as FormatoDataVueCal,
                 id_recurso: reserva.id_recurso,
@@ -194,9 +186,6 @@ const horasBloqueadasNativas = computed(() => {
         <ModalReserva
             v-model="modalAberto"
             :dados-iniciais="dadosParaModal"
-            :usa-interceptador="usaInterceptador"
-            :ocultar-titulo-modal="props.ocultarTituloModal"
-            @before-save="$emit('before-save', $event)"
             @salvo="aoSalvar"
             @cancelado="encerrarCriacaoProvisoria"
         >
@@ -208,7 +197,6 @@ const horasBloqueadasNativas = computed(() => {
         <ModalDetalhesReserva
             v-model="modalDetalhesAberto"
             :reserva="reservaSelecionadaDetalhes"
-            :titulo-padrao="props.tituloPadrao"
             @editar="abrirEdicaoDeReserva"
             @excluido="atualizarVisualizacao"
         />

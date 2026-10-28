@@ -8,7 +8,7 @@ e exposição da lista contendo o recurso atualmente em exibição.
 -->
 <script setup lang="ts">
 defineSlots<{ [key: string]: any }>();
-import { computed, watch, inject } from 'vue';
+import { computed, watch } from 'vue';
 import { useAgenda } from '../composables/useAgenda';
 import { useCoresAgenda } from '../composables/useCoresAgenda';
 import { useSelecaoArrasto } from '../composables/useSelecaoArrasto';
@@ -38,21 +38,10 @@ interface MetadadoLinha {
   fimDeBlocoPrincipal: boolean;
 }
 
-const props = defineProps<{
-  idRecursoUnico?: number | string | null;
-  usaInterceptador?: boolean;
-  tituloPadrao?: string;
-  ocultarTituloModal?: boolean;
-  configuracaoBlocos?: any;
-}>();
-
-const api = inject('api-instance-agenda') as any;
-defineEmits(['before-save']);
-
-const { agendaSelecionada, recursosDisponiveis, recursoSelecionado } = useAgenda(api);
+const { configEntrada, agendaSelecionada, recursosDisponiveis, recursoSelecionado } = useAgenda();
 const { theme, obterCoresBloco } = useCoresAgenda();
 
-useSincronizarRecursoUnico(api, () => props.idRecursoUnico);
+useSincronizarRecursoUnico();
 
 const {
   dadosMatrix,
@@ -64,11 +53,11 @@ const {
   obterBlocosDoDia,
   dispararBuscaSemanal,
   abrirEdicaoDeReserva
-} = useGradeSemanal(api, () => props.configuracaoBlocos);
+} = useGradeSemanal();
 
 // Quando a agenda muda no seletor e não há idRecursoUnico fixo, garante que o recursoSelecionado pertença à agenda ativa.
 watch(agendaSelecionada, (novoIdAgenda) => {
-  if (!novoIdAgenda || props.idRecursoUnico) return;
+  if (!novoIdAgenda || configEntrada.idRecursoUnico) return;
   const pertence = recursosDisponiveis.value.some(
     (r: any) => Number(r.id_recurso) === Number(recursoSelecionado.value) && Number(r.id_agenda) === Number(novoIdAgenda)
   );
@@ -90,7 +79,7 @@ const recursosDaAgendaAtual = computed(() => {
 });
 
 const idRecursoAtivo = computed(() => {
-  if (props.idRecursoUnico) return Number(props.idRecursoUnico);
+  if (configEntrada.idRecursoUnico) return Number(configEntrada.idRecursoUnico);
   if (recursoSelecionado.value) return Number(recursoSelecionado.value);
   const primeiro = recursosDaAgendaAtual.value[0];
   return primeiro ? Number(primeiro.id_recurso) : null;
@@ -297,9 +286,11 @@ const estruturaGradeHorario = computed(() => {
 
 <template>
   <div class="tabela-horario-container">
-    <ModalReserva v-model="modalAberto" :dados-iniciais="dadosParaModal" :usa-interceptador="props.usaInterceptador"
-      :ocultar-titulo-modal="props.ocultarTituloModal" @before-save="$emit('before-save', $event)"
-      @salvo="dispararBuscaSemanal">
+    <ModalReserva
+      v-model="modalAberto"
+      :dados-iniciais="dadosParaModal"
+      @salvo="dispararBuscaSemanal"
+    >
       <template v-for="(_, nomeSlot) in $slots" :key="nomeSlot" #[nomeSlot]="slotProps">
         <slot :name="nomeSlot" v-bind="slotProps ?? {}"></slot>
       </template>
@@ -308,7 +299,6 @@ const estruturaGradeHorario = computed(() => {
     <ModalDetalhesReserva
       v-model="modalDetalhesAberto"
       :reserva="reservaSelecionadaDetalhes"
-      :titulo-padrao="props.tituloPadrao"
       @editar="abrirEdicaoDeReserva"
       @excluido="dispararBuscaSemanal"
     />
@@ -319,7 +309,7 @@ const estruturaGradeHorario = computed(() => {
     </div>
 
     <div class="horario-conteudo" v-else-if="estruturaGradeHorario.grupos.length > 0">
-      <div class="barra-topo-recurso" v-if="!props.idRecursoUnico && recursosDaAgendaAtual.length > 0">
+      <div class="barra-topo-recurso" v-if="!configEntrada.idRecursoUnico && recursosDaAgendaAtual.length > 0">
         <label for="select-recurso-grade">Sala / Laboratório:</label>
         <select id="select-recurso-grade" v-model="recursoSelecionado">
           <option v-for="rec in recursosDaAgendaAtual" :key="rec.id_recurso" :value="rec.id_recurso">
@@ -399,7 +389,7 @@ const estruturaGradeHorario = computed(() => {
                       }">
                       <div class="conteudo-slot-horario" v-if="dia.celulas[idxLinha - 1]?.reservado_slot">
                         <span class="titulo-reserva-grade">
-                          {{ dia.celulas[idxLinha - 1]?.detalhes_reserva?.titulo_reserva?.trim() || props.tituloPadrao
+                          {{ dia.celulas[idxLinha - 1]?.detalhes_reserva?.titulo_reserva?.trim() || configEntrada.tituloPadrao
                           || 'Reservado' }}
                         </span>
                       </div>

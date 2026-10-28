@@ -2,27 +2,23 @@
 ========
 Este arquivo representa o modal de visualização detalhada de uma reserva existente.
 Ele exibe horário, recurso, autoria, payload JSON e todos os dias reservados caso a reserva
-pertença a um grupo de recorrência. Permite transicionar para o modal de edição e gerencia
-o cancelamento individual ou de todo o grupo recorrente através de um modal de decisão claro.
+pertença a um grupo de recorrência. Consome o tituloPadrao e os métodos da API diretamente do useAgenda.
 ========
 -->
 <script setup lang="ts">
-import { ref, computed, watch, inject, type PropType } from 'vue';
+import { ref, computed, watch, type PropType } from 'vue';
 import { ModalBaseDefault, ModalPerigo } from '@/Modals';
 import { useAgenda } from '../composables/useAgenda';
 import { criarDataLocal, extrairDataHoraLocal } from '../composables/useGradeCompartilhada';
 
-const api = inject('api-instance-agenda') as any;
-
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
-    reserva: { type: Object as PropType<Record<string, any> | null>, default: () => ({}) },
-    tituloPadrao: { type: String, default: 'Reserva sem título' }
+    reserva: { type: Object as PropType<Record<string, any> | null>, default: () => ({}) }
 });
 
 const emit = defineEmits(['update:modelValue', 'excluido', 'editar']);
 
-const { excluirReserva, obterDetalhesReserva } = useAgenda(api);
+const { configEntrada, excluirReserva, obterDetalhesReserva } = useAgenda();
 
 // Armazena os dados completos da reserva garantindo que a lista de datas do grupo esteja sempre atualizada.
 const reservaDetalhada = ref<Record<string, any>>({});
@@ -221,7 +217,7 @@ const executarExclusao = async (cancelarTodoGrupo = false) => {
     <div class="info-bloco">
       <span class="info-label">Título da Reserva</span>
       <span class="info-valor destaque">
-        {{ reservaDetalhada?.titulo_reserva?.trim() || props.tituloPadrao || 'Sem título' }}
+        {{ reservaDetalhada?.titulo_reserva?.trim() || configEntrada.tituloPadrao || 'Sem título' }}
       </span>
     </div>
 
@@ -316,7 +312,6 @@ const executarExclusao = async (cancelarTodoGrupo = false) => {
     </template>
   </ModalBaseDefault>
 
-  <!-- Confirmação para reserva individual sem vínculo de grupo -->
   <ModalPerigo
     v-model="modalConfirmarExclusaoSimplesAberto"
     titulo="Cancelar reserva?"
@@ -327,7 +322,6 @@ const executarExclusao = async (cancelarTodoGrupo = false) => {
     @confirmar="executarExclusao(false)"
   />
 
-  <!-- Modal intuitivo de decisão quando a reserva faz parte de um grupo de recorrência -->
   <ModalBaseDefault
     v-model="modalConfirmarExclusaoGrupoAberto"
     titulo="Cancelar Reserva em Lote Recorrente"

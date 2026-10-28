@@ -1,9 +1,10 @@
-// ============================================================================
-// Composable utilitário que centraliza cálculos de datas semanais, formatação
-// de horários, busca de matriz na API, mesclagem de reservas contínuas,
-// abertura do modal em modo de edição e sincronização de recurso único.
-// ============================================================================
-
+/*
+========
+Composable utilitário que centraliza cálculos de datas semanais, formatação de horários,
+busca de matriz na API, mesclagem de reservas contínuas, abertura do modal em modo de edição
+e sincronização automática de recurso único a partir da configuração global do useAgenda.
+========
+*/
 import { ref, computed, watch, onMounted } from 'vue';
 import { useAgenda } from './useAgenda';
 
@@ -134,9 +135,10 @@ export const montarDadosModalParaEdicao = (reserva: any) => {
     };
 };
 
-// Gerencia o ciclo de busca semanal da matriz, estados de modais e configuração de blocos por agenda.
-export function useGradeSemanal(api: any, obterConfiguracaoBlocos?: () => any) {
+// Gerencia o ciclo de busca semanal da matriz, estados de modais e configuração de blocos lendo direto do useAgenda.
+export function useGradeSemanal() {
     const {
+        configEntrada,
         dadosMatrix,
         buscarSlotsMatrix,
         buscarReservas,
@@ -144,7 +146,7 @@ export function useGradeSemanal(api: any, obterConfiguracaoBlocos?: () => any) {
         agendaSelecionada,
         dataSelecionada,
         converterParaUtc
-    } = useAgenda(api);
+    } = useAgenda();
 
     const carregando = ref(false);
     const modalAberto = ref(false);
@@ -187,7 +189,7 @@ export function useGradeSemanal(api: any, obterConfiguracaoBlocos?: () => any) {
     watch([dataSelecionada, agendaSelecionada], dispararBuscaSemanal);
 
     const configuracaoAgendaAtual = computed(() => {
-        const configBruta = obterConfiguracaoBlocos ? obterConfiguracaoBlocos() : null;
+        const configBruta = configEntrada.configuracaoBlocos;
         if (!configBruta || !agendaSelecionada.value) return null;
         const idAtual = Number(agendaSelecionada.value);
 
@@ -224,11 +226,11 @@ export function useGradeSemanal(api: any, obterConfiguracaoBlocos?: () => any) {
     };
 }
 
-// Sincroniza automaticamente o recursoSelecionado e a agendaSelecionada quando um ID de recurso fixo é informado.
-export function useSincronizarRecursoUnico(api: any, obterIdRecurso: () => number | string | null | undefined) {
-    const { recursosDisponiveis, agendaSelecionada, recursoSelecionado } = useAgenda(api);
+// Sincroniza automaticamente o recursoSelecionado e a agendaSelecionada observando o idRecursoUnico global do useAgenda.
+export function useSincronizarRecursoUnico() {
+    const { configEntrada, recursosDisponiveis, agendaSelecionada, recursoSelecionado } = useAgenda();
 
-    watch([obterIdRecurso, recursosDisponiveis], ([idRec]) => {
+    watch([() => configEntrada.idRecursoUnico, recursosDisponiveis], ([idRec]) => {
         if (!idRec || recursosDisponiveis.value.length === 0) return;
 
         const encontrado = recursosDisponiveis.value.find(

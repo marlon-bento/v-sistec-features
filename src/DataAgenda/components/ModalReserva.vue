@@ -2,11 +2,11 @@
 ========
 Este arquivo representa o componente orquestrador do modal de criação e edição de reservas.
 Ele conecta a lógica do composable useFormularioReserva aos subcomponentes visuais modulares
-e preserva todos os slots customizáveis e modais de feedback.
+e preserva todos os slots customizáveis e modais de feedback sem precisar receber props de configuração.
 ========
 -->
 <script setup lang="ts">
-import { computed, inject } from 'vue';
+import { computed } from 'vue';
 import {
     ModalBaseDefault,
     ModalAviso,
@@ -21,16 +21,12 @@ import SecaoHorarioModal from './ModalReservaPartes/SecaoHorarioModal.vue';
 import SecaoRecorrenciaModal from './ModalReservaPartes/SecaoRecorrenciaModal.vue';
 import RodapeAcoesModal from './ModalReservaPartes/RodapeAcoesModal.vue';
 
-const api = inject('api-instance-agenda') as any;
-
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
-    dadosIniciais: { type: Object, required: true },
-    usaInterceptador: { type: Boolean, default: false },
-    ocultarTituloModal: { type: Boolean, default: false }
+    dadosIniciais: { type: Object, required: true }
 });
 
-const emit = defineEmits(['update:modelValue', 'salvo', 'cancelado', 'before-save']);
+const emit = defineEmits(['update:modelValue', 'salvo', 'cancelado']);
 
 // Sincroniza o estado de visibilidade do modal com o v-model externo.
 const exibirModal = computed({
@@ -39,6 +35,7 @@ const exibirModal = computed({
 });
 
 const {
+    configEntrada,
     recursosDisponiveis,
     salvando,
     desvinculando,
@@ -67,13 +64,10 @@ const {
     confirmarRetiradaDoGrupo,
     salvarReserva
 } = useFormularioReserva({
-    api,
     obterAberto: () => props.modelValue,
     obterDadosIniciais: () => props.dadosIniciais,
-    obterUsaInterceptador: () => props.usaInterceptador,
     aoSalvar: () => emit('salvo'),
-    aoFecharModal: () => emit('update:modelValue', false),
-    aoAntesDeSalvar: (evento) => emit('before-save', evento)
+    aoFecharModal: () => emit('update:modelValue', false)
 });
 
 // Emite o evento de cancelamento quando o modal principal é fechado pelo usuário.
@@ -135,12 +129,11 @@ const aoCancelarModal = () => {
         :dados-reserva="formReserva"
         :payload="formReserva.payload"
         :recursos-disponiveis="recursosDisponiveis"
-        :ocultar-titulo-modal="props.ocultarTituloModal"
+        :ocultar-titulo-modal="configEntrada.ocultarTituloModal"
       >
         <SecaoIdentificacaoModal
           :form-reserva="formReserva"
           :recursos-disponiveis="recursosDisponiveis"
-          :ocultar-titulo-modal="props.ocultarTituloModal"
         />
       </slot>
 

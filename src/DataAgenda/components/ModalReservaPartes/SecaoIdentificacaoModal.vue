@@ -1,50 +1,39 @@
 <!--
 ========
 Subcomponente do ModalReserva responsável por renderizar o campo de título da reserva
-e o seletor bloqueado com o nome do recurso vinculado, consumindo as configurações de rótulo
-e obrigatoriedade fornecidas pelo VDataAgenda.
+e o seletor bloqueado com o nome do recurso vinculado, lendo as configurações de rótulo,
+placeholder e obrigatoriedade diretamente do estado global useAgenda.
 ========
 -->
 <script setup lang="ts">
-import { computed, inject } from 'vue';
+import { computed } from 'vue';
+import { useAgenda } from '../../composables/useAgenda';
 
-const props = defineProps<{
+defineProps<{
     formReserva: {
         titulo_reserva: string;
         id_recurso: string | number;
         [key: string]: any;
     };
     recursosDisponiveis: any[];
-    ocultarTituloModal?: boolean;
 }>();
 
-const configInjetada = inject<any>('config-modal-agenda', null);
+const { configEntrada } = useAgenda();
 
 // Calcula o texto do rótulo do campo de título conforme a configuração de obrigatoriedade.
 const textoLabelTitulo = computed(() => {
-    const base = configInjetada?.value?.labelTituloModal || 'Nome da Reserva';
-    const obrigatorio = Boolean(configInjetada?.value?.tituloObrigatorio);
-    return obrigatorio ? `${base} *` : `${base} (opcional)`;
-});
-
-// Devolve o placeholder configurado para o input de título da reserva.
-const textoPlaceholderTitulo = computed(() => {
-    return configInjetada?.value?.placeholderTituloModal || 'Ex: Treinamento';
-});
-
-// Verifica se o campo de título deve ser ocultado via prop direta ou configuração injetada.
-const deveOcultarTitulo = computed(() => {
-    return Boolean(props.ocultarTituloModal || configInjetada?.value?.ocultarTituloModal);
+    const base = configEntrada.labelTituloModal || 'Nome da Reserva';
+    return configEntrada.tituloObrigatorio ? `${base} *` : `${base} (opcional)`;
 });
 </script>
 
 <template>
-  <div class="form-group" v-if="!deveOcultarTitulo">
+  <div class="form-group" v-if="!configEntrada.ocultarTituloModal">
     <label>{{ textoLabelTitulo }}</label>
     <input
       type="text"
       v-model="formReserva.titulo_reserva"
-      :placeholder="textoPlaceholderTitulo"
+      :placeholder="configEntrada.placeholderTituloModal || 'Ex: Treinamento'"
       autofocus
     />
   </div>

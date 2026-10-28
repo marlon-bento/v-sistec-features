@@ -1,20 +1,20 @@
+<!--
+========
+Cabeçalho exclusivo para o modo Calendário. Controla as visões de Dia/Semana, a navegação temporal
+e o seletor de recursos disponíveis consumindo diretamente o estado global do useAgenda.
+========
+-->
 <script setup lang="ts">
-/*
-========
-Cabeçalho exclusivo para o modo Calendário. Controla as visões de Dia/Semana e a navegação temporal.
-Agora seleciona 'Recursos' individuais em vez de Agendas inteiras.
-========
-*/
-import { computed, inject } from 'vue';
+import { computed } from 'vue';
 import { useAgenda } from '../composables/useAgenda';
-const api = inject('api-instance-agenda') as any
+
 const props = defineProps<{
     alternarMenu: () => void;
     irParaHoje: () => void;
     mudarVisao: (visao: string) => void;
 }>();
 
-const { dataSelecionada, visaoAtiva, recursosDisponiveis, recursoSelecionado } = useAgenda(api);
+const { dataSelecionada, visaoAtiva, recursosDisponiveis, recursoSelecionado } = useAgenda();
 
 // Devolve a string formatada do mês/ano ou data completa conforme a visão ativa ('day' ou 'week').
 const textoPeriodo = computed(() => {
@@ -25,8 +25,6 @@ const textoPeriodo = computed(() => {
     }
     return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 });
-
-
 </script>
 
 <template>
@@ -125,7 +123,6 @@ const textoPeriodo = computed(() => {
     margin-left: 8px; 
 }
 
-/* Alternador Dia / Semana */
 .menu-visoes { 
     display: inline-flex; 
     background-color: var(--bg-secondary); 
@@ -151,7 +148,6 @@ const textoPeriodo = computed(() => {
     box-shadow: var(--shadow-sm); 
 }
 
-/* Caixa de seleção do Recurso */
 .seletor-recurso { 
     display: flex; 
     align-items: center; 

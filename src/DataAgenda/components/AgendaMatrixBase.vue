@@ -8,7 +8,8 @@ e mescla células de reservas contínuas com colspan.
 -->
 <script setup lang="ts">
 defineSlots<{ [key: string]: any }>();
-import { computed, inject } from 'vue';
+import { computed } from 'vue';
+import { useAgenda } from '../composables/useAgenda';
 import { useCoresAgenda } from '../composables/useCoresAgenda';
 import { useSelecaoArrasto } from '../composables/useSelecaoArrasto';
 import {
@@ -32,16 +33,10 @@ interface MetadadoColuna {
 
 const props = defineProps<{
     idsRecursosVisiveis: string[];
-    usaInterceptador?: boolean;
-    tituloPadrao?: string;
-    ocultarTituloModal?: boolean;
     mensagemVazio?: string;
-    configuracaoBlocos?: any;
 }>();
 
-const api = inject('api-instance-agenda') as any;
-defineEmits(['before-save']);
-
+const { configEntrada } = useAgenda();
 const { obterCoresBloco } = useCoresAgenda();
 
 const {
@@ -54,7 +49,7 @@ const {
     obterBlocosDoDia,
     dispararBuscaSemanal,
     abrirEdicaoDeReserva
-} = useGradeSemanal(api, () => props.configuracaoBlocos);
+} = useGradeSemanal();
 
 const controladorArrastoHorizontal = useSelecaoArrasto({
     aoClicarItemIndisponivel: (item) => {
@@ -289,9 +284,6 @@ const formatarData = (isoData: string) => {
     <ModalReserva
       v-model="modalAberto"
       :dados-iniciais="dadosParaModal"
-      :usa-interceptador="props.usaInterceptador"
-      :ocultar-titulo-modal="props.ocultarTituloModal"
-      @before-save="$emit('before-save', $event)"
       @salvo="dispararBuscaSemanal"
     >
       <template v-for="(_, nomeSlot) in $slots" :key="nomeSlot" #[nomeSlot]="slotProps">
@@ -302,7 +294,6 @@ const formatarData = (isoData: string) => {
     <ModalDetalhesReserva
       v-model="modalDetalhesAberto"
       :reserva="reservaSelecionadaDetalhes"
-      :titulo-padrao="props.tituloPadrao"
       @editar="abrirEdicaoDeReserva"
       @excluido="dispararBuscaSemanal"
     />
@@ -422,7 +413,7 @@ const formatarData = (isoData: string) => {
                     >
                       <div class="conteudo-slot-matrix" v-if="slot.reservado_slot">
                         <span class="etiqueta-reserva">
-                          {{ slot.detalhes_reserva?.titulo_reserva?.trim() || props.tituloPadrao || 'Reservado' }}
+                          {{ slot.detalhes_reserva?.titulo_reserva?.trim() || configEntrada.tituloPadrao || 'Reservado' }}
                         </span>
                       </div>
                     </BlocoArrastavel>

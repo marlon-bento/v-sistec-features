@@ -1,31 +1,27 @@
 /*
 ========
 Este arquivo centraliza o estado reativo, os cálculos de validação de grade e as chamadas de persistência
-do formulário de criação e edição de reservas. Ele separa a regra de negócio da camada visual do ModalReserva,
+do formulário de criação e edição de reservas. Ele consome diretamente as configurações globais do useAgenda,
 gerenciando edição em lote recorrente, desvinculação de grupo, ajuste automático de horários e interceptação antes de salvar.
 ========
 */
-import { ref, computed, watch, inject } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useAgenda } from './useAgenda';
 import { criarDataLocal } from './useGradeCompartilhada';
 
 interface OpcoesFormularioReserva {
-    api: any;
     obterAberto: () => boolean;
     obterDadosIniciais: () => Record<string, any>;
-    obterUsaInterceptador: () => boolean;
-    obterOcultarTituloModal?: () => boolean;
     aoSalvar: () => void;
     aoFecharModal: () => void;
-    aoAntesDeSalvar: (eventoInterceptador: any) => void;
 }
 
-// Recebe as dependências e callbacks do componente de modal e devolve os estados reativos e funções de controle do formulário.
+// Recebe os gatilhos de abertura e fechamento do modal e devolve os estados reativos e funções de controle do formulário.
 // É usada pelo ModalReserva para isolar a lógica de validação, manipulação de grupo e envio para a API.
 export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
-    const configInjetada = inject<any>('config-modal-agenda', null);
-
     const {
+        configEntrada,
+        dispararAntesDeSalvar,
         minutosInicio,
         minutosFim,
         recursosDisponiveis,
@@ -36,7 +32,7 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         desvincularReservaGrupo,
         converterParaUtc,
         reservasBrutas
-    } = useAgenda(opcoes.api);
+    } = useAgenda();
 
     // Indica se a requisição de salvamento ou edição está em andamento.
     const salvando = ref(false);
@@ -411,14 +407,9 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
     const salvarReserva = async () => {
         if (precisaValidar.value) return;
 
-        const ocultarTitulo = Boolean(
-            opcoes.obterOcultarTituloModal?.() || configInjetada?.value?.ocultarTituloModal
-        );
-        const tituloObrigatorio = Boolean(configInjetada?.value?.tituloObrigatorio);
-
-        if (!ocultarTitulo && tituloObrigatorio && !formReserva.value.titulo_reserva.trim()) {
-            const labelCampo = configInjetada?.value?.labelTituloModal || 'Nome da Reserva';
-            const msgCustom = configInjetada?.value?.mensagemErroTitulo;
+        if (!configEntrada.ocultarTituloModal && configEntrada.tituloObrigatorio && !formReserva.value.titulo_reserva.trim()) {
+            const labelCampo = configEntrada.labelTituloModal || 'Nome da Reserva';
+            const msgCustom = configEntrada.mensagemErroTitulo;
             abrirAviso(
                 'Campo obrigatório',
                 msgCustom || `O campo "${labelCampo}" é obrigatório para realizar o agendamento.`
@@ -498,8 +489,8 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
             payloadBase.data_limite_repeticao = formReserva.value.data_limite_repeticao;
         }
 
-        if (opcoes.obterUsaInterceptador()) {
-            opcoes.aoAntesDeSalvar({
+        if (configEntrada.usaInterceptador) {
+            dispararAntesDeSalvar({
                 payloadBase,
                 payload: payloadCustomizado,
                 modoEdicao: ehModoEdicao.value,
@@ -527,6 +518,7 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
     };
 
     return {
+        configEntrada,
         recursosDisponiveis,
         salvando,
         desvinculando,
