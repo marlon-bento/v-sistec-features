@@ -349,8 +349,11 @@ const estruturaGradeHorario = computed(() => {
                     backgroundColor: estruturaGradeHorario.grupos[0].linhasMetadados[idxLinha - 1].corFundo,
                     borderColor: estruturaGradeHorario.grupos[0].linhasMetadados[idxLinha - 1].corBorda
                   }" class="td-turno-vertical">
-                  <div class="texto-turno-vertical">
-                    {{ estruturaGradeHorario.grupos[0].linhasMetadados[idxLinha - 1].nomeBlocoLateral }}
+                  <div class="div-texto-turno-vertical">
+                    <span class="texto-turno-vertical">
+                      {{ estruturaGradeHorario.grupos[0].linhasMetadados[idxLinha - 1].nomeBlocoLateral }}
+                    </span>
+                    
                   </div>
                 </td>
               </template>
@@ -537,7 +540,12 @@ const estruturaGradeHorario = computed(() => {
   text-align: center;
   color: #111827 !important;
 }
-
+.div-texto-turno-vertical {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
 .texto-turno-vertical {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
