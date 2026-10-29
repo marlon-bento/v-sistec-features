@@ -144,41 +144,52 @@ function criarContextoAgenda(apiInicial?: any) {
 
     // Recebe o ID da agenda selecionada e não devolve retorno.
     // É usada para calcular os dias da semana desabilitados e os limites de horário a partir dos detalhes da agenda.
+    // Recebe o ID da agenda selecionada e não devolve retorno.
+    // É usada para calcular os dias da semana desabilitados e os limites de horário a partir dos detalhes da agenda.
     const processarDetalhesAgenda = (idAgenda: number) => {
-        const agenda = agendasDisponiveis.value.find(a => a.id_agenda === idAgenda);
+        const agenda = agendasDisponiveis.value.find(a => Number(a.id_agenda) === Number(idAgenda));
         if (!agenda || !agenda.detalhes) return;
         const detalhes = agenda.detalhes;
 
-        if (detalhes.dia_inicio_semana_agenda !== undefined && detalhes.dias_visiveis_agenda !== undefined) {
-            const diaInicioPython = parseInt(detalhes.dia_inicio_semana_agenda);
-            const diasVisiveis = parseInt(detalhes.dias_visiveis_agenda);
-            const diasPermitidosPython = new Set<number>();
+        const diaInicioPython = Number(detalhes.dia_inicio_semana_agenda ?? 0);
+        const diasVisiveis = Number(detalhes.dias_visiveis_agenda ?? 7);
+        const diasPermitidosPython = new Set<number>();
 
-            for (let i = 0; i < diasVisiveis; i++) {
-                diasPermitidosPython.add((diaInicioPython + i) % 7);
+        for (let i = 0; i < diasVisiveis; i++) {
+            const diaIndice = (diaInicioPython + i) % 7;
+            const periodosDoDia = Array.isArray(detalhes.periodos_agenda)
+                ? detalhes.periodos_agenda[diaIndice]
+                : null;
+
+            const possuiHorarioReservavel = Array.isArray(periodosDoDia)
+                ? periodosDoDia.some((p: any) => Boolean(p.reservavel_periodo))
+                : true;
+
+            if (possuiHorarioReservavel) {
+                diasPermitidosPython.add(diaIndice);
             }
+        }
 
-            const datas: FormatoDataSimplesVueCal[] = [];
-            const anoAtual = new Date().getFullYear();
+        const datas: FormatoDataSimplesVueCal[] = [];
+        const anoAtual = new Date().getFullYear();
 
-            for (let ano = anoAtual - 1; ano <= anoAtual + 1; ano++) {
-                for (let mes = 0; mes < 12; mes++) {
-                    const diasNoMes = new Date(ano, mes + 1, 0).getDate();
-                    for (let dia = 1; dia <= diasNoMes; dia++) {
-                        const dataAtual = new Date(ano, mes, dia);
-                        const diaPython = (dataAtual.getDay() + 6) % 7;
+        for (let ano = anoAtual - 1; ano <= anoAtual + 1; ano++) {
+            for (let mes = 0; mes < 12; mes++) {
+                const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+                for (let dia = 1; dia <= diasNoMes; dia++) {
+                    const dataAtual = new Date(ano, mes, dia);
+                    const diaPython = (dataAtual.getDay() + 6) % 7;
 
-                        if (!diasPermitidosPython.has(diaPython)) {
-                            const anoStr = dataAtual.getFullYear();
-                            const mesStr = String(dataAtual.getMonth() + 1).padStart(2, '0');
-                            const diaStr = String(dataAtual.getDate()).padStart(2, '0');
-                            datas.push(`${anoStr}-${mesStr}-${diaStr}` as FormatoDataSimplesVueCal);
-                        }
+                    if (!diasPermitidosPython.has(diaPython)) {
+                        const anoStr = dataAtual.getFullYear();
+                        const mesStr = String(dataAtual.getMonth() + 1).padStart(2, '0');
+                        const diaStr = String(dataAtual.getDate()).padStart(2, '0');
+                        datas.push(`${anoStr}-${mesStr}-${diaStr}` as FormatoDataSimplesVueCal);
                     }
                 }
             }
-            datasDesabilitadas.value = datas;
         }
+        datasDesabilitadas.value = datas;
 
         if (detalhes.periodos_agenda && Array.isArray(detalhes.periodos_agenda)) {
             let menorMinuto = 24 * 60;
@@ -245,9 +256,11 @@ function criarContextoAgenda(apiInicial?: any) {
 
                 agendasDisponiveis.value = Array.from(mapaAgendas.values());
 
-                if (agendasDisponiveis.value.length > 0 && !agendaSelecionada.value) {
-                    agendaSelecionada.value = agendasDisponiveis.value[0].id_agenda;
-                    processarDetalhesAgenda(agendasDisponiveis.value[0].id_agenda);
+                if (agendasDisponiveis.value.length > 0) {
+                    if (!agendaSelecionada.value) {
+                        agendaSelecionada.value = agendasDisponiveis.value[0].id_agenda;
+                    }
+                    processarDetalhesAgenda(Number(agendaSelecionada.value));
                 }
             }
         } catch (erro) {

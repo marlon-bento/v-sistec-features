@@ -109,7 +109,10 @@ const datasVisiveisNaSemana = computed(() => {
   for (let i = 0; i < diasVisiveis; i++) {
     const diaCorrente = new Date(inicioSemana);
     diaCorrente.setDate(inicioSemana.getDate() + i);
-    visiveis.add(formatarDataIso(diaCorrente));
+    const iso = formatarDataIso(diaCorrente);
+    if (!conjuntoDatasDesabilitadas.value.has(iso)) {
+      visiveis.add(iso);
+    }
   }
 
   return visiveis;
