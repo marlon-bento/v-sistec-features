@@ -7,6 +7,7 @@ controles de navegação semanal alinhados ao início da semana da agenda e sele
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useAgenda } from '../composables/useAgenda';
+import { calcularDataInicioSemana } from '../composables/useGradeCompartilhada';
 
 const props = defineProps<{
     alternarMenu: () => void;
@@ -15,19 +16,13 @@ const props = defineProps<{
 
 const { configEntrada, dataSelecionada, agendasDisponiveis, agendaSelecionada } = useAgenda();
 
-// Calcula e formata o intervalo da semana começando no dia inicial configurado na agenda (Segunda-feira por padrão).
+// Calcula e formata o intervalo da semana começando no dia inicial configurado na agenda.
 const textoPeriodoTabela = computed(() => {
     if (!dataSelecionada.value) return '';
-    const dBase = new Date(dataSelecionada.value);
-    const inicio = new Date(dBase.getFullYear(), dBase.getMonth(), dBase.getDate());
-
     const agendaObj = agendasDisponiveis.value.find((a: any) => Number(a.id_agenda) === Number(agendaSelecionada.value));
     const diaInicioPython = agendaObj?.detalhes?.dia_inicio_semana_agenda ?? 0;
-    const diaInicioJs = (diaInicioPython + 1) % 7;
-    const diff = (inicio.getDay() - diaInicioJs + 7) % 7;
 
-    inicio.setDate(inicio.getDate() - diff);
-
+    const inicio = calcularDataInicioSemana(dataSelecionada.value, diaInicioPython);
     const fim = new Date(inicio);
     fim.setDate(inicio.getDate() + 6);
 
@@ -84,9 +79,6 @@ const textoPeriodoTabela = computed(() => {
 .btn-hoje { background: transparent; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; color: var(--color-brand); display: flex; align-items: center; gap: 6px; transition: background 0.2s; }
 .btn-hoje:hover { background: var(--color-brand-light); }
 .titulo-periodo { font-weight: 600; font-size: 1.1rem; color: var(--text-primary); text-transform: capitalize; margin-left: 8px; }
-.menu-visoes { display: inline-flex; background-color: var(--bg-secondary); border-radius: 8px; padding: 4px; gap: 2px; }
-.menu-visoes button { background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 6px 16px; font-size: 0.9rem; cursor: pointer; font-weight: 500; color: var(--text-secondary); transition: all 0.2s; }
-.menu-visoes button.ativo { background-color: var(--bg-primary); border-color: var(--border-light); color: var(--color-brand); box-shadow: var(--shadow-sm); }
 .seletor-recurso { display: flex; align-items: center; font-size: 14px; color: var(--text-secondary); }
 .seletor-recurso select { margin-left: 10px; padding: 6px 12px; border: 1px solid var(--border-light); border-radius: 8px; background-color: var(--bg-primary); color: var(--text-primary); cursor: pointer; }
 </style>

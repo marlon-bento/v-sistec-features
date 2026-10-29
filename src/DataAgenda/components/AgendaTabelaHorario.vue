@@ -6,7 +6,6 @@ os turnos laterais e alimenta o componente visual puro GradeTabelaHorario.
 ========
 -->
 <script setup lang="ts">
-defineSlots<{ [key: string]: any }>();
 import { computed, watch } from 'vue';
 import { useAgenda } from '../composables/useAgenda';
 import { useCoresAgenda } from '../composables/useCoresAgenda';
@@ -17,26 +16,20 @@ import {
   extrairHoraFormatada,
   criarDataLocal,
   mesclarSlotsReservados,
+  calcularEstruturaDeBlocos,
   useGradeSemanal,
   useSincronizarRecursoUnico
 } from '../composables/useGradeCompartilhada';
 import GradeTabelaHorario from './Grades/GradeTabelaHorario.vue';
-import ModalReserva from './ModalReserva.vue';
-import ModalDetalhesReserva from './ModalDetalhesReserva.vue';
 
-interface MetadadoLinha {
-  horaInicio: string;
-  horaFim: string;
-  corFundo: string;
-  corBorda: string;
-  mostrarBlocoLateral: boolean;
-  nomeBlocoLateral: string;
-  rowspanBlocoLateral: number;
-  fimDeSubbloco: boolean;
-  fimDeBlocoPrincipal: boolean;
-}
-
-const { configEntrada, agendaSelecionada, recursosDisponiveis, recursoSelecionado } = useAgenda();
+const {
+  configEntrada,
+  agendaSelecionada,
+  recursosDisponiveis,
+  recursoSelecionado,
+  abrirModalCriacao,
+  abrirModalDetalhes
+} = useAgenda();
 const { theme, obterCoresBloco } = useCoresAgenda();
 
 useSincronizarRecursoUnico();
@@ -44,13 +37,7 @@ useSincronizarRecursoUnico();
 const {
   dadosMatrix,
   carregando,
-  modalAberto,
-  dadosParaModal,
-  modalDetalhesAberto,
-  reservaSelecionadaDetalhes,
-  obterBlocosDoDia,
-  dispararBuscaSemanal,
-  abrirEdicaoDeReserva
+  obterBlocosDoDia
 } = useGradeSemanal();
 
 // Quando a agenda muda no seletor e não há idRecursoUnico fixo, garante que o recursoSelecionado pertença à agenda ativa.
@@ -93,13 +80,7 @@ const recursosEmExibicao = computed(() => {
 
 defineExpose({ recursosEmExibicao });
 
-// Abre o modal de detalhes da reserva clicada na GradeTabelaHorario.
-const aoClicarReserva = (detalhesReserva: any) => {
-  reservaSelecionadaDetalhes.value = detalhesReserva;
-  modalDetalhesAberto.value = true;
-};
-
-// Abre o modal de criação com o intervalo vertical selecionado na GradeTabelaHorario.
+// Abre o modal central de criação com o intervalo vertical selecionado na GradeTabelaHorario.
 const aoSelecionarIntervalo = (itensSelecionados: any[]) => {
   if (!idRecursoAtivo.value) return;
   const slotInicial = itensSelecionados[0];
@@ -109,116 +90,17 @@ const aoSelecionarIntervalo = (itensSelecionados: any[]) => {
   const inicio = extrairDataHoraLocal(slotInicial.data_inicio_slot);
   const fim = extrairDataHoraLocal(slotFinal.data_fim_slot);
 
-  dadosParaModal.value = {
+  abrirModalCriacao({
     id_recurso: idRecursoAtivo.value,
     titulo_reserva: '',
     data_inicio: inicio.data,
     hora_inicio: inicio.hora,
     data_fim: fim.data,
     hora_fim: fim.hora
-  };
-
-  modalAberto.value = true;
-};
-
-// Processa a lista de horários de um grupo de dias e gera os metadados de cada linha (bloco lateral, cor e bordas de subdivisão).
-const mapearLinhasComBlocos = (horariosBase: { horaInicio: string; horaFim: string }[], siglaDia: string) => {
-  const total = horariosBase.length;
-  const listaBlocos = obterBlocosDoDia(siglaDia);
-
-  const metadadosLinhas: MetadadoLinha[] = horariosBase.map((h) => ({
-    horaInicio: h.horaInicio,
-    horaFim: h.horaFim,
-    corFundo: theme.value === 'dark' ? 'var(--bg-primary)' : '#FFFFFF',
-    corBorda: 'var(--border-light)',
-    mostrarBlocoLateral: false,
-    nomeBlocoLateral: '',
-    rowspanBlocoLateral: 1,
-    fimDeSubbloco: false,
-    fimDeBlocoPrincipal: false
-  }));
-
-  if (!listaBlocos || listaBlocos.length === 0) {
-    return { temColunaTurno: false, linhas: metadadosLinhas };
-  }
-
-  let cursor = 0;
-
-  listaBlocos.forEach((blocoCfg: any, idxBloco: number) => {
-    if (cursor >= total) return;
-    const qtdSolicitada = Number(blocoCfg.quantidade) || 0;
-    const qtdReal = Math.min(qtdSolicitada, total - cursor);
-    if (qtdReal <= 0) return;
-
-    const { corFundo, corBorda } = obterCoresBloco(idxBloco);
-
-    const metaCursor = metadadosLinhas[cursor];
-    if (metaCursor) {
-      metaCursor.mostrarBlocoLateral = true;
-      metaCursor.nomeBlocoLateral = blocoCfg.nome || `TURNO ${idxBloco + 1}`;
-      metaCursor.rowspanBlocoLateral = qtdReal;
-    }
-
-    for (let i = 0; i < qtdReal; i++) {
-      const metaItem = metadadosLinhas[cursor + i];
-      if (metaItem) {
-        metaItem.corFundo = corFundo;
-        metaItem.corBorda = corBorda;
-      }
-    }
-
-    const subFixo = Number(blocoCfg.subdivisao) || 0;
-    const subLista = Array.isArray(blocoCfg.subdivisoes) ? blocoCfg.subdivisoes : null;
-
-    if (subLista && subLista.length > 0) {
-      let consumido = 0;
-      subLista.forEach((tam: number) => {
-        if (consumido >= qtdReal) return;
-        consumido += Math.min(Number(tam) || 1, qtdReal - consumido);
-        const metaFimSub = metadadosLinhas[cursor + consumido - 1];
-        if (metaFimSub) metaFimSub.fimDeSubbloco = true;
-      });
-    } else if (subFixo > 0) {
-      let consumido = 0;
-      while (consumido < qtdReal) {
-        consumido += Math.min(subFixo, qtdReal - consumido);
-        const metaFimSub = metadadosLinhas[cursor + consumido - 1];
-        if (metaFimSub) metaFimSub.fimDeSubbloco = true;
-      }
-    }
-
-    const metaFimPrincipal = metadadosLinhas[cursor + qtdReal - 1];
-    if (metaFimPrincipal) metaFimPrincipal.fimDeBlocoPrincipal = true;
-    cursor += qtdReal;
   });
-
-  if (cursor < total) {
-    const restante = total - cursor;
-    const { corFundo, corBorda } = obterCoresBloco(listaBlocos.length);
-
-    const metaRestante = metadadosLinhas[cursor];
-    if (metaRestante) {
-      metaRestante.mostrarBlocoLateral = true;
-      metaRestante.nomeBlocoLateral = 'OUTROS';
-      metaRestante.rowspanBlocoLateral = restante;
-    }
-
-    for (let i = 0; i < restante; i++) {
-      const metaItem = metadadosLinhas[cursor + i];
-      if (metaItem) {
-        metaItem.corFundo = corFundo;
-        metaItem.corBorda = corBorda;
-      }
-    }
-
-    const metaUltimo = metadadosLinhas[total - 1];
-    if (metaUltimo) metaUltimo.fimDeBlocoPrincipal = true;
-  }
-
-  return { temColunaTurno: true, linhas: metadadosLinhas };
 };
 
-// Constrói a estrutura completa de grupos de colunas e calcula o rowspan das reservas.
+// Constrói a estrutura completa de grupos de colunas e calcula o rowspan das reservas usando o calculador unificado de blocos.
 const estruturaGradeHorario = computed(() => {
   if (!dadosMatrix.value?.datas_matriz || !idRecursoAtivo.value) {
     return { grupos: [], maxLinhas: 0, temColunaTurnoPrincipal: false };
@@ -229,6 +111,7 @@ const estruturaGradeHorario = computed(() => {
   );
 
   const gruposPorAssinatura = new Map<string, any>();
+  const corFundoPadrao = theme.value === 'dark' ? 'var(--bg-primary)' : '#FFFFFF';
 
   diasOperacionais.forEach((dia: any) => {
     const recObj = (dia.recursos_slot || []).find(
@@ -251,12 +134,18 @@ const estruturaGradeHorario = computed(() => {
     const dataCurta = dtLocal.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
 
     if (!gruposPorAssinatura.has(assinatura)) {
-      const infoLinhas = mapearLinhasComBlocos(horariosDia, siglaDia);
+      const infoLinhas = calcularEstruturaDeBlocos(
+        horariosDia,
+        obterBlocosDoDia(siglaDia),
+        obterCoresBloco,
+        corFundoPadrao,
+        'TURNO'
+      );
       gruposPorAssinatura.set(assinatura, {
         assinatura,
         siglaReferencia: siglaDia,
-        temColunaTurno: infoLinhas.temColunaTurno,
-        linhasMetadados: infoLinhas.linhas,
+        temColunaTurno: infoLinhas.temBlocos,
+        linhasMetadados: infoLinhas.metadadosSlots,
         dias: []
       });
     }
@@ -283,29 +172,12 @@ const estruturaGradeHorario = computed(() => {
 
 <template>
   <div class="tabela-horario-container">
-    <ModalReserva
-      v-model="modalAberto"
-      :dados-iniciais="dadosParaModal"
-      @salvo="dispararBuscaSemanal"
-    >
-      <template v-for="(_, nomeSlot) in $slots" :key="nomeSlot" #[nomeSlot]="slotProps">
-        <slot :name="nomeSlot" v-bind="slotProps ?? {}"></slot>
-      </template>
-    </ModalReserva>
-
-    <ModalDetalhesReserva
-      v-model="modalDetalhesAberto"
-      :reserva="reservaSelecionadaDetalhes"
-      @editar="abrirEdicaoDeReserva"
-      @excluido="dispararBuscaSemanal"
-    />
-
     <GradeTabelaHorario
       :estrutura="estruturaGradeHorario"
       :carregando="carregando"
       :titulo-padrao="configEntrada.tituloPadrao"
       @selecionar-intervalo="aoSelecionarIntervalo"
-      @clicar-reserva="aoClicarReserva"
+      @clicar-reserva="abrirModalDetalhes"
     >
       <template #topo>
         <div class="barra-topo-recurso" v-if="!configEntrada.idRecursoUnico && recursosDaAgendaAtual.length > 0">

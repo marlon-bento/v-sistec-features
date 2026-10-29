@@ -1,11 +1,12 @@
 /*
 ========
-Este arquivo encapsula o estado reativo isolado por instância, as propriedades de entrada do VDataAgenda
-e a comunicação HTTP com a API nativa de agendamento. Utiliza provide/inject sob uma chave única para
-permitir múltiplos componentes VDataAgenda na mesma página sem conflito de estado e sem prop drilling.
+Este arquivo encapsula o estado reativo isolado por instância, as propriedades de entrada do VDataAgenda,
+o controle centralizado dos modais de reserva/detalhes e a comunicação HTTP com a API nativa de agendamento.
+Utiliza provide/inject sob uma chave única para permitir múltiplos componentes VDataAgenda na mesma página.
 ========
 */
-import { ref, reactive, watch, provide, inject, type InjectionKey } from 'vue';
+import { ref, reactive, computed, watch, provide, inject, type InjectionKey } from 'vue';
+import { extrairDataHoraLocal } from './useGradeCompartilhada';
 
 type FormatoDataSimplesVueCal = `${number}${number}${number}${number}-${number}${number}-${number}${number}`;
 
@@ -26,14 +27,19 @@ export interface ConfiguracaoEntradaAgenda {
 // Chave tipada para injeção segura do contexto da agenda na árvore de componentes.
 const CHAVE_CONTEXTO_AGENDA: InjectionKey<RetornoContextoAgenda> = Symbol('contexto-v-data-agenda');
 
-// Cria uma nova instância isolada com todos os estados reativos, configurações e métodos da API de agendamento.
-// É usada internamente para garantir que cada VDataAgenda na tela tenha seu próprio escopo independente.
+// Cria uma nova instância isolada com todos os estados reativos, modais, configurações e métodos da API de agendamento.
 function criarContextoAgenda(apiInicial?: any) {
     // Armazena a instância do cliente HTTP configurada para esta agenda.
     const clienteApi = ref<any>(apiInicial || null);
 
     // Armazena a função de callback que dispara o evento before-save no VDataAgenda desta instância.
     let callbackAntesDeSalvar: ((evento: any) => void) | null = null;
+
+    // Armazena a função de atualização registrada pela visão ativa no momento (calendário ou grade semanal).
+    let callbackAtualizarVisaoAtiva: (() => void) | null = null;
+
+    // Armazena a função resolve temporária do vue-cal para limpar o evento fantasma ao fechar ou salvar o modal.
+    let resolverCriacaoProvisoria: ((confirmado: boolean) => void) | null = null;
 
     // Armazena de forma reativa todas as propriedades de configuração passadas para o VDataAgenda.
     const configEntrada = reactive<ConfiguracaoEntradaAgenda>({
@@ -50,7 +56,19 @@ function criarContextoAgenda(apiInicial?: any) {
         configuracaoBlocos: null
     });
 
-    // Armazena a lista de reservas retornadas pela API para o período visível.
+    // Controla a visibilidade do ModalReserva centralizado no VDataAgenda.
+    const modalReservaAberto = ref(false);
+
+    // Armazena os dados iniciais enviados para o ModalReserva ao criar ou editar um agendamento.
+    const dadosParaModal = ref<Record<string, any>>({});
+
+    // Controla a visibilidade do ModalDetalhesReserva centralizado no VDataAgenda.
+    const modalDetalhesAberto = ref(false);
+
+    // Armazena o objeto da reserva atualmente selecionada para inspeção no ModalDetalhesReserva.
+    const reservaSelecionadaDetalhes = ref<any>(null);
+
+    // Armazena a lista de reservas retornadas pela rota de reservas para o modo calendário.
     const reservasBrutas = ref<any[]>([]);
 
     // Armazena a lista de recursos permitidos para a aplicação cliente.
@@ -59,10 +77,10 @@ function criarContextoAgenda(apiInicial?: any) {
     // Armazena a lista de agendas associadas aos recursos carregados.
     const agendasDisponiveis = ref<any[]>([]);
 
-    // Armazena o identificador numérico da agenda atualmente selecionada no modo tabela.
+    // Armazena o identificador numérico da agenda atualmente selecionada.
     const agendaSelecionada = ref<number | null>(null);
 
-    // Armazena o identificador numérico do recurso atualmente selecionado no modo calendário.
+    // Armazena o identificador numérico do recurso atualmente selecionado.
     const recursoSelecionado = ref<number | null>(null);
 
     // Armazena a data de foco selecionada pelo usuário.
@@ -83,14 +101,88 @@ function criarContextoAgenda(apiInicial?: any) {
     // Armazena as datas (YYYY-MM-DD) que devem ficar desabilitadas no calendário por não serem dias operacionais.
     const datasDesabilitadas = ref<FormatoDataSimplesVueCal[]>([]);
 
-    // Armazena a estrutura de datas, recursos e slots para renderização da visão em matriz.
+    // Armazena a estrutura de datas, recursos e slots retornada pelo endpoint de matriz do backend.
     const dadosMatrix = ref<any>({});
 
-    // Armazena a matriz semanal de períodos de uma agenda específica.
-    const periodsAgenda = ref<any[]>([]);
+    // Unifica as reservas ativas para checagem de conflito no formulário, aproveitando os detalhes_reserva
+    // que o backend já envia dentro de dadosMatrix nos modos de tabela sem precisar de uma segunda requisição.
+    const reservasAtivas = computed(() => {
+        if (configEntrada.modoLayout === 'calendario' || !dadosMatrix.value?.datas_matriz) {
+            return reservasBrutas.value;
+        }
+        const mapaUnico = new Map<string, any>();
+        dadosMatrix.value.datas_matriz.forEach((dia: any) => {
+            (dia.recursos_slot || []).forEach((rec: any) => {
+                (rec.horarios_slot || []).forEach((slot: any) => {
+                    const det = slot.detalhes_reserva;
+                    if (det?.codigo_referencia_reserva && !mapaUnico.has(det.codigo_referencia_reserva)) {
+                        mapaUnico.set(det.codigo_referencia_reserva, det);
+                    }
+                });
+            });
+        });
+        return Array.from(mapaUnico.values());
+    });
+
+    // Registra a função que recarrega os dados da visão ativa quando uma reserva é criada, editada ou excluída.
+    const registrarAtualizadorVisao = (fn: () => void) => {
+        callbackAtualizarVisaoAtiva = fn;
+    };
+
+    // Limpa a marcação provisória de criação na grade do vue-cal caso exista uma pendente.
+    const encerrarCriacaoProvisoria = () => {
+        if (resolverCriacaoProvisoria) {
+            resolverCriacaoProvisoria(false);
+            resolverCriacaoProvisoria = null;
+        }
+    };
+
+    // Recebe os dados iniciais do intervalo selecionado e abre o modal de criação de reserva.
+    const abrirModalCriacao = (dadosIniciais: Record<string, any>, resolverVueCal?: (confirmado: boolean) => void) => {
+        resolverCriacaoProvisoria = resolverVueCal || null;
+        dadosParaModal.value = dadosIniciais;
+        modalReservaAberto.value = true;
+    };
+
+    // Recebe o objeto de uma reserva ocupada e abre o modal de visualização de detalhes.
+    const abrirModalDetalhes = (reserva: any) => {
+        if (!reserva) return;
+        reservaSelecionadaDetalhes.value = reserva;
+        modalDetalhesAberto.value = true;
+    };
+
+    // Fecha o modal de detalhes e abre o ModalReserva preenchido no modo de edição para a reserva informada.
+    const abrirModalEdicao = (reserva: any) => {
+        if (!reserva) return;
+        const inicio = extrairDataHoraLocal(reserva.data_inicio_reserva);
+        const fim = extrairDataHoraLocal(reserva.data_fim_reserva);
+
+        modalDetalhesAberto.value = false;
+        dadosParaModal.value = {
+            modo_edicao: true,
+            codigo_referencia_reserva: reserva.codigo_referencia_reserva,
+            grupo_recorrencia_reserva: reserva.grupo_recorrencia_reserva || null,
+            datas_grupo_recorrencia_reserva: reserva.datas_grupo_recorrencia_reserva || [],
+            id_recurso: Number(reserva.id_recurso),
+            titulo_reserva: reserva.titulo_reserva || '',
+            data_inicio: inicio.data,
+            hora_inicio: inicio.hora,
+            data_fim: fim.data,
+            hora_fim: fim.hora,
+            payload: reserva.payload
+        };
+        modalReservaAberto.value = true;
+    };
+
+    // Finaliza a criação provisória se houver e solicita que a visão ativa recarregue seus dados da API.
+    const recarregarVisaoAtiva = () => {
+        encerrarCriacaoProvisoria();
+        if (callbackAtualizarVisaoAtiva) {
+            callbackAtualizarVisaoAtiva();
+        }
+    };
 
     // Recebe o objeto de props do VDataAgenda e a função emit, mantendo o estado desta instância sincronizado.
-    // É usada pelo VDataAgenda na montagem para vincular reativamente suas entradas.
     const sincronizarEntradaAgenda = (
         propsRaiz: Record<string, any>,
         emitRaiz?: (evento: 'before-save', payload: any) => void
@@ -100,55 +192,57 @@ function criarContextoAgenda(apiInicial?: any) {
         }
 
         watch(
-            () => propsRaiz,
-            (novasProps) => {
-                if (novasProps.fetch) {
-                    clienteApi.value = novasProps.fetch;
+            () => [
+                propsRaiz.fetch,
+                propsRaiz.tituloObrigatorio,
+                propsRaiz.labelTituloModal,
+                propsRaiz.placeholderTituloModal,
+                propsRaiz.mensagemErroTitulo,
+                propsRaiz.modoLayout,
+                propsRaiz.idRecursoUnico,
+                propsRaiz.usaInterceptador,
+                propsRaiz.usuarioLogado,
+                propsRaiz.tituloPadrao,
+                propsRaiz.ocultarTituloModal,
+                propsRaiz.configuracaoBlocos
+            ],
+            () => {
+                if (propsRaiz.fetch) {
+                    clienteApi.value = propsRaiz.fetch;
                 }
-                configEntrada.tituloObrigatorio = Boolean(novasProps.tituloObrigatorio);
-                configEntrada.labelTituloModal = novasProps.labelTituloModal ?? 'Nome da Reserva';
-                configEntrada.placeholderTituloModal = novasProps.placeholderTituloModal ?? 'Ex: Treinamento';
-                configEntrada.mensagemErroTitulo = novasProps.mensagemErroTitulo ?? '';
-                configEntrada.modoLayout = novasProps.modoLayout ?? 'calendario';
-                configEntrada.idRecursoUnico = novasProps.idRecursoUnico ?? null;
-                configEntrada.usaInterceptador = Boolean(novasProps.usaInterceptador);
-                configEntrada.usuarioLogado = novasProps.usuarioLogado ?? '';
-                configEntrada.tituloPadrao = novasProps.tituloPadrao ?? '';
-                configEntrada.ocultarTituloModal = Boolean(novasProps.ocultarTituloModal);
-                configEntrada.configuracaoBlocos = novasProps.configuracaoBlocos ?? null;
+                configEntrada.tituloObrigatorio = Boolean(propsRaiz.tituloObrigatorio);
+                configEntrada.labelTituloModal = propsRaiz.labelTituloModal ?? 'Nome da Reserva';
+                configEntrada.placeholderTituloModal = propsRaiz.placeholderTituloModal ?? 'Ex: Treinamento';
+                configEntrada.mensagemErroTitulo = propsRaiz.mensagemErroTitulo ?? '';
+                configEntrada.modoLayout = propsRaiz.modoLayout ?? 'calendario';
+                configEntrada.idRecursoUnico = propsRaiz.idRecursoUnico ?? null;
+                configEntrada.usaInterceptador = Boolean(propsRaiz.usaInterceptador);
+                configEntrada.usuarioLogado = propsRaiz.usuarioLogado ?? '';
+                configEntrada.tituloPadrao = propsRaiz.tituloPadrao ?? '';
+                configEntrada.ocultarTituloModal = Boolean(propsRaiz.ocultarTituloModal);
+                configEntrada.configuracaoBlocos = propsRaiz.configuracaoBlocos ?? null;
             },
-            { immediate: true, deep: true }
+            { immediate: true }
         );
     };
 
     // Recebe o payload do interceptador e dispara diretamente o evento before-save no VDataAgenda desta instância.
-    // É usada pelo composable do formulário de reserva quando usaInterceptador está ativo.
     const dispararAntesDeSalvar = (eventoInterceptador: any) => {
         if (callbackAntesDeSalvar) {
             callbackAntesDeSalvar(eventoInterceptador);
         }
     };
 
-    // Recebe strings de data (YYYY-MM-DD) e hora (HH:MM) locais e devolve a string em UTC (ISO 8601).
-    // É usada para converter os horários escolhidos pelo usuário antes de enviar para o backend.
+    // Recebe strings de data (YYYY-MM-DD) e hora (HH:MM) locais e devolve a string em UTC (ISO 8601 sem milissegundos).
     const converterParaUtc = (dataStr: string, horaStr: string) => {
         const d = new Date(`${dataStr}T${horaStr}:00`);
-        const ano = d.getUTCFullYear();
-        const mes = String(d.getUTCMonth() + 1).padStart(2, '0');
-        const dia = String(d.getUTCDate()).padStart(2, '0');
-        const horas = String(d.getUTCHours()).padStart(2, '0');
-        const minutos = String(d.getUTCMinutes()).padStart(2, '0');
-        const segundos = String(d.getUTCSeconds()).padStart(2, '0');
-        return `${ano}-${mes}-${dia}T${horas}:${minutos}:${segundos}Z`;
+        return `${d.toISOString().slice(0, 19)}Z`;
     };
 
-    // Recebe o ID da agenda selecionada e não devolve retorno.
-    // É usada para calcular os dias da semana desabilitados e os limites de horário a partir dos detalhes da agenda.
-    // Recebe o ID da agenda selecionada e não devolve retorno.
-    // É usada para calcular os dias da semana desabilitados e os limites de horário a partir dos detalhes da agenda.
+    // Recebe o ID da agenda selecionada e calcula os dias desabilitados e os limites de expediente a partir dos detalhes da agenda.
     const processarDetalhesAgenda = (idAgenda: number) => {
         const agenda = agendasDisponiveis.value.find(a => Number(a.id_agenda) === Number(idAgenda));
-        if (!agenda || !agenda.detalhes) return;
+        if (!agenda?.detalhes) return;
         const detalhes = agenda.detalhes;
 
         const diaInicioPython = Number(detalhes.dia_inicio_semana_agenda ?? 0);
@@ -191,17 +285,17 @@ function criarContextoAgenda(apiInicial?: any) {
         }
         datasDesabilitadas.value = datas;
 
-        if (detalhes.periodos_agenda && Array.isArray(detalhes.periodos_agenda)) {
+        if (Array.isArray(detalhes.periodos_agenda)) {
             let menorMinuto = 24 * 60;
             let maiorMinuto = 0;
 
             detalhes.periodos_agenda.forEach((dia: any[]) => {
                 dia.forEach((periodo: any) => {
                     if (periodo.reservavel_periodo) {
-                        const [horaInicio, minInicio] = periodo.hora_inicio_periodo.split(':');
-                        const [horaFim, minFim] = periodo.hora_fim_periodo.split(':');
-                        const tempoInicio = parseInt(horaInicio) * 60 + parseInt(minInicio);
-                        const tempoFim = parseInt(horaFim) * 60 + parseInt(minFim);
+                        const [horaInicio, minInicio] = periodo.hora_inicio_periodo.split(':').map(Number);
+                        const [horaFim, minFim] = periodo.hora_fim_periodo.split(':').map(Number);
+                        const tempoInicio = horaInicio * 60 + minInicio;
+                        const tempoFim = horaFim * 60 + minFim;
                         if (tempoInicio < menorMinuto) menorMinuto = tempoInicio;
                         if (tempoFim > maiorMinuto) maiorMinuto = tempoFim;
                     }
@@ -213,8 +307,7 @@ function criarContextoAgenda(apiInicial?: any) {
         }
     };
 
-    // Não recebe parâmetros e devolve uma Promise.
-    // É usada na inicialização para buscar a lista de recursos permitidos e os detalhes de cada agenda vinculada.
+    // Busca na inicialização a lista de recursos permitidos e carrega os detalhes de todas as agendas em paralelo.
     const carregarRecursosEAgendas = async () => {
         if (!clienteApi.value) return;
         try {
@@ -228,31 +321,32 @@ function criarContextoAgenda(apiInicial?: any) {
                     recursoSelecionado.value = dados.recursos[0].id_recurso;
                 }
 
-                const mapaAgendas = new Map<number, { id_agenda: number, nome_agenda: string, detalhes?: any }>();
+                const mapaAgendas = new Map<number, { id_agenda: number; nome_agenda: string; detalhes?: any }>();
 
                 dados.recursos.forEach((r: any) => {
                     const idAg = r.id_agenda;
-                    if (idAg !== undefined && idAg !== null) {
-                        const nomeAgenda = r.nome_agenda || `Agenda ${idAg}`;
-                        if (!mapaAgendas.has(idAg)) {
-                            mapaAgendas.set(idAg, { id_agenda: idAg, nome_agenda: nomeAgenda });
-                        }
+                    if (idAg !== undefined && idAg !== null && !mapaAgendas.has(idAg)) {
+                        mapaAgendas.set(idAg, {
+                            id_agenda: idAg,
+                            nome_agenda: r.nome_agenda || `Agenda ${idAg}`
+                        });
                     }
                 });
 
-                for (const [idAg, agendaObj] of mapaAgendas.entries()) {
-                    try {
-                        const respDetalhes = await clienteApi.value.get(`/agendas/${idAg}/detalhes/`);
-                        const detalhes = respDetalhes.data || respDetalhes;
-                        agendaObj.detalhes = detalhes;
-
-                        if (detalhes && detalhes.nome_agenda) {
-                            agendaObj.nome_agenda = detalhes.nome_agenda;
+                await Promise.all(
+                    Array.from(mapaAgendas.entries()).map(async ([idAg, agendaObj]) => {
+                        try {
+                            const respDetalhes = await clienteApi.value.get(`/agendas/${idAg}/detalhes/`);
+                            const detalhes = respDetalhes.data || respDetalhes;
+                            agendaObj.detalhes = detalhes;
+                            if (detalhes?.nome_agenda) {
+                                agendaObj.nome_agenda = detalhes.nome_agenda;
+                            }
+                        } catch (e) {
+                            console.error("Erro ao buscar detalhes da agenda", idAg, e);
                         }
-                    } catch (e) {
-                        console.error("Erro ao buscar detalhes da agenda", idAg);
-                    }
-                }
+                    })
+                );
 
                 agendasDisponiveis.value = Array.from(mapaAgendas.values());
 
@@ -275,13 +369,11 @@ function criarContextoAgenda(apiInicial?: any) {
     watch(recursoSelecionado, (novoId) => {
         if (novoId) {
             const recurso = recursosDisponiveis.value.find(r => r.id_recurso === novoId);
-            const idAg = recurso?.id_agenda;
-            if (idAg) processarDetalhesAgenda(idAg);
+            if (recurso?.id_agenda) processarDetalhesAgenda(recurso.id_agenda);
         }
     });
 
     // Recebe as datas de início e fim do filtro e atualiza a lista reativa reservasBrutas.
-    // É usada para buscar todas as reservas ativas dentro da janela de visualização do usuário.
     const buscarReservas = async (dataInicio: string, dataFim: string) => {
         if (!clienteApi.value) return;
         try {
@@ -294,7 +386,6 @@ function criarContextoAgenda(apiInicial?: any) {
     };
 
     // Recebe o ID da agenda e o intervalo de tempo em UTC, atualizando o estado dadosMatrix.
-    // É usada pelos componentes de grade semanal para montar a malha de horários e recursos.
     const buscarSlotsMatrix = async (idAgenda: number, dataInicio: string, dataFim: string) => {
         if (!clienteApi.value) return;
         try {
@@ -307,82 +398,37 @@ function criarContextoAgenda(apiInicial?: any) {
 
     // Recebe o objeto padronizado da reserva e devolve a resposta da API após criar o agendamento.
     const criarReserva = async (payload: any) => {
-        try {
-            const resposta = await clienteApi.value.post('/reservas/', payload);
-            return resposta;
-        } catch (erro) {
-            console.error("Erro na API ao criar reserva:", erro);
-            throw erro;
-        }
+        const resposta = await clienteApi.value.post('/reservas/', payload);
+        return resposta;
     };
 
     // Recebe o código de referência da reserva e o payload de atualização, devolvendo os dados atualizados.
     const editarReserva = async (codigoReferenciaReserva: string, payload: any) => {
-        try {
-            const resposta = await clienteApi.value.put(`/reservas/${codigoReferenciaReserva}/`, payload);
-            return resposta.data || resposta;
-        } catch (erro) {
-            console.error("Erro na API ao editar reserva:", erro);
-            throw erro;
-        }
+        const resposta = await clienteApi.value.put(`/reservas/${codigoReferenciaReserva}/`, payload);
+        return resposta.data || resposta;
     };
 
     // Recebe o código de referência da reserva e solicita a remoção definitiva do vínculo com o grupo de recorrência.
     const desvincularReservaGrupo = async (codigoReferenciaReserva: string) => {
-        try {
-            const resposta = await clienteApi.value.post(`/reservas/${codigoReferenciaReserva}/desvincular/`, {});
-            return resposta.data || resposta;
-        } catch (erro) {
-            console.error("Erro na API ao desvincular reserva do grupo:", erro);
-            throw erro;
-        }
-    };
-
-    // Recebe o ID da agenda e armazena seus períodos em periodsAgenda.
-    const buscarPeriodosAgenda = async (idAgenda: number | string) => {
-        if (!clienteApi.value) return;
-        try {
-            const resposta = await clienteApi.value.get(`/agendas/${idAgenda}/detalhes/`);
-            const dados = resposta.data || resposta;
-            periodsAgenda.value = dados.periodos_agenda || [];
-        } catch (e) {
-            console.error("Erro ao buscar períodos da agenda:", e);
-            periodsAgenda.value = [];
-        }
+        const resposta = await clienteApi.value.post(`/reservas/${codigoReferenciaReserva}/desvincular/`, {});
+        return resposta.data || resposta;
     };
 
     // Recebe o código de referência único da reserva e devolve os dados completos vindos da API.
     const obterDetalhesReserva = async (codigoReferenciaReserva: string) => {
-        try {
-            const resposta = await clienteApi.value.get(`/reservas/${codigoReferenciaReserva}/`);
-            return resposta.data || resposta;
-        } catch (erro) {
-            console.error("Erro ao buscar detalhes da reserva:", erro);
-            throw erro;
-        }
+        const resposta = await clienteApi.value.get(`/reservas/${codigoReferenciaReserva}/`);
+        return resposta.data || resposta;
     };
 
     // Recebe o código de referência único da reserva e a flag opcional cancelarGrupo para exclusão na API.
     const excluirReserva = async (codigoReferenciaReserva: string, cancelarGrupo = false) => {
-        try {
-            const sufixoQuery = cancelarGrupo ? '?cancelar_grupo=true' : '';
-            const resposta = await clienteApi.value.delete(`/reservas/${codigoReferenciaReserva}/${sufixoQuery}`);
-            return resposta;
-        } catch (erro) {
-            console.error("Erro ao excluir reserva:", erro);
-            throw erro;
-        }
+        const sufixoQuery = cancelarGrupo ? '?cancelar_grupo=true' : '';
+        return await clienteApi.value.delete(`/reservas/${codigoReferenciaReserva}/${sufixoQuery}`);
     };
 
     // Recebe o objeto padronizado da reserva recorrente e envia para a rota de criação em lote.
     const criarReservaRecorrente = async (payload: any) => {
-        try {
-            const resposta = await clienteApi.value.post('/reservas/recorrentes/', payload);
-            return resposta;
-        } catch (erro) {
-            console.error("Erro na API ao criar reserva recorrente:", erro);
-            throw erro;
-        }
+        return await clienteApi.value.post('/reservas/recorrentes/', payload);
     };
 
     // Atualiza a instância do cliente HTTP caso seja passada posteriormente.
@@ -397,7 +443,17 @@ function criarContextoAgenda(apiInicial?: any) {
         sincronizarEntradaAgenda,
         dispararAntesDeSalvar,
         definirClienteApi,
-        reservasBrutas,
+        modalReservaAberto,
+        dadosParaModal,
+        modalDetalhesAberto,
+        reservaSelecionadaDetalhes,
+        registrarAtualizadorVisao,
+        abrirModalCriacao,
+        abrirModalDetalhes,
+        abrirModalEdicao,
+        encerrarCriacaoProvisoria,
+        recarregarVisaoAtiva,
+        reservasBrutas: reservasAtivas,
         recursosDisponiveis,
         recursoSelecionado,
         agendasDisponiveis,
@@ -416,8 +472,6 @@ function criarContextoAgenda(apiInicial?: any) {
         editarReserva,
         desvincularReservaGrupo,
         converterParaUtc,
-        periodsAgenda,
-        buscarPeriodosAgenda,
         obterDetalhesReserva,
         excluirReserva,
         criarReservaRecorrente
@@ -426,11 +480,9 @@ function criarContextoAgenda(apiInicial?: any) {
 
 export type RetornoContextoAgenda = ReturnType<typeof criarContextoAgenda>;
 
-// Instância de segurança caso useAgenda seja chamado fora de uma árvore VDataAgenda.
 let contextoPadraoFallback: RetornoContextoAgenda | null = null;
 
-// Recebe as props e o emit do componente raiz VDataAgenda, cria uma instância isolada, provê para todos os filhos e a devolve.
-// É usada exclusivamente no setup do VDataAgenda.vue para permitir múltiplos calendários independentes na mesma tela.
+// Provê o contexto isolado da agenda para toda a árvore de componentes filhos do VDataAgenda.
 export function proverContextoAgenda(
     propsRaiz: Record<string, any>,
     emitRaiz?: (evento: 'before-save', payload: any) => void
@@ -442,7 +494,6 @@ export function proverContextoAgenda(
 }
 
 // Recupera automaticamente o contexto da instância do VDataAgenda mais próxima na árvore de componentes.
-// É usada por todos os subcomponentes e composables filhos sem precisar repassar propriedades.
 export function useAgenda(apiOpcional?: any): RetornoContextoAgenda {
     const contextoInjetado = inject(CHAVE_CONTEXTO_AGENDA, null);
 

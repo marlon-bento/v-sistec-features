@@ -1,11 +1,11 @@
 /*
 ========
 Composable utilitário que centraliza cálculos de datas semanais, formatação de horários,
-busca de matriz na API, mesclagem de reservas contínuas, abertura do modal em modo de edição
-e sincronização automática de recurso único a partir da configuração global do useAgenda.
+busca de matriz na API, mesclagem de reservas contínuas, cálculo unificado de blocos/subblocos
+e sincronização automática de recurso único.
 ========
 */
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useAgenda } from './useAgenda';
 
 export const SIGLAS_DIAS_JS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
@@ -115,45 +115,200 @@ export const mesclarSlotsReservados = (slotsBrutos: any[], chaveSpan: 'colspan' 
     return celulasMescladas;
 };
 
-// Recebe o objeto de uma reserva existente e devolve a estrutura formatada para abrir o ModalReserva em modo de edição.
-export const montarDadosModalParaEdicao = (reserva: any) => {
-    const inicio = extrairDataHoraLocal(reserva.data_inicio_reserva);
-    const fim = extrairDataHoraLocal(reserva.data_fim_reserva);
+// Recebe os horários base do dia, a lista de blocos configurados e o gerador de cores.
+// Devolve de forma unificada os blocos principais, subblocos e metadados individuais de cada slot.
+export const calcularEstruturaDeBlocos = (
+    slotsBase: { horaInicio: string; horaFim: string }[],
+    listaBlocosConfig: any[] | null,
+    obterCoresBloco: (idx: number) => { corFundo: string; corBorda: string },
+    corFundoPadrao: string | null = null,
+    prefixoPadrao = 'Bloco'
+) => {
+    const totalSlots = slotsBase.length;
+
+    const metadadosSlots = slotsBase.map((h) => ({
+        horaInicio: h.horaInicio,
+        horaFim: h.horaFim,
+        corFundo: corFundoPadrao,
+        corBorda: 'var(--border-light)',
+        mostrarBlocoLateral: false,
+        nomeBlocoLateral: '',
+        rowspanBlocoLateral: 1,
+        fimDeSubbloco: false,
+        fimDeBlocoPrincipal: false
+    }));
+
+    if (!listaBlocosConfig || listaBlocosConfig.length === 0) {
+        return {
+            temBlocos: false,
+            temSubblocos: false,
+            blocosPrincipais: [],
+            subblocos: [],
+            metadadosSlots
+        };
+    }
+
+    const blocosPrincipais: any[] = [];
+    const subblocos: any[] = [];
+    let cursor = 0;
+    let algumSubblocoDefinido = false;
+
+    const adicionarSubbloco = (
+        inicioIdx: number,
+        tam: number,
+        cor: string,
+        corBorda: string,
+        fimPrincipal: boolean,
+        marcarSub: boolean
+    ) => {
+        const iniSub = slotsBase[inicioIdx];
+        const fimSub = slotsBase[inicioIdx + tam - 1];
+        subblocos.push({
+            colspan: tam,
+            cor,
+            corBorda,
+            fimDeBlocoPrincipal: fimPrincipal,
+            etiqueta: `${iniSub?.horaInicio ?? ''} - ${fimSub?.horaFim ?? ''}`
+        });
+        if (marcarSub) {
+            const metaFimSub = metadadosSlots[inicioIdx + tam - 1];
+            if (metaFimSub) metaFimSub.fimDeSubbloco = true;
+        }
+    };
+
+    listaBlocosConfig.forEach((blocoCfg: any, idxBloco: number) => {
+        if (cursor >= totalSlots) return;
+
+        const qtdSolicitada = Number(blocoCfg.quantidade) || 0;
+        const qtdReal = Math.min(qtdSolicitada, totalSlots - cursor);
+        if (qtdReal <= 0) return;
+
+        const { corFundo, corBorda } = obterCoresBloco(idxBloco);
+        const slotPrimeiro = slotsBase[cursor];
+        const slotUltimo = slotsBase[cursor + qtdReal - 1];
+        const nomeBloco = blocoCfg.nome || `${prefixoPadrao} ${idxBloco + 1}`;
+
+        blocosPrincipais.push({
+            nome: nomeBloco,
+            colspan: qtdReal,
+            cor: corFundo,
+            corBorda,
+            horaInicio: slotPrimeiro?.horaInicio ?? '',
+            horaFim: slotUltimo?.horaFim ?? ''
+        });
+
+        const metaCursor = metadadosSlots[cursor];
+        if (metaCursor) {
+            metaCursor.mostrarBlocoLateral = true;
+            metaCursor.nomeBlocoLateral = nomeBloco;
+            metaCursor.rowspanBlocoLateral = qtdReal;
+        }
+
+        for (let i = 0; i < qtdReal; i++) {
+            const meta = metadadosSlots[cursor + i];
+            if (meta) {
+                meta.corFundo = corFundo;
+                meta.corBorda = corBorda;
+            }
+        }
+
+        const tamanhoSubFixo = Number(blocoCfg.subdivisao) || 0;
+        const listaSubCustom = Array.isArray(blocoCfg.subdivisoes) ? blocoCfg.subdivisoes : null;
+
+        if (listaSubCustom && listaSubCustom.length > 0) {
+            algumSubblocoDefinido = true;
+            let consumido = 0;
+            listaSubCustom.forEach((tamSub: number) => {
+                if (consumido >= qtdReal) return;
+                const tamEfetivo = Math.min(Number(tamSub) || 1, qtdReal - consumido);
+                const ehUltimo = (consumido + tamEfetivo) >= qtdReal;
+                adicionarSubbloco(cursor + consumido, tamEfetivo, corFundo, corBorda, ehUltimo, true);
+                consumido += tamEfetivo;
+            });
+            if (consumido < qtdReal) {
+                adicionarSubbloco(cursor + consumido, qtdReal - consumido, corFundo, corBorda, true, true);
+            }
+        } else if (tamanhoSubFixo > 0) {
+            algumSubblocoDefinido = true;
+            let consumido = 0;
+            while (consumido < qtdReal) {
+                const tamEfetivo = Math.min(tamanhoSubFixo, qtdReal - consumido);
+                const ehUltimo = (consumido + tamEfetivo) >= qtdReal;
+                adicionarSubbloco(cursor + consumido, tamEfetivo, corFundo, corBorda, ehUltimo, true);
+                consumido += tamEfetivo;
+            }
+        } else {
+            adicionarSubbloco(cursor, qtdReal, corFundo, corBorda, true, false);
+        }
+
+        const metaFimPrincipal = metadadosSlots[cursor + qtdReal - 1];
+        if (metaFimPrincipal) metaFimPrincipal.fimDeBlocoPrincipal = true;
+
+        cursor += qtdReal;
+    });
+
+    if (cursor < totalSlots) {
+        const restante = totalSlots - cursor;
+        const { corFundo: corRestante, corBorda: corBordaRestante } = obterCoresBloco(blocosPrincipais.length);
+        const slotPrimeiro = slotsBase[cursor];
+        const slotUltimo = slotsBase[totalSlots - 1];
+        const nomeOutros = prefixoPadrao === 'TURNO' ? 'OUTROS' : 'Outros';
+
+        blocosPrincipais.push({
+            nome: nomeOutros,
+            colspan: restante,
+            cor: corRestante,
+            corBorda: corBordaRestante,
+            horaInicio: slotPrimeiro?.horaInicio ?? '',
+            horaFim: slotUltimo?.horaFim ?? ''
+        });
+
+        const metaRestante = metadadosSlots[cursor];
+        if (metaRestante) {
+            metaRestante.mostrarBlocoLateral = true;
+            metaRestante.nomeBlocoLateral = nomeOutros;
+            metaRestante.rowspanBlocoLateral = restante;
+        }
+
+        for (let i = 0; i < restante; i++) {
+            const meta = metadadosSlots[cursor + i];
+            if (meta) {
+                meta.corFundo = corRestante;
+                meta.corBorda = corBordaRestante;
+            }
+        }
+
+        adicionarSubbloco(cursor, restante, corRestante, corBordaRestante, true, false);
+
+        const metaUltimo = metadadosSlots[totalSlots - 1];
+        if (metaUltimo) metaUltimo.fimDeBlocoPrincipal = true;
+    }
 
     return {
-        modo_edicao: true,
-        codigo_referencia_reserva: reserva.codigo_referencia_reserva,
-        grupo_recorrencia_reserva: reserva.grupo_recorrencia_reserva || null,
-        datas_grupo_recorrencia_reserva: reserva.datas_grupo_recorrencia_reserva || [],
-        id_recurso: Number(reserva.id_recurso),
-        titulo_reserva: reserva.titulo_reserva || '',
-        data_inicio: inicio.data,
-        hora_inicio: inicio.hora,
-        data_fim: fim.data,
-        hora_fim: fim.hora,
-        payload: reserva.payload
+        temBlocos: blocosPrincipais.length > 0,
+        temSubblocos: algumSubblocoDefinido,
+        blocosPrincipais,
+        subblocos,
+        metadadosSlots
     };
 };
 
-// Gerencia o ciclo de busca semanal da matriz, estados de modais e configuração de blocos lendo direto do useAgenda.
+// Gerencia o ciclo de busca semanal da matriz e a configuração de blocos lendo direto do useAgenda.
 export function useGradeSemanal() {
     const {
         configEntrada,
         dadosMatrix,
         buscarSlotsMatrix,
-        buscarReservas,
         agendasDisponiveis,
         agendaSelecionada,
         dataSelecionada,
-        converterParaUtc
+        converterParaUtc,
+        registrarAtualizadorVisao
     } = useAgenda();
 
     const carregando = ref(false);
-    const modalAberto = ref(false);
-    const dadosParaModal = ref({});
-    const modalDetalhesAberto = ref(false);
-    const reservaSelecionadaDetalhes = ref<any>(null);
 
+    // Consulta no backend apenas os slots da matriz, pois o endpoint /slots/ já embute detalhes_reserva em cada horário ocupado.
     const dispararBuscaSemanal = async () => {
         const idAgenda = agendaSelecionada.value;
         if (!idAgenda) return;
@@ -173,20 +328,13 @@ export function useGradeSemanal() {
         const fimUtc = encodeURIComponent(converterParaUtc(strFim, '23:59'));
 
         await buscarSlotsMatrix(idAgenda, inicioUtc, fimUtc);
-        await buscarReservas(`${strInicio}T00:00:00`, `${strFim}T23:59:59`);
         carregando.value = false;
     };
 
-    // Fecha o modal de detalhes e abre o modal de reserva preenchido no modo de edição.
-    const abrirEdicaoDeReserva = (reserva: any) => {
-        if (!reserva) return;
-        modalDetalhesAberto.value = false;
-        dadosParaModal.value = montarDadosModalParaEdicao(reserva);
-        modalAberto.value = true;
-    };
+    // Registra a busca semanal como atualizador padrão quando os modais centralizados salvarem ou excluírem reservas.
+    registrarAtualizadorVisao(dispararBuscaSemanal);
 
-    onMounted(dispararBuscaSemanal);
-    watch([dataSelecionada, agendaSelecionada], dispararBuscaSemanal);
+    watch([dataSelecionada, agendaSelecionada], dispararBuscaSemanal, { immediate: true });
 
     const configuracaoAgendaAtual = computed(() => {
         const configBruta = configEntrada.configuracaoBlocos;
@@ -215,14 +363,9 @@ export function useGradeSemanal() {
     return {
         dadosMatrix,
         carregando,
-        modalAberto,
-        dadosParaModal,
-        modalDetalhesAberto,
-        reservaSelecionadaDetalhes,
         configuracaoAgendaAtual,
         obterBlocosDoDia,
-        dispararBuscaSemanal,
-        abrirEdicaoDeReserva
+        dispararBuscaSemanal
     };
 }
 

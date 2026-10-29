@@ -6,7 +6,7 @@ pertença a um grupo de recorrência. Consome o tituloPadrao e os métodos da AP
 ========
 -->
 <script setup lang="ts">
-import { ref, computed, watch, type PropType } from 'vue';
+import { ref, computed, type PropType } from 'vue';
 import { ModalBaseDefault, ModalPerigo } from '@/Modals';
 import { useAgenda } from '../composables/useAgenda';
 import { criarDataLocal, extrairDataHoraLocal } from '../composables/useGradeCompartilhada';
@@ -18,10 +18,10 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'excluido', 'editar']);
 
-const { configEntrada, excluirReserva, obterDetalhesReserva } = useAgenda();
+const { configEntrada, excluirReserva } = useAgenda();
 
-// Armazena os dados completos da reserva garantindo que a lista de datas do grupo esteja sempre atualizada.
-const reservaDetalhada = ref<Record<string, any>>({});
+// Referência reativa direta aos dados da reserva selecionada (o backend já entrega datas_grupo_recorrencia_reserva populado).
+const reservaDetalhada = computed<Record<string, any>>(() => props.reserva || {});
 
 // Indica se uma requisição de exclusão da reserva ou do grupo está em andamento.
 const excluindo = ref(false);
@@ -37,29 +37,6 @@ const modalErroAberto = ref(false);
 
 // Armazena a mensagem de erro retornada pela API durante a tentativa de exclusão.
 const mensagemErro = ref('');
-
-// Atualiza os dados locais sempre que a reserva recebida via prop mudar ou o modal abrir.
-watch(
-    [() => props.modelValue, () => props.reserva],
-    async ([aberto, novaReserva]) => {
-        if (aberto && novaReserva && typeof novaReserva === 'object') {
-            reservaDetalhada.value = { ...novaReserva };
-            if (
-                novaReserva.grupo_recorrencia_reserva &&
-                (!Array.isArray(novaReserva.datas_grupo_recorrencia_reserva) || novaReserva.datas_grupo_recorrencia_reserva.length === 0) &&
-                novaReserva.codigo_referencia_reserva
-            ) {
-                try {
-                    const atualizado = await obterDetalhesReserva(novaReserva.codigo_referencia_reserva);
-                    if (atualizado) reservaDetalhada.value = atualizado;
-                } catch {
-                    // Mantém os dados já carregados em memória caso a consulta complementar falhe.
-                }
-            }
-        }
-    },
-    { immediate: true }
-);
 
 // Controla a visibilidade do modal principal sincronizando com o componente pai.
 const exibirModal = computed({
@@ -344,8 +321,8 @@ const executarExclusao = async (cancelarTodoGrupo = false) => {
           <span
             v-for="itemData in datasDoGrupoFormatadas"
             :key="itemData.iso"
-            class="chip-data-grupo"
             :class="{ 'chip-data-atual': itemData.ehAtual }"
+            class="chip-data-grupo"
           >
             {{ itemData.texto }}
           </span>

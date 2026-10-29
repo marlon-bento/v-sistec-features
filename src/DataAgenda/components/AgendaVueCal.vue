@@ -2,17 +2,14 @@
 ========
 Este arquivo atua como controlador de regras de negócio para o modo calendário.
 Ele converte as reservas da API para o formato aceito pela GradeVueCal, gerencia a busca por período
-e controla a abertura dos modais de criação, edição e detalhes de reserva.
+e aciona os modais centralizados do useAgenda para criação e visualização de detalhes.
 ========
 -->
 <script setup lang="ts">
-defineSlots<{ [key: string]: any }>();
 import { ref, computed } from 'vue';
 import { useAgenda } from '../composables/useAgenda';
-import { extrairDataHoraLocal, formatarDataIso, montarDadosModalParaEdicao } from '../composables/useGradeCompartilhada';
+import { extrairDataHoraLocal, formatarDataIso } from '../composables/useGradeCompartilhada';
 import GradeVueCal from './Grades/GradeVueCal.vue';
-import ModalReserva from './ModalReserva.vue';
-import ModalDetalhesReserva from './ModalDetalhesReserva.vue';
 
 const {
     configEntrada,
@@ -25,22 +22,13 @@ const {
     minutosInicio,
     minutosFim,
     datasDesabilitadas,
-    buscarReservas
+    buscarReservas,
+    registrarAtualizadorVisao,
+    abrirModalCriacao,
+    abrirModalDetalhes
 } = useAgenda();
 
 const gradeCalendarioRef = ref<any>(null);
-const modalAberto = ref(false);
-const resolverCriacaoVueCal = ref<any>(null);
-const dadosParaModal = ref({});
-const modalDetalhesAberto = ref(false);
-const reservaSelecionadaDetalhes = ref<any>(null);
-
-const abrirEdicaoDeReserva = (reserva: any) => {
-    if (!reserva) return;
-    modalDetalhesAberto.value = false;
-    dadosParaModal.value = montarDadosModalParaEdicao(reserva);
-    modalAberto.value = true;
-};
 
 const recursosEmExibicao = computed(() => {
     if (!recursoSelecionado.value) return [];
@@ -83,10 +71,11 @@ const atualizarVisualizacao = (evento: any = null) => {
     buscarReservas(`${formatarDataIso(dataInicio)}T00:00:00`, `${formatarDataIso(dataFim)}T23:59:59`);
 };
 
-// Prepara os dados iniciais ao arrastar na grade e abre o ModalReserva.
-const aoCriarEvento = ({ event, resolve }: any) => {
-    resolverCriacaoVueCal.value = resolve;
+// Registra a função de busca do calendário para ser executada após salvar ou excluir nos modais centralizados.
+registrarAtualizadorVisao(() => atualizarVisualizacao());
 
+// Prepara os dados iniciais ao arrastar na grade e abre o ModalReserva centralizado passando o resolve provisório.
+const aoCriarEvento = ({ event, resolve }: any) => {
     let start = typeof event.start === 'string' ? new Date(event.start.replace(' ', 'T')) : new Date(event.start);
     let end = typeof event.end === 'string' ? new Date(event.end.replace(' ', 'T')) : new Date(event.end);
 
@@ -96,19 +85,20 @@ const aoCriarEvento = ({ event, resolve }: any) => {
     const inicio = extrairDataHoraLocal(start.toISOString());
     const fim = extrairDataHoraLocal(end.toISOString());
 
-    dadosParaModal.value = {
-        id_recurso: recursoSelecionado.value,
-        titulo_reserva: '',
-        data_inicio: inicio.data,
-        hora_inicio: inicio.hora,
-        data_fim: fim.data,
-        hora_fim: fim.hora
-    };
-
-    modalAberto.value = true;
+    abrirModalCriacao(
+        {
+            id_recurso: recursoSelecionado.value,
+            titulo_reserva: '',
+            data_inicio: inicio.data,
+            hora_inicio: inicio.hora,
+            data_fim: fim.data,
+            hora_fim: fim.hora
+        },
+        resolve
+    );
 };
 
-// Localiza a reserva clicada pelo código de referência e abre o modal de detalhes.
+// Localiza a reserva clicada pelo código de referência e abre o modal centralizado de detalhes.
 const aoClicarEvento = (eventoVueCal: any) => {
     const idClicado = eventoVueCal?.id || eventoVueCal?.event?.id;
     if (!idClicado) return;
@@ -118,21 +108,8 @@ const aoClicarEvento = (eventoVueCal: any) => {
     );
 
     if (encontrada) {
-        reservaSelecionadaDetalhes.value = encontrada;
-        modalDetalhesAberto.value = true;
+        abrirModalDetalhes(encontrada);
     }
-};
-
-const encerrarCriacaoProvisoria = () => {
-    if (resolverCriacaoVueCal.value) {
-        resolverCriacaoVueCal.value(false);
-        resolverCriacaoVueCal.value = null;
-    }
-};
-
-const aoSalvar = () => {
-    encerrarCriacaoProvisoria();
-    atualizarVisualizacao();
 };
 
 type FormatoDataVueCal = `${number}${number}${number}${number}-${number}${number}-${number}${number} ${number}${number}:${number}${number}`;
@@ -170,24 +147,6 @@ const eventosProcessados = computed(() => {
 
 <template>
     <div class="wrapper-calendario">
-        <ModalReserva
-            v-model="modalAberto"
-            :dados-iniciais="dadosParaModal"
-            @salvo="aoSalvar"
-            @cancelado="encerrarCriacaoProvisoria"
-        >
-            <template v-for="(_, nomeSlot) in $slots" :key="nomeSlot" #[nomeSlot]="slotProps">
-                <slot :name="nomeSlot" v-bind="slotProps ?? {}"></slot>
-            </template>
-        </ModalReserva>
-
-        <ModalDetalhesReserva
-            v-model="modalDetalhesAberto"
-            :reserva="reservaSelecionadaDetalhes"
-            @editar="abrirEdicaoDeReserva"
-            @excluido="atualizarVisualizacao"
-        />
-
         <GradeVueCal
             ref="gradeCalendarioRef"
             :eventos="eventosProcessados"

@@ -1,9 +1,9 @@
 <!--
 ========
-O layout raiz que orquestra a interface com cabeçalhos modulares separados.
+O layout raiz que orquestra a interface com cabeçalhos modulares separados e centraliza os modais de reserva e detalhes.
 Suporta os modos 'calendario', 'tabela' (matriz horizontal) e 'tabela-horario' (grade vertical de horários por turno).
 Provê o contexto isolado da agenda para toda a árvore de componentes filhos, permitindo múltiplos calendários
-independentes na mesma página sem necessidade de repasse manual de propriedades (prop drilling).
+independentes na mesma página sem necessidade de repasse manual de propriedades ou slots pelas views.
 ========
 -->
 <script setup lang="ts">
@@ -14,10 +14,11 @@ import { calcularDataInicioSemana, formatarDataIso } from './composables/useGrad
 import GradeMiniCalendario from './components/Grades/GradeMiniCalendario.vue';
 import AgendaVueCal from './components/AgendaVueCal.vue';
 import AgendaMatrix from './components/AgendaMatrix.vue';
-import AgendaMatrixUnico from './components/AgendaMatrixUnico.vue';
 import AgendaTabelaHorario from './components/AgendaTabelaHorario.vue';
 import HeaderCalendario from './components/HeaderCalendario.vue';
 import HeaderTabela from './components/HeaderTabela.vue';
+import ModalReserva from './components/ModalReserva.vue';
+import ModalDetalhesReserva from './components/ModalDetalhesReserva.vue';
 
 const props = withDefaults(defineProps<{
   tituloObrigatorio?: boolean;
@@ -48,13 +49,20 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits(['before-save']);
 
-// Cria e provê o contexto isolado da agenda para esta instância.
+// Cria e provê o contexto isolado da agenda e o estado centralizado dos modais para esta instância.
 const {
   dataSelecionada,
   dataVisao,
   agendasDisponiveis,
   agendaSelecionada,
   datasDesabilitadas,
+  modalReservaAberto,
+  dadosParaModal,
+  modalDetalhesAberto,
+  reservaSelecionadaDetalhes,
+  abrirModalEdicao,
+  encerrarCriacaoProvisoria,
+  recarregarVisaoAtiva,
   carregarRecursosEAgendas
 } = proverContextoAgenda(props, emit);
 
@@ -66,10 +74,10 @@ const ehModoGradeSemanal = computed(() =>
   props.modoLayout === 'tabela' || props.modoLayout === 'tabela-horario'
 );
 
+// Seleciona o componente da visão principal (AgendaMatrix atende tanto único quanto múltiplos recursos).
 const componenteModeloAtivo = computed(() => {
   if (props.modoLayout === 'calendario') return AgendaVueCal;
   if (props.modoLayout === 'tabela-horario') return AgendaTabelaHorario;
-  if (props.modoLayout === 'tabela' && props.idRecursoUnico) return AgendaMatrixUnico;
   return AgendaMatrix;
 });
 
@@ -123,6 +131,24 @@ const mudarVisao = (novaVisao: string) => {
 
 <template>
   <div>
+    <ModalReserva
+      v-model="modalReservaAberto"
+      :dados-iniciais="dadosParaModal"
+      @salvo="recarregarVisaoAtiva"
+      @cancelado="encerrarCriacaoProvisoria"
+    >
+      <template v-for="(_, nomeSlot) in $slots" :key="nomeSlot" #[nomeSlot]="slotProps">
+        <slot :name="nomeSlot" v-bind="slotProps ?? {}"></slot>
+      </template>
+    </ModalReserva>
+
+    <ModalDetalhesReserva
+      v-model="modalDetalhesAberto"
+      :reserva="reservaSelecionadaDetalhes"
+      @editar="abrirModalEdicao"
+      @excluido="recarregarVisaoAtiva"
+    />
+
     <div class="painel-agenda-unificado">
       <header class="painel-header-topo">
         <HeaderCalendario
@@ -154,11 +180,7 @@ const mudarVisao = (novaVisao: string) => {
         </aside>
 
         <main class="area-calendario">
-          <component :is="componenteModeloAtivo" ref="modeloAtivoRef">
-            <template v-for="(_, nomeSlot) in $slots" :key="nomeSlot" #[nomeSlot]="slotProps">
-              <slot :name="nomeSlot" v-bind="slotProps ?? {}"></slot>
-            </template>
-          </component>
+          <component :is="componenteModeloAtivo" ref="modeloAtivoRef" />
         </main>
       </div>
     </div>
