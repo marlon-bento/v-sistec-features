@@ -9,10 +9,9 @@ independentes na mesma página sem necessidade de repasse manual de propriedades
 <script setup lang="ts">
 defineSlots<{ [key: string]: any }>();
 import { ref, computed, onMounted } from 'vue';
-import { VueCal } from 'vue-cal';
-import 'vue-cal/style.css';
 import { proverContextoAgenda } from './composables/useAgenda';
 import { calcularDataInicioSemana, formatarDataIso } from './composables/useGradeCompartilhada';
+import GradeMiniCalendario from './components/Grades/GradeMiniCalendario.vue';
 import AgendaVueCal from './components/AgendaVueCal.vue';
 import AgendaMatrix from './components/AgendaMatrix.vue';
 import AgendaMatrixUnico from './components/AgendaMatrixUnico.vue';
@@ -80,15 +79,7 @@ defineExpose({ recursosEmExibicao });
 
 onMounted(() => { carregarRecursosEAgendas(); });
 
-const obterDataDaCelula = (cell: any): Date | null => {
-  if (!cell) return null;
-  if (cell instanceof Date) return cell;
-  if (cell.start) return new Date(cell.start);
-  return null;
-};
-
-const conjuntoDatasDesabilitadas = computed(() => new Set<string>(datasDesabilitadas.value));
-
+// Calcula o conjunto de datas (YYYY-MM-DD) que compõem a semana visível na tabela ativa.
 const datasVisiveisNaSemana = computed(() => {
   const visiveis = new Set<string>();
   if (!ehModoGradeSemanal.value || !dataSelecionada.value || !agendaSelecionada.value) {
@@ -109,26 +100,11 @@ const datasVisiveisNaSemana = computed(() => {
   for (let i = 0; i < diasVisiveis; i++) {
     const diaCorrente = new Date(inicioSemana);
     diaCorrente.setDate(inicioSemana.getDate() + i);
-    const iso = formatarDataIso(diaCorrente);
-    if (!conjuntoDatasDesabilitadas.value.has(iso)) {
-      visiveis.add(iso);
-    }
+    visiveis.add(formatarDataIso(diaCorrente));
   }
 
   return visiveis;
 });
-
-const ehDiaBloqueadoNoMini = (cell: any): boolean => {
-  const data = obterDataDaCelula(cell);
-  if (!data || !ehModoGradeSemanal.value) return false;
-  return conjuntoDatasDesabilitadas.value.has(formatarDataIso(data));
-};
-
-const ehDiaVisivelNaGrade = (cell: any): boolean => {
-  const data = obterDataDaCelula(cell);
-  if (!data || !ehModoGradeSemanal.value) return false;
-  return datasVisiveisNaSemana.value.has(formatarDataIso(data));
-};
 
 const alternarMenu = () => { menuAberto.value = !menuAberto.value; };
 
@@ -137,7 +113,7 @@ const irParaHoje = () => {
   dataSelecionada.value = hoje;
   dataVisao.value = hoje;
   if (props.modoLayout === 'calendario') modeloAtivoRef.value?.irParaHoje?.();
-  if (calendarioMiniRef.value) calendarioMiniRef.value.view.goToToday();
+  calendarioMiniRef.value?.irParaHoje?.();
 };
 
 const mudarVisao = (novaVisao: string) => {
@@ -166,33 +142,14 @@ const mudarVisao = (novaVisao: string) => {
       <div class="corpo-principal">
         <aside class="barra-lateral" :class="{ 'oculta': !menuAberto }">
           <div class="conteudo-lateral-fixo">
-            <div class="secao-mini-cal">
-              <vue-cal ref="calendarioMiniRef" class="calendario-mini vuecal--blue-theme"
-                :class="{ 'modo-mini-tabela-horario': ehModoGradeSemanal }" small active-view="month" :views="['month']"
-                :time="false" hide-view-selector :click-to-navigate="false" locale="pt-br"
-                :disable-days="ehModoGradeSemanal ? datasDesabilitadas : []" v-model:selected-date="dataSelecionada"
-                :view-date="dataVisao" @update:selected-date="dataVisao = $event">
-                <template #views-bar></template>
-                <template #today-button></template>
-
-                <template #cell-content="{ cell }">
-                  <div class="vuecal__cell-date" :class="{
-                    'dia-semana-visivel': ehDiaVisivelNaGrade(cell),
-                    'dia-coluna-inativa': ehDiaBloqueadoNoMini(cell)
-                  }" @mousedown.stop="
-                      (ehDiaVisivelNaGrade(cell) || ehDiaBloqueadoNoMini(cell))
-                        ? $event.preventDefault()
-                        : null
-                      " @click.stop="
-                      (!ehDiaVisivelNaGrade(cell) && !ehDiaBloqueadoNoMini(cell))
-                        ? (dataSelecionada = obterDataDaCelula(cell) || dataSelecionada, dataVisao = obterDataDaCelula(cell) || dataVisao)
-                        : null
-                      ">
-                    {{ cell.content }}
-                  </div>
-                </template>
-              </vue-cal>
-            </div>
+            <GradeMiniCalendario
+              ref="calendarioMiniRef"
+              v-model:data-selecionada="dataSelecionada"
+              v-model:data-visao="dataVisao"
+              :modo-grade-semanal="ehModoGradeSemanal"
+              :datas-desabilitadas="datasDesabilitadas"
+              :datas-visiveis-semana="datasVisiveisNaSemana"
+            />
           </div>
         </aside>
 
@@ -261,10 +218,6 @@ const mudarVisao = (novaVisao: string) => {
   padding: 15px;
 }
 
-.secao-mini-cal {
-  width: 100%;
-}
-
 .area-calendario {
   flex: 1;
   min-width: 0;
@@ -273,150 +226,5 @@ const mudarVisao = (novaVisao: string) => {
   background-color: var(--bg-primary);
   display: flex;
   flex-direction: column;
-}
-
-.calendario-mini {
-  border: none !important;
-  box-shadow: none !important;
-  background-color: transparent !important;
-}
-
-:deep(.calendario-mini .vuecal__header),
-:deep(.calendario-mini .vuecal__title-bar) {
-  background-color: var(--bg-primary) !important;
-  border: none !important;
-  padding-bottom: 5px;
-}
-
-:deep(.calendario-mini .vuecal__title),
-:deep(.calendario-mini .vuecal__arrow) {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-brand) !important;
-  background: transparent !important;
-}
-
-:deep(.calendario-mini .vuecal__weekdays-headings) {
-  background-color: var(--bg-primary) !important;
-  border-bottom: 1px solid var(--border-light) !important;
-}
-
-:deep(.calendario-mini .vuecal__heading),
-:deep(.calendario-mini .vuecal__weekday),
-:deep(.calendario-mini .vuecal__weekday-name),
-:deep(.calendario-mini .vuecal__heading *) {
-  background-color: var(--bg-primary) !important;
-  color: var(--text-secondary) !important;
-  font-weight: 600 !important;
-  border: none !important;
-  padding-bottom: 4px;
-}
-
-:deep(.calendario-mini .vuecal__cell) {
-  border: none !important;
-  background-color: transparent !important;
-  height: 32px !important;
-  min-height: 32px !important;
-  aspect-ratio: auto !important;
-}
-
-:deep(.calendario-mini .vuecal__cell::before) {
-  display: none !important;
-  content: none !important;
-}
-
-:deep(.calendario-mini .vuecal__cell-content) {
-  height: 32px !important;
-  min-height: 32px !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  justify-content: center !important;
-  align-items: center !important;
-  width: 100% !important;
-}
-
-:deep(.calendario-mini .vuecal__cell-date) {
-  width: 26px !important;
-  height: 26px !important;
-  font-size: 12px !important;
-  line-height: 26px !important;
-  padding: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin: 0 auto !important;
-  border-radius: 50% !important;
-  border: 2px solid transparent !important;
-  box-sizing: border-box !important;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  background-color: transparent !important;
-  color: var(--text-primary);
-}
-
-:deep(.calendario-mini .vuecal__cell--selected),
-:deep(.calendario-mini .vuecal__cell--today) {
-  background-color: transparent !important;
-}
-
-:deep(.calendario-mini:not(.modo-mini-tabela-horario) .vuecal__cell--selected .vuecal__cell-date) {
-  background-color: var(--color-brand) !important;
-  color: var(--text-inverse) !important;
-  border-color: var(--color-brand) !important;
-}
-
-:deep(.calendario-mini .vuecal__cell--today:not(.vuecal__cell--selected) .vuecal__cell-date:not(.dia-semana-visivel)) {
-  background-color: var(--color-brand-light) !important;
-  border-color: transparent !important;
-  color: var(--color-brand) !important;
-}
-
-:deep(.vuecal__body) {
-  padding: 0;
-  gap: 0;
-  margin: 0;
-}
-
-:deep(.calendario-mini .vuecal__views-bar) {
-  display: none !important;
-}
-
-:deep(.calendario-mini .vuecal__nav--next),
-:deep(.calendario-mini .vuecal__nav--prev) {
-  color: var(--text-primary) !important;
-}
-
-:deep(.calendario-mini .vuecal__body) {
-  height: 0% !important;
-}
-
-:deep(.calendario-mini .vuecal__scrollable-wrap) {
-  background-color: transparent !important;
-}
-
-:deep(.calendario-mini.modo-mini-tabela-horario .vuecal__cell--disabled) {
-  pointer-events: none !important;
-  cursor: not-allowed !important;
-}
-
-:deep(.calendario-mini.modo-mini-tabela-horario .vuecal__cell-date.dia-coluna-inativa) {
-  opacity: 0.22 !important;
-  color: var(--text-secondary) !important;
-  background-color: transparent !important;
-  border-color: transparent !important;
-  cursor: not-allowed !important;
-  pointer-events: none !important;
-  text-decoration: line-through;
-}
-
-:deep(.calendario-mini.modo-mini-tabela-horario .vuecal__cell-date.dia-semana-visivel) {
-  background-color: var(--color-brand) !important;
-  color: var(--text-inverse) !important;
-  border-color: var(--color-brand) !important;
-  font-weight: 700 !important;
-  width: 92% !important;
-  border-radius: 6px !important;
-  cursor: default !important;
-  box-shadow: var(--shadow-sm);
 }
 </style>
