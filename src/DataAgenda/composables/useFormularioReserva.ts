@@ -1,24 +1,51 @@
 /*
 ========
-Este arquivo centraliza o estado reativo, os cálculos de validação de grade e as chamadas de persistência
-do formulário de criação e edição de reservas. Ele consome diretamente as configurações globais do useAgenda,
-gerenciando edição em lote recorrente, desvinculação de grupo, ajuste automático de horários, acesso ao payload
-do recurso selecionado, tratamento de erros customizados por campo e interceptação antes de salvar.
+Este arquivo centraliza o estado reativo, os cálculos de encaixe na grade e o fluxo de salvamento
+do modal de reservas. Gerencia criação simples, lotes recorrentes, desvinculação de grupo
+e interceptação de dados antes do envio para a API.
 ========
 */
 import { ref, computed, watch } from 'vue';
 import { useAgenda } from './useAgenda';
-import { criarDataLocal } from './useGradeCompartilhada';
+import {
+    criarDataLocal,
+    converterParaUtc,
+    converterHoraParaMinutos,
+    formatarMinutosParaHora
+} from '../utils/datasAgenda';
+import type { OpcoesFormularioReserva, DadosFormularioReserva } from '../types/agenda';
 
-interface OpcoesFormularioReserva {
-    obterAberto: () => boolean;
-    obterDadosIniciais: () => Record<string, any>;
-    aoSalvar: () => void;
-    aoFecharModal: () => void;
+// Recebe qualquer valor bruto de payload e devolve um objeto plano e desacoplado de referências antigas.
+function normalizarObjetoPayload(payloadBruto: any): Record<string, any> {
+    if (payloadBruto == null) return {};
+
+    if (typeof payloadBruto === 'string') {
+        try {
+            const parsed = JSON.parse(payloadBruto);
+            return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+                ? { ...parsed }
+                : { valor: parsed };
+        } catch {
+            return { valor: payloadBruto };
+        }
+    }
+
+    if (typeof payloadBruto === 'object' && !Array.isArray(payloadBruto)) {
+        return JSON.parse(JSON.stringify(payloadBruto));
+    }
+
+    return {};
 }
 
-// Recebe os gatilhos de abertura e fechamento do modal e devolve os estados reativos e funções de controle do formulário.
-// É usada pelo ModalReserva para isolar a lógica de validação, manipulação de grupo, regras de payload do recurso e envio para a API.
+// Extrai a mensagem de erro amigável retornada pelo backend nas respostas de falha da API.
+function extrairMensagemErroApi(erro: any, mensagemPadrao: string): string {
+    return erro?.response?.data?.mensagem?.texto
+        || erro?.response?.data?.detail
+        || erro?.response?.data?.message
+        || mensagemPadrao;
+}
+
+// Controla o ciclo de vida, validações de grade e persistência do formulário de criação e edição de reservas.
 export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
     const {
         configEntrada,
@@ -30,39 +57,23 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         criarReserva,
         criarReservaRecorrente,
         editarReserva,
-        desvincularReservaGrupo,
-        converterParaUtc,
-        reservasBrutas
+        desvincularReservaGrupo
     } = useAgenda();
 
-    // Indica se a requisição de salvamento ou edição está em andamento.
+    // Flags de carregamento e controle de modais secundários de confirmação e horários.
     const salvando = ref(false);
-
-    // Indica se a requisição de desvinculação do grupo está em andamento.
     const desvinculando = ref(false);
-
-    // Controla a abertura do modal de confirmação antes de retirar a reserva do grupo.
     const modalConfirmarDesvinculoAberto = ref(false);
-
-    // Indica se o usuário alterou manualmente a data ou horário e precisa revalidar na grade.
     const precisaValidar = ref(false);
-
-    // Controla se os campos de edição manual de data e hora estão visíveis.
     const mostrarAjusteHorario = ref(false);
-
-    // Indica se o novo agendamento será replicado semanalmente (usado apenas na criação).
     const repetirReserva = ref(false);
-
-    // Controla a exibição do subpainel com a listagem de horários disponíveis no dia.
     const exibirHorariosModal = ref(false);
-
-    // Armazena a lista de strings com os intervalos de horários disponíveis para exibição.
     const horariosDisponiveisFormatados = ref<string[]>([]);
 
-    // Armazena as mensagens de erro por campo customizado geradas pelas regras do payload do recurso na aplicação.
+    // Mapa de erros por campo customizado preenchido durante a validação do payload.
     const errosCampos = ref<Record<string, string>>({});
 
-    // Armazena o estado de edição e o vínculo de grupo da reserva aberta.
+    // Estado de controle da reserva quando o modal opera em modo de edição.
     const estadoEdicao = ref({
         ativo: false,
         codigoReferencia: '',
@@ -71,7 +82,7 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         foiDesvinculadaNestaSessao: false
     });
 
-    // Armazena o estado e o conteúdo dos modais de feedback (aviso, erro e sucesso).
+    // Estado unificado para os modais de feedback visual (Aviso, Perigo e Sucesso).
     const feedbackModal = ref({
         avisoAberto: false,
         perigoAberto: false,
@@ -80,17 +91,8 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         descricao: ''
     });
 
-    // Armazena os dados reativos do formulário de agendamento, incluindo o objeto payload para campos customizados.
-    const formReserva = ref<{
-        id_recurso: string | number;
-        titulo_reserva: string;
-        data_inicio: string;
-        hora_inicio: string;
-        data_fim: string;
-        hora_fim: string;
-        data_limite_repeticao: string;
-        payload: Record<string, any>;
-    }>({
+    // Dados preenchidos nos campos do formulário da reserva.
+    const formReserva = ref<DadosFormularioReserva>({
         id_recurso: '',
         titulo_reserva: '',
         data_inicio: '',
@@ -101,39 +103,7 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         payload: {}
     });
 
-    // Recebe um valor bruto de payload e devolve sempre um objeto seguro e desacoplado.
-    // É usada tanto para o payload da reserva quanto para normalizar o payload_recurso.
-    const normalizarObjetoPayload = (payloadBruto: any): Record<string, any> => {
-        if (payloadBruto === undefined || payloadBruto === null) {
-            return {};
-        }
-        if (typeof payloadBruto === 'string') {
-            try {
-                const parsed = JSON.parse(payloadBruto);
-                if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-                    return { ...parsed };
-                }
-                return { valor: parsed };
-            } catch {
-                return { valor: payloadBruto };
-            }
-        }
-        if (typeof payloadBruto === 'object' && !Array.isArray(payloadBruto)) {
-            return JSON.parse(JSON.stringify(payloadBruto));
-        }
-        return {};
-    };
-
-    // Recebe o payload bruto vindo do banco e um booleano indicando se está em edição, devolvendo um objeto isolado.
-    // É usada para garantir que o objeto de campos extras esteja sempre limpo e reativo ao abrir o modal.
-    const normalizarPayloadInicial = (payloadBruto: any, modoEdicao: boolean): Record<string, any> => {
-        if (!modoEdicao && (payloadBruto === undefined || payloadBruto === null)) {
-            return {};
-        }
-        return normalizarObjetoPayload(payloadBruto);
-    };
-
-    // Localiza o objeto completo do recurso atualmente selecionado no formulário de reserva.
+    // Objeto completo do recurso selecionado atualmente no formulário.
     const recursoAtual = computed<Record<string, any> | null>(() => {
         if (!formReserva.value.id_recurso) return null;
         return recursosDisponiveis.value.find(
@@ -141,7 +111,7 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         ) || null;
     });
 
-    // Devolve o payload configurado especificamente no recurso selecionado (payload_recurso) para uso nas regras do modal.
+    // Objeto payload configurado no recurso atual para leitura de regras específicas na tela.
     const payloadRecurso = computed<Record<string, any>>(() => {
         const bruto = recursoAtual.value?.payload_recurso
             ?? recursoAtual.value?.payload
@@ -149,52 +119,25 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         return normalizarObjetoPayload(bruto);
     });
 
-    // Registra uma mensagem de erro para um campo customizado específico do modal.
-    const definirErroCampo = (campo: string, mensagem: string) => {
-        if (!mensagem) {
-            delete errosCampos.value[campo];
-        } else {
-            errosCampos.value[campo] = mensagem;
-        }
-    };
-
-    // Remove o erro de um campo customizado específico.
-    const limparErroCampo = (campo: string) => {
-        delete errosCampos.value[campo];
-    };
-
-    // Limpa todas as mensagens de erro de campos customizados do modal.
-    const limparErrosCampos = () => {
-        errosCampos.value = {};
-    };
-
-    // Indica se o modal está operando em modo de edição de uma reserva já existente.
     const ehModoEdicao = computed(() => estadoEdicao.value.ativo);
 
-    // Indica se a reserva sendo editada ainda pertence a um grupo de recorrência ativo.
     const editandoEmGrupo = computed(() =>
         ehModoEdicao.value && Boolean(estadoEdicao.value.grupoRecorrencia)
     );
 
-    // Define o título dinâmico do cabeçalho do modal conforme o modo atual.
     const tituloModalPrincipal = computed(() => {
         if (!ehModoEdicao.value) return 'Nova Reserva';
         return editandoEmGrupo.value ? 'Editar Grupo de Recorrência' : 'Editar Reserva';
     });
 
-    // Formata as datas do grupo de recorrência para exibição no painel de cuidado durante a edição.
-    const datasGrupoFormatadas = computed(() => {
-        return (estadoEdicao.value.datasGrupo || []).map((iso: string) => {
-            const dt = criarDataLocal(iso);
-            return {
-                iso,
-                texto: dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-                ehAtual: iso === formReserva.value.data_inicio
-            };
-        });
-    });
+    const datasGrupoFormatadas = computed(() =>
+        (estadoEdicao.value.datasGrupo || []).map((iso: string) => ({
+            iso,
+            texto: criarDataLocal(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+            ehAtual: iso === formReserva.value.data_inicio
+        }))
+    );
 
-    // Indica se algum modal de feedback ou confirmação está aberto por cima do formulário de reserva.
     const temDialogoSecundarioAberto = computed(() =>
         feedbackModal.value.avisoAberto ||
         feedbackModal.value.perigoAberto ||
@@ -202,67 +145,53 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         modalConfirmarDesvinculoAberto.value
     );
 
-    // Recebe o título e a descrição e abre o modal de aviso.
-    // É usada para alertar sobre campos obrigatórios, regras do payload do recurso ou horários fora do expediente.
-    const abrirAviso = (titulo: string, descricao: string) => {
-        feedbackModal.value.titulo = titulo;
-        feedbackModal.value.descricao = descricao;
-        feedbackModal.value.avisoAberto = true;
-    };
-
-    // Recebe o título e a descrição e abre o modal de perigo.
-    // É usada para exibir erros da API ou conflitos de agendamento.
-    const abrirPerigo = (titulo: string, descricao: string) => {
-        feedbackModal.value.titulo = titulo;
-        feedbackModal.value.descricao = descricao;
-        feedbackModal.value.perigoAberto = true;
-    };
-
-    // Recebe o título e a descrição e abre o modal de sucesso.
-    // É usada para confirmar ajustes de grade ou desvinculação de grupo.
-    const abrirSucesso = (titulo: string, descricao: string) => {
-        feedbackModal.value.titulo = titulo;
-        feedbackModal.value.descricao = descricao;
-        feedbackModal.value.sucessoAberto = true;
-    };
-
-    // Converte a string de data inicial do formulário em um objeto Date local.
     const dataInicioLocal = computed(() => {
         if (!formReserva.value.data_inicio || formReserva.value.data_inicio.split('-').length !== 3) return null;
         const dt = criarDataLocal(formReserva.value.data_inicio);
         return isNaN(dt.getTime()) ? null : dt;
     });
 
-    // Devolve o texto completo do dia selecionado com dia da semana e data formatada.
     const textoDiaSelecionado = computed(() => {
         if (!dataInicioLocal.value) return formReserva.value.data_inicio || 'Data não definida';
         const diaSemana = dataInicioLocal.value.toLocaleDateString('pt-BR', { weekday: 'long' });
-        const diaSemanaCap = diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1);
+        const diaCap = diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1);
         const dataBr = dataInicioLocal.value.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        return `${diaSemanaCap}, ${dataBr}`;
+        return `${diaCap}, ${dataBr}`;
     });
 
-    // Devolve o nome do dia da semana selecionado para exibir na dica de recorrência.
-    const nomeDiaSemana = computed(() => {
-        return dataInicioLocal.value ? dataInicioLocal.value.toLocaleDateString('pt-BR', { weekday: 'long' }) : 'semana';
-    });
+    const nomeDiaSemana = computed(() =>
+        dataInicioLocal.value ? dataInicioLocal.value.toLocaleDateString('pt-BR', { weekday: 'long' }) : 'semana'
+    );
 
-    // Devolve o texto formatado com o intervalo entre a hora de início e a hora de término.
-    const textoIntervaloHorario = computed(() => {
-        return `Das ${formReserva.value.hora_inicio || '--:--'} até as ${formReserva.value.hora_fim || '--:--'}`;
-    });
+    const textoIntervaloHorario = computed(() =>
+        `Das ${formReserva.value.hora_inicio || '--:--'} até as ${formReserva.value.hora_fim || '--:--'}`
+    );
 
-    // Alterna a visibilidade do painel de edição manual de data e horário.
-    const alternarAjusteHorario = () => {
-        mostrarAjusteHorario.value = !mostrarAjusteHorario.value;
+    // Funções de gerenciamento de erros de campos customizados e abertura de modais de alerta.
+    const definirErroCampo = (campo: string, mensagem: string) => {
+        if (!mensagem) delete errosCampos.value[campo];
+        else errosCampos.value[campo] = mensagem;
     };
 
-    // Recebe um valor booleano e atualiza o estado de repetição semanal da reserva.
-    const definirRepetirReserva = (valor: boolean) => {
-        repetirReserva.value = valor;
+    const limparErroCampo = (campo: string) => { delete errosCampos.value[campo]; };
+    const limparErrosCampos = () => { errosCampos.value = {}; };
+
+    const abrirAviso = (titulo: string, descricao: string) => {
+        Object.assign(feedbackModal.value, { titulo, descricao, avisoAberto: true });
     };
 
-    // Sincroniza a data final com a data inicial após edição manual e exige validação na grade antes de salvar.
+    const abrirPerigo = (titulo: string, descricao: string) => {
+        Object.assign(feedbackModal.value, { titulo, descricao, perigoAberto: true });
+    };
+
+    const abrirSucesso = (titulo: string, descricao: string) => {
+        Object.assign(feedbackModal.value, { titulo, descricao, sucessoAberto: true });
+    };
+
+    const alternarAjusteHorario = () => { mostrarAjusteHorario.value = !mostrarAjusteHorario.value; };
+    const definirRepetirReserva = (valor: boolean) => { repetirReserva.value = valor; };
+
+    // Atualiza a data final ao mudar a data de início manualmente e exige revalidação na grade.
     const marcarComoAlterado = () => {
         if (formReserva.value.data_inicio) {
             formReserva.value.data_fim = formReserva.value.data_inicio;
@@ -273,13 +202,7 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         precisaValidar.value = true;
     };
 
-    // Recebe uma string de horário (HH:MM) e devolve o total de minutos desde o início do dia.
-    const converterHoraParaMinutos = (horaStr: string) => {
-        const [h, m] = horaStr.split(':').map(Number) as [number, number];
-        return h * 60 + m;
-    };
-
-    // Localiza e ordena os períodos reserváveis do dia selecionado na agenda vinculada ao recurso atual.
+    // Retorna os períodos reserváveis ordenados para o dia da semana e recurso selecionados.
     const obterPeriodosReservaveisDoDia = () => {
         if (!formReserva.value.id_recurso || !dataInicioLocal.value) return null;
 
@@ -288,8 +211,8 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         const periodosAgenda = agenda?.detalhes?.periodos_agenda;
         if (!periodosAgenda) return null;
 
-        const diaDaSemanaPython = (dataInicioLocal.value.getDay() + 6) % 7;
-        const periodosDoDia = periodosAgenda[diaDaSemanaPython] || [];
+        const diaPython = (dataInicioLocal.value.getDay() + 6) % 7;
+        const periodosDoDia = periodosAgenda[diaPython] || [];
 
         return periodosDoDia
             .filter((s: any) => s.reservavel_periodo)
@@ -301,56 +224,45 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
             .sort((a: any, b: any) => a.inicioMin - b.inicioMin);
     };
 
-    // Verifica os horários disponíveis para a data e recurso escolhidos e abre o overlay ou modal de aviso.
+    // Carrega e exibe a camada sobreposta com todos os horários disponíveis no dia.
     const mostrarHorariosPossiveis = () => {
         if (!formReserva.value.id_recurso || !formReserva.value.data_inicio) {
-            abrirAviso('Dados incompletos', 'Selecione um recurso e uma data para ver os horários possíveis.');
-            return;
+            return abrirAviso('Dados incompletos', 'Selecione um recurso e uma data para ver os horários possíveis.');
         }
 
-        const slotsReservaveis = obterPeriodosReservaveisDoDia();
-        if (!slotsReservaveis) {
-            abrirAviso('Grade indisponível', 'Nenhuma grade de horários foi encontrada para este recurso.');
-            return;
-        }
+        const slots = obterPeriodosReservaveisDoDia();
+        if (!slots) return abrirAviso('Grade indisponível', 'Nenhuma grade de horários foi encontrada para este recurso.');
+        if (slots.length === 0) return abrirAviso('Sem horários', 'Nenhum horário disponível para este dia na grade.');
 
-        if (slotsReservaveis.length === 0) {
-            abrirAviso('Sem horários', 'Nenhum horário disponível para este dia na grade.');
-            return;
-        }
-
-        horariosDisponiveisFormatados.value = slotsReservaveis.map((s: any) => `${s.hora_inicio_periodo} às ${s.hora_fim_periodo}`);
+        horariosDisponiveisFormatados.value = slots.map((s: any) => `${s.hora_inicio_periodo} às ${s.hora_fim_periodo}`);
         exibirHorariosModal.value = true;
     };
 
-    // Recebe um booleano indicando se a operação é silenciosa e encaixa os horários de início e fim nos blocos válidos da grade.
+    // Encaixa os horários digitados pelo usuário nos blocos válidos mais próximos da grade da agenda.
     const ajustarHorarios = (silencioso = false) => {
-        if (!formReserva.value.id_recurso || !formReserva.value.data_inicio || !formReserva.value.hora_inicio || !formReserva.value.hora_fim) return;
+        const { id_recurso, data_inicio, hora_inicio, hora_fim } = formReserva.value;
+        if (!id_recurso || !data_inicio || !hora_inicio || !hora_fim) return;
 
-        const slotsReservaveis = obterPeriodosReservaveisDoDia();
-        if (!slotsReservaveis) return;
+        const slots = obterPeriodosReservaveisDoDia();
+        if (!slots) return;
 
-        if (slotsReservaveis.length === 0) {
-            if (!silencioso) {
-                abrirAviso('Sem horários', 'Nenhum horário disponível para este dia na grade.');
-            }
+        if (slots.length === 0) {
+            if (!silencioso) abrirAviso('Sem horários', 'Nenhum horário disponível para este dia na grade.');
             return;
         }
 
-        const minInicio = converterHoraParaMinutos(formReserva.value.hora_inicio);
-        const minFim = converterHoraParaMinutos(formReserva.value.hora_fim);
+        const minInicio = converterHoraParaMinutos(hora_inicio);
+        const minFim = converterHoraParaMinutos(hora_fim);
+        const invertidos = [...slots].reverse();
 
-        const invertidos = [...slotsReservaveis].reverse();
-        const blocoInicio = invertidos.find(b => b.inicioMin <= minInicio) || slotsReservaveis[0];
-        const blocoFim = invertidos.find(b => b.inicioMin < minFim) || slotsReservaveis[0];
+        const blocoInicio = invertidos.find(b => b.inicioMin <= minInicio) || slots[0];
+        const blocoFim = invertidos.find(b => b.inicioMin < minFim) || slots[0];
 
         const novoInicioMin = blocoInicio.inicioMin;
         const novoFimMin = blocoFim.fimMin <= novoInicioMin ? blocoInicio.fimMin : blocoFim.fimMin;
 
-        const formatarMin = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-
-        formReserva.value.hora_inicio = formatarMin(novoInicioMin);
-        formReserva.value.hora_fim = formatarMin(novoFimMin);
+        formReserva.value.hora_inicio = formatarMinutosParaHora(novoInicioMin);
+        formReserva.value.hora_fim = formatarMinutosParaHora(novoFimMin);
         formReserva.value.data_fim = formReserva.value.data_inicio;
         precisaValidar.value = false;
 
@@ -359,44 +271,44 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         }
     };
 
-    // Observa a abertura do modal para hidratar o formulário com os dados iniciais (nova reserva ou edição).
+    // Hidrata o formulário sempre que o modal é aberto para criação ou edição.
     watch(opcoes.obterAberto, (aberto) => {
-        const dadosIniciais = opcoes.obterDadosIniciais();
-        if (aberto && dadosIniciais) {
-            const dataIni = dadosIniciais.data_inicio ?? '';
-            const modoEdicao = Boolean(dadosIniciais.modo_edicao && dadosIniciais.codigo_referencia_reserva);
+        const iniciais = opcoes.obterDadosIniciais();
+        if (!aberto || !iniciais) return;
 
-            estadoEdicao.value = {
-                ativo: modoEdicao,
-                codigoReferencia: dadosIniciais.codigo_referencia_reserva ?? '',
-                grupoRecorrencia: dadosIniciais.grupo_recorrencia_reserva ?? null,
-                datasGrupo: Array.isArray(dadosIniciais.datas_grupo_recorrencia_reserva)
-                    ? [...dadosIniciais.datas_grupo_recorrencia_reserva]
-                    : [],
-                foiDesvinculadaNestaSessao: false
-            };
+        const dataIni = iniciais.data_inicio ?? '';
+        const modoEdicao = Boolean(iniciais.modo_edicao && iniciais.codigo_referencia_reserva);
 
-            formReserva.value = {
-                id_recurso: dadosIniciais.id_recurso ?? '',
-                titulo_reserva: dadosIniciais.titulo_reserva ?? '',
-                data_inicio: dataIni,
-                hora_inicio: dadosIniciais.hora_inicio ?? '',
-                data_fim: dadosIniciais.data_fim || dataIni,
-                hora_fim: dadosIniciais.hora_fim ?? '',
-                data_limite_repeticao: dataIni,
-                payload: normalizarPayloadInicial(dadosIniciais.payload, modoEdicao)
-            };
+        estadoEdicao.value = {
+            ativo: modoEdicao,
+            codigoReferencia: iniciais.codigo_referencia_reserva ?? '',
+            grupoRecorrencia: iniciais.grupo_recorrencia_reserva ?? null,
+            datasGrupo: Array.isArray(iniciais.datas_grupo_recorrencia_reserva)
+                ? [...iniciais.datas_grupo_recorrencia_reserva]
+                : [],
+            foiDesvinculadaNestaSessao: false
+        };
 
-            limparErrosCampos();
-            precisaValidar.value = false;
-            mostrarAjusteHorario.value = modoEdicao;
-            repetirReserva.value = false;
-            exibirHorariosModal.value = false;
-            ajustarHorarios(true);
-        }
+        formReserva.value = {
+            id_recurso: iniciais.id_recurso ?? '',
+            titulo_reserva: iniciais.titulo_reserva ?? '',
+            data_inicio: dataIni,
+            hora_inicio: iniciais.hora_inicio ?? '',
+            data_fim: iniciais.data_fim || dataIni,
+            hora_fim: iniciais.hora_fim ?? '',
+            data_limite_repeticao: dataIni,
+            payload: !modoEdicao && iniciais.payload == null ? {} : normalizarObjetoPayload(iniciais.payload)
+        };
+
+        limparErrosCampos();
+        precisaValidar.value = false;
+        mostrarAjusteHorario.value = modoEdicao;
+        repetirReserva.value = false;
+        exibirHorariosModal.value = false;
+        ajustarHorarios(true);
     });
 
-    // Solicita na API a desvinculação da reserva do seu grupo de recorrência, liberando a edição individual.
+    // Desvincula a reserva atual do seu lote recorrente na API para permitir edição individual.
     const confirmarRetiradaDoGrupo = async () => {
         if (!estadoEdicao.value.codigoReferencia) return;
 
@@ -415,17 +327,54 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
             );
         } catch (erro: any) {
             modalConfirmarDesvinculoAberto.value = false;
-            const textoErro = erro.response?.data?.mensagem?.texto
-                || erro.response?.data?.detail
-                || erro.response?.data?.message
-                || 'Não foi possível desvincular a reserva do grupo.';
-            abrirPerigo('Erro ao desvincular', textoErro);
+            abrirPerigo('Erro ao desvincular', extrairMensagemErroApi(erro, 'Não foi possível desvincular a reserva do grupo.'));
         } finally {
             desvinculando.value = false;
         }
     };
 
-    // Recebe o payload final da reserva e executa a chamada HTTP correspondente (criação simples, recorrente ou edição).
+    // Executa a função customizada validarCamposExtras passada por prop e trata os diferentes formatos de retorno.
+    const validarRegrasCustomizadas = async (): Promise<boolean> => {
+        limparErrosCampos();
+        if (typeof configEntrada.validarCamposExtras !== 'function') return true;
+
+        const resultado = await configEntrada.validarCamposExtras({
+            payload: formReserva.value.payload,
+            payloadRecurso: payloadRecurso.value,
+            recursoAtual: recursoAtual.value,
+            dadosReserva: formReserva.value,
+            modoEdicao: ehModoEdicao.value,
+            errosCampos: errosCampos.value,
+            definirErroCampo,
+            limparErrosCampos,
+            abrirAviso,
+            abrirPerigo
+        });
+
+        if (typeof resultado === 'string' && resultado.trim()) {
+            abrirAviso('Verifique os campos', resultado.trim());
+            return false;
+        }
+
+        if (resultado && typeof resultado === 'object' && resultado.valido === false) {
+            if (resultado.erros) errosCampos.value = { ...errosCampos.value, ...resultado.erros };
+            const msg = resultado.mensagem || Object.values(errosCampos.value)[0] || 'Verifique os campos informados.';
+            abrirAviso(resultado.titulo || 'Verifique os campos', msg);
+            return false;
+        }
+
+        const primeiroErroRegistrado = Object.values(errosCampos.value)[0];
+        if (resultado === false || primeiroErroRegistrado) {
+            if (primeiroErroRegistrado && !feedbackModal.value.avisoAberto && !feedbackModal.value.perigoAberto) {
+                abrirAviso('Verifique os campos', primeiroErroRegistrado);
+            }
+            return false;
+        }
+
+        return true;
+    };
+
+    // Envia o payload validado para a rota correspondente da API (edição, lote recorrente ou criação simples).
     const executarPersistenciaAPI = async (payloadParaEnviar: any) => {
         try {
             if (ehModoEdicao.value) {
@@ -441,131 +390,46 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
             opcoes.aoSalvar();
             opcoes.aoFecharModal();
         } catch (erro: any) {
-            const textoErro = erro.response?.data?.mensagem?.texto
-                || erro.response?.data?.message
-                || erro.response?.data?.detail
-                || 'Erro ao processar a reserva na API. Verifique a disponibilidade do horário.';
-
-            abrirPerigo('Falha na operação', textoErro);
+            const msgPadrao = 'Erro ao processar a reserva na API. Verifique a disponibilidade do horário.';
+            abrirPerigo('Falha na operação', extrairMensagemErroApi(erro, msgPadrao));
         } finally {
             salvando.value = false;
         }
     };
 
-    // Valida os horários, checa obrigatoriedade do título, executa regras customizadas baseadas no payload do recurso e dispara o salvamento.
+    // Orquestra as validações de preenchimento do formulário e aciona o interceptador ou a persistência direta na API.
     const salvarReserva = async () => {
         if (precisaValidar.value) return;
 
         if (!configEntrada.ocultarTituloModal && configEntrada.tituloObrigatorio && !formReserva.value.titulo_reserva.trim()) {
-            const labelCampo = configEntrada.labelTituloModal || 'Nome da Reserva';
-            const msgCustom = configEntrada.mensagemErroTitulo;
-            abrirAviso(
-                'Campo obrigatório',
-                msgCustom || `O campo "${labelCampo}" é obrigatório para realizar o agendamento.`
-            );
-            return;
+            const label = configEntrada.labelTituloModal || 'Nome da Reserva';
+            return abrirAviso('Campo obrigatório', configEntrada.mensagemErroTitulo || `O campo "${label}" é obrigatório para realizar o agendamento.`);
         }
 
         formReserva.value.data_fim = formReserva.value.data_inicio;
 
-        const inicioNovaReserva = new Date(`${formReserva.value.data_inicio}T${formReserva.value.hora_inicio}`);
-        const fimNovaReserva = new Date(`${formReserva.value.data_fim}T${formReserva.value.hora_fim}`);
+        const minIni = converterHoraParaMinutos(formReserva.value.hora_inicio);
+        const minFim = converterHoraParaMinutos(formReserva.value.hora_fim);
 
-        const minutosInicioReserva = inicioNovaReserva.getHours() * 60 + inicioNovaReserva.getMinutes();
-        const minutosFimReserva = fimNovaReserva.getHours() * 60 + fimNovaReserva.getMinutes();
-
-        if (minutosInicioReserva < minutosInicio.value || minutosFimReserva > minutosFim.value) {
-            abrirAviso('Fora do expediente', 'O horário selecionado está fora do expediente da agenda.');
-            return;
+        if (minIni < minutosInicio.value || minFim > minutosFim.value) {
+            return abrirAviso('Fora do expediente', 'O horário selecionado está fora do expediente da agenda.');
         }
 
-        if (inicioNovaReserva >= fimNovaReserva) {
-            abrirAviso('Horário inválido', 'O horário de início deve ser anterior ao término.');
-            return;
+        if (minIni >= minFim) {
+            return abrirAviso('Horário inválido', 'O horário de início deve ser anterior ao término.');
         }
 
         if (!ehModoEdicao.value && repetirReserva.value) {
             if (!formReserva.value.data_limite_repeticao) {
-                abrirAviso('Data obrigatória', 'Informe a data final para a repetição do agendamento.');
-                return;
+                return abrirAviso('Data obrigatória', 'Informe a data final para a repetição do agendamento.');
             }
             if (formReserva.value.data_limite_repeticao < formReserva.value.data_inicio) {
-                abrirAviso('Data inválida', 'A data final da repetição deve ser igual ou posterior à data inicial do agendamento.');
-                return;
+                return abrirAviso('Data inválida', 'A data final da repetição deve ser igual ou posterior à data inicial do agendamento.');
             }
         }
 
-        const conflito = reservasBrutas.value.some((reserva: any) => {
-            if (Number(reserva.id_recurso) !== Number(formReserva.value.id_recurso)) return false;
-
-            if (ehModoEdicao.value) {
-                if (String(reserva.codigo_referencia_reserva) === String(estadoEdicao.value.codigoReferencia)) {
-                    return false;
-                }
-                if (
-                    estadoEdicao.value.grupoRecorrencia &&
-                    String(reserva.grupo_recorrencia_reserva) === String(estadoEdicao.value.grupoRecorrencia)
-                ) {
-                    return false;
-                }
-            }
-
-            const inicioEvento = new Date(reserva.data_inicio_reserva);
-            const fimEvento = new Date(reserva.data_fim_reserva);
-            return inicioNovaReserva < fimEvento && fimNovaReserva > inicioEvento;
-        });
-
-        if (conflito) {
-            abrirPerigo('Conflito de horário', 'Já existe uma reserva para este recurso no horário selecionado.');
-            return;
-        }
-
-        limparErrosCampos();
-
-        if (typeof configEntrada.validarCamposExtras === 'function') {
-            const resultadoValidacao = await configEntrada.validarCamposExtras({
-                payload: formReserva.value.payload,
-                payloadRecurso: payloadRecurso.value,
-                recursoAtual: recursoAtual.value,
-                dadosReserva: formReserva.value,
-                modoEdicao: ehModoEdicao.value,
-                errosCampos: errosCampos.value,
-                definirErroCampo,
-                limparErrosCampos,
-                abrirAviso,
-                abrirPerigo
-            });
-
-            if (resultadoValidacao === false) {
-                const primeiraMensagem = Object.values(errosCampos.value)[0];
-                if (primeiraMensagem && !feedbackModal.value.avisoAberto && !feedbackModal.value.perigoAberto) {
-                    abrirAviso('Verifique os campos', primeiraMensagem);
-                }
-                return;
-            }
-
-            if (typeof resultadoValidacao === 'string' && resultadoValidacao.trim()) {
-                abrirAviso('Verifique os campos', resultadoValidacao.trim());
-                return;
-            }
-
-            if (resultadoValidacao && typeof resultadoValidacao === 'object' && resultadoValidacao.valido === false) {
-                if (resultadoValidacao.erros && typeof resultadoValidacao.erros === 'object') {
-                    errosCampos.value = { ...errosCampos.value, ...resultadoValidacao.erros };
-                }
-                const msg = resultadoValidacao.mensagem || Object.values(errosCampos.value)[0] || 'Verifique os campos informados.';
-                abrirAviso(resultadoValidacao.titulo || 'Verifique os campos', msg);
-                return;
-            }
-
-            if (Object.keys(errosCampos.value).length > 0) {
-                const primeiraMensagem = Object.values(errosCampos.value)[0];
-                if (primeiraMensagem && !feedbackModal.value.avisoAberto && !feedbackModal.value.perigoAberto) {
-                    abrirAviso('Verifique os campos', primeiraMensagem);
-                }
-                return;
-            }
-        }
+        const camposExtrasValidos = await validarRegrasCustomizadas();
+        if (!camposExtrasValidos) return;
 
         salvando.value = true;
 
@@ -585,45 +449,46 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
             payloadBase.data_limite_repeticao = formReserva.value.data_limite_repeticao;
         }
 
-        if (configEntrada.usaInterceptador) {
-            dispararAntesDeSalvar({
-                payloadBase,
-                payload: payloadCustomizado,
-                payloadRecurso: payloadRecurso.value,
-                recursoAtual: recursoAtual.value,
-                errosCampos: errosCampos.value,
-                definirErroCampo,
-                limparErroCampo,
-                limparErrosCampos,
-                abrirAviso,
-                abrirPerigo,
-                modoEdicao: ehModoEdicao.value,
-                codigoReferenciaReserva: estadoEdicao.value.codigoReferencia || null,
-                grupoRecorrenciaReserva: estadoEdicao.value.grupoRecorrencia || null,
-                dadosReserva: {
-                    ...formReserva.value,
-                    payload: payloadCustomizado,
-                    payload_recurso: payloadRecurso.value,
-                    repetir_reserva: repetirReserva.value,
-                    modo_edicao: ehModoEdicao.value,
-                    codigo_referencia_reserva: estadoEdicao.value.codigoReferencia || null,
-                    grupo_recorrencia_reserva: estadoEdicao.value.grupoRecorrencia || null
-                },
-                proceed: (novoPayloadModificado?: any) => {
-                    executarPersistenciaAPI(novoPayloadModificado || payloadBase);
-                },
-                abort: (acaoOuMensagem?: Function | string, tituloOpcional?: string) => {
-                    salvando.value = false;
-                    if (typeof acaoOuMensagem === 'function') {
-                        acaoOuMensagem();
-                    } else if (typeof acaoOuMensagem === 'string' && acaoOuMensagem.trim()) {
-                        abrirAviso(tituloOpcional || 'Verifique os campos', acaoOuMensagem.trim());
-                    }
-                }
-            });
-        } else {
+        if (!configEntrada.usaInterceptador) {
             await executarPersistenciaAPI(payloadBase);
+            return;
         }
+
+        dispararAntesDeSalvar({
+            payloadBase,
+            payload: payloadCustomizado,
+            payloadRecurso: payloadRecurso.value,
+            recursoAtual: recursoAtual.value,
+            errosCampos: errosCampos.value,
+            definirErroCampo,
+            limparErroCampo,
+            limparErrosCampos,
+            abrirAviso,
+            abrirPerigo,
+            modoEdicao: ehModoEdicao.value,
+            codigoReferenciaReserva: estadoEdicao.value.codigoReferencia || null,
+            grupoRecorrenciaReserva: estadoEdicao.value.grupoRecorrencia || null,
+            dadosReserva: {
+                ...formReserva.value,
+                payload: payloadCustomizado,
+                payload_recurso: payloadRecurso.value,
+                repetir_reserva: repetirReserva.value,
+                modo_edicao: ehModoEdicao.value,
+                codigo_referencia_reserva: estadoEdicao.value.codigoReferencia || null,
+                grupo_recorrencia_reserva: estadoEdicao.value.grupoRecorrencia || null
+            },
+            proceed: (novoPayloadModificado?: any) => {
+                executarPersistenciaAPI(novoPayloadModificado || payloadBase);
+            },
+            abort: (acaoOuMensagem?: Function | string, tituloOpcional?: string) => {
+                salvando.value = false;
+                if (typeof acaoOuMensagem === 'function') {
+                    acaoOuMensagem();
+                } else if (typeof acaoOuMensagem === 'string' && acaoOuMensagem.trim()) {
+                    abrirAviso(tituloOpcional || 'Verifique os campos', acaoOuMensagem.trim());
+                }
+            }
+        });
     };
 
     return {

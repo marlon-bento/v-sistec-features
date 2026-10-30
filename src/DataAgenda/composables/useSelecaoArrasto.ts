@@ -1,15 +1,13 @@
 /*
 ========
-Este arquivo implementa um gerenciador genérico e agnóstico de seleção por arrasto (drag-to-select).
-Ele permite selecionar intervalos contínuos de itens em um mesmo eixo (horizontal ou vertical),
-validando se há itens desabilitados no caminho e devolvendo a lista de dados selecionados ao final.
+Este arquivo implementa o gerenciador de seleção contínua por clique e arrasto (drag-to-select).
+Valida se todos os blocos no caminho estão disponíveis no mesmo grupo (linha ou coluna) e
+devolve a lista ordenada de itens selecionados ao soltar o botão do mouse.
 ========
 */
 import { ref, onMounted, onUnmounted } from 'vue';
 
 interface OpcoesSelecaoArrasto<T = any> {
-    obterListaDoGrupo?: (grupo: string | number) => T[];
-    validarItemDisponivel?: (item: T) => boolean;
     aoFinalizarSelecao?: (dados: {
         grupo: string | number;
         indiceInicial: number;
@@ -19,14 +17,21 @@ interface OpcoesSelecaoArrasto<T = any> {
     aoClicarItemIndisponivel?: (item: T, grupo: string | number, indice: number) => void;
 }
 
+// Recebe os callbacks de finalização de seleção e de clique em item ocupado e devolve o controlador de arrasto.
 export function useSelecaoArrasto<T = any>(opcoes: OpcoesSelecaoArrasto<T> = {}) {
+    // Indica se o usuário está mantendo o botão do mouse pressionado sobre uma grade.
     const arrastando = ref(false);
+    // Identifica a linha (recurso) ou coluna (dia) onde o arrasto começou.
     const grupoAtivo = ref<string | number | null>(null);
+    // Índice numérico do primeiro bloco clicado.
     const indiceInicio = ref<number | null>(null);
+    // Índice numérico do último bloco alcançado pelo cursor.
     const indiceFim = ref<number | null>(null);
 
+    // Mapa interno que armazena os blocos renderizados em cada grupo para checagem de caminho livre.
     const mapaItensRegistrados = new Map<string | number, Map<number, { item: T; disponivel: boolean }>>();
 
+    // Registra ou atualiza os dados e disponibilidade de uma célula no mapa do seu grupo.
     const registrarItemNoMapa = (grupo: string | number, indice: number, item: T, disponivel: boolean) => {
         if (!mapaItensRegistrados.has(grupo)) {
             mapaItensRegistrados.set(grupo, new Map());
@@ -34,6 +39,7 @@ export function useSelecaoArrasto<T = any>(opcoes: OpcoesSelecaoArrasto<T> = {})
         mapaItensRegistrados.get(grupo)!.set(indice, { item, disponivel });
     };
 
+    // Remove uma célula desmontada do mapa de verificação do grupo.
     const removerItemDoMapa = (grupo: string | number, indice: number) => {
         const submapa = mapaItensRegistrados.get(grupo);
         if (submapa) {
@@ -42,6 +48,7 @@ export function useSelecaoArrasto<T = any>(opcoes: OpcoesSelecaoArrasto<T> = {})
         }
     };
 
+    // Recebe o grupo e o índice da célula e devolve verdadeiro caso ela esteja dentro do intervalo arrastado.
     const verificarSelecionado = (grupo: string | number, indice: number): boolean => {
         if (!arrastando.value || grupoAtivo.value !== grupo) return false;
         if (indiceInicio.value === null || indiceFim.value === null) return false;
@@ -50,15 +57,10 @@ export function useSelecaoArrasto<T = any>(opcoes: OpcoesSelecaoArrasto<T> = {})
         return indice >= menor && indice <= maior;
     };
 
+    // Inicia o arrasto se o bloco estiver livre ou dispara a abertura de detalhes caso esteja ocupado.
     const iniciarArrasto = (grupo: string | number, indice: number, item: T, disponivel = true) => {
-        const podeSelecionar = opcoes.validarItemDisponivel
-            ? opcoes.validarItemDisponivel(item)
-            : disponivel;
-
-        if (!podeSelecionar) {
-            if (opcoes.aoClicarItemIndisponivel) {
-                opcoes.aoClicarItemIndisponivel(item, grupo, indice);
-            }
+        if (!disponivel) {
+            opcoes.aoClicarItemIndisponivel?.(item, grupo, indice);
             return;
         }
 
@@ -68,28 +70,19 @@ export function useSelecaoArrasto<T = any>(opcoes: OpcoesSelecaoArrasto<T> = {})
         indiceFim.value = indice;
     };
 
+    // Expande a seleção até o novo índice caso todas as células intermediárias do mesmo grupo estejam livres.
     const atualizarArrasto = (grupo: string | number, indice: number) => {
         if (!arrastando.value || grupoAtivo.value !== grupo || indiceInicio.value === null) return;
 
         const menorTentativa = Math.min(indiceInicio.value, indice);
         const maiorTentativa = Math.max(indiceInicio.value, indice);
+        const submapa = mapaItensRegistrados.get(grupo);
 
-        if (opcoes.obterListaDoGrupo && opcoes.validarItemDisponivel) {
-            const listaGrupo = opcoes.obterListaDoGrupo(grupo);
+        if (submapa) {
             for (let i = menorTentativa; i <= maiorTentativa; i++) {
-                const itemVerificacao = listaGrupo[i];
-                if (!itemVerificacao || !opcoes.validarItemDisponivel(itemVerificacao)) {
+                const registro = submapa.get(i);
+                if (!registro || !registro.disponivel) {
                     return;
-                }
-            }
-        } else {
-            const submapa = mapaItensRegistrados.get(grupo);
-            if (submapa) {
-                for (let i = menorTentativa; i <= maiorTentativa; i++) {
-                    const registro = submapa.get(i);
-                    if (!registro || !registro.disponivel) {
-                        return;
-                    }
                 }
             }
         }
@@ -97,6 +90,7 @@ export function useSelecaoArrasto<T = any>(opcoes: OpcoesSelecaoArrasto<T> = {})
         indiceFim.value = indice;
     };
 
+    // Encerra o estado de arrasto ao soltar o mouse e emite a lista ordenada de itens selecionados.
     const finalizarArrasto = () => {
         if (!arrastando.value) return;
 
@@ -114,28 +108,17 @@ export function useSelecaoArrasto<T = any>(opcoes: OpcoesSelecaoArrasto<T> = {})
         const menor = Math.min(ini, fim);
         const maior = Math.max(ini, fim);
         const itensSelecionados: T[] = [];
+        const submapa = mapaItensRegistrados.get(grupoFinal);
 
-        if (opcoes.obterListaDoGrupo) {
-            const listaGrupo = opcoes.obterListaDoGrupo(grupoFinal);
+        if (submapa) {
             for (let i = menor; i <= maior; i++) {
-                const itemLocalizado = listaGrupo[i];
-                // Tipagem forte para garantir ao TS que a conversão é segura.
-                if (itemLocalizado !== undefined) {
-                    itensSelecionados.push(itemLocalizado as T);
-                }
-            }
-        } else {
-            const submapa = mapaItensRegistrados.get(grupoFinal);
-            if (submapa) {
-                for (let i = menor; i <= maior; i++) {
-                    const reg = submapa.get(i);
-                    if (reg) itensSelecionados.push(reg.item);
-                }
+                const reg = submapa.get(i);
+                if (reg) itensSelecionados.push(reg.item);
             }
         }
 
-        if (itensSelecionados.length > 0 && opcoes.aoFinalizarSelecao) {
-            opcoes.aoFinalizarSelecao({
+        if (itensSelecionados.length > 0) {
+            opcoes.aoFinalizarSelecao?.({
                 grupo: grupoFinal,
                 indiceInicial: menor,
                 indiceFinal: maior,
