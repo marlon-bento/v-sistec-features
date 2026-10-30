@@ -10,6 +10,23 @@ import { extrairDataHoraLocal } from './useGradeCompartilhada';
 
 type FormatoDataSimplesVueCal = `${number}${number}${number}${number}-${number}${number}-${number}${number}`;
 
+export interface ContextoValidacaoCamposExtras {
+    payload: Record<string, any>;
+    payloadRecurso: Record<string, any>;
+    recursoAtual: Record<string, any> | null;
+    dadosReserva: Record<string, any>;
+    modoEdicao: boolean;
+    errosCampos: Record<string, string>;
+    definirErroCampo: (campo: string, mensagem: string) => void;
+    limparErrosCampos: () => void;
+    abrirAviso: (titulo: string, descricao: string) => void;
+    abrirPerigo: (titulo: string, descricao: string) => void;
+}
+
+export type FuncaoValidarCamposExtras = (
+    contexto: ContextoValidacaoCamposExtras
+) => boolean | string | { valido: boolean; titulo?: string; mensagem?: string; erros?: Record<string, string> } | Promise<any>;
+
 export interface ConfiguracaoEntradaAgenda {
     tituloObrigatorio: boolean;
     labelTituloModal: string;
@@ -22,6 +39,7 @@ export interface ConfiguracaoEntradaAgenda {
     tituloPadrao: string;
     ocultarTituloModal: boolean;
     configuracaoBlocos: any;
+    validarCamposExtras: FuncaoValidarCamposExtras | null;
 }
 
 // Chave tipada para injeção segura do contexto da agenda na árvore de componentes.
@@ -53,7 +71,8 @@ function criarContextoAgenda(apiInicial?: any) {
         usuarioLogado: '',
         tituloPadrao: '',
         ocultarTituloModal: false,
-        configuracaoBlocos: null
+        configuracaoBlocos: null,
+        validarCamposExtras: null
     });
 
     // Controla a visibilidade do ModalReserva centralizado no VDataAgenda.
@@ -169,7 +188,8 @@ function criarContextoAgenda(apiInicial?: any) {
             hora_inicio: inicio.hora,
             data_fim: fim.data,
             hora_fim: fim.hora,
-            payload: reserva.payload
+            payload: reserva.payload,
+            payload_recurso: reserva.payload_recurso
         };
         modalReservaAberto.value = true;
     };
@@ -204,7 +224,8 @@ function criarContextoAgenda(apiInicial?: any) {
                 propsRaiz.usuarioLogado,
                 propsRaiz.tituloPadrao,
                 propsRaiz.ocultarTituloModal,
-                propsRaiz.configuracaoBlocos
+                propsRaiz.configuracaoBlocos,
+                propsRaiz.validarCamposExtras
             ],
             () => {
                 if (propsRaiz.fetch) {
@@ -221,6 +242,9 @@ function criarContextoAgenda(apiInicial?: any) {
                 configEntrada.tituloPadrao = propsRaiz.tituloPadrao ?? '';
                 configEntrada.ocultarTituloModal = Boolean(propsRaiz.ocultarTituloModal);
                 configEntrada.configuracaoBlocos = propsRaiz.configuracaoBlocos ?? null;
+                configEntrada.validarCamposExtras = typeof propsRaiz.validarCamposExtras === 'function'
+                    ? propsRaiz.validarCamposExtras
+                    : null;
             },
             { immediate: true }
         );
@@ -396,6 +420,24 @@ function criarContextoAgenda(apiInicial?: any) {
         }
     };
 
+    // Recebe os dados de um novo recurso (incluindo payload_recurso) e o cria na API, atualizando a lista local.
+    const criarRecurso = async (payloadRecursoNovo: any) => {
+        const resposta = await clienteApi.value.post('/recursos/', payloadRecursoNovo);
+        await carregarRecursosEAgendas();
+        return resposta.data || resposta;
+    };
+
+    // Recebe o ID do recurso e os dados atualizados (como payload_recurso), salvando na API e sincronizando a memória local.
+    const editarRecurso = async (idRecurso: number, payloadEdicao: any) => {
+        const resposta = await clienteApi.value.put(`/recursos/${idRecurso}/`, payloadEdicao);
+        const atualizado = resposta.data || resposta;
+        const idx = recursosDisponiveis.value.findIndex((r: any) => Number(r.id_recurso) === Number(idRecurso));
+        if (idx !== -1 && atualizado) {
+            recursosDisponiveis.value[idx] = atualizado;
+        }
+        return atualizado;
+    };
+
     // Recebe o objeto padronizado da reserva e devolve a resposta da API após criar o agendamento.
     const criarReserva = async (payload: any) => {
         const resposta = await clienteApi.value.post('/reservas/', payload);
@@ -468,6 +510,8 @@ function criarContextoAgenda(apiInicial?: any) {
         carregarRecursosEAgendas,
         buscarReservas,
         buscarSlotsMatrix,
+        criarRecurso,
+        editarRecurso,
         criarReserva,
         editarReserva,
         desvincularReservaGrupo,

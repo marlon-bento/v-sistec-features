@@ -9,7 +9,7 @@ independentes na mesma página sem necessidade de repasse manual de propriedades
 <script setup lang="ts">
 defineSlots<{ [key: string]: any }>();
 import { ref, computed, onMounted } from 'vue';
-import { proverContextoAgenda } from './composables/useAgenda';
+import { proverContextoAgenda, type FuncaoValidarCamposExtras } from './composables/useAgenda';
 import { calcularDataInicioSemana, formatarDataIso } from './composables/useGradeCompartilhada';
 import GradeMiniCalendario from './components/Grades/GradeMiniCalendario.vue';
 import AgendaVueCal from './components/AgendaVueCal.vue';
@@ -32,6 +32,7 @@ const props = withDefaults(defineProps<{
   tituloPadrao?: string;
   ocultarTituloModal?: boolean;
   configuracaoBlocos?: any;
+  validarCamposExtras?: FuncaoValidarCamposExtras | null;
   fetch: any;
 }>(), {
   tituloObrigatorio: false,
@@ -44,7 +45,8 @@ const props = withDefaults(defineProps<{
   usuarioLogado: '',
   tituloPadrao: '',
   ocultarTituloModal: false,
-  configuracaoBlocos: null
+  configuracaoBlocos: null,
+  validarCamposExtras: null
 });
 
 const emit = defineEmits(['before-save']);

@@ -2,7 +2,8 @@
 ========
 Este arquivo representa o componente orquestrador do modal de criação e edição de reservas.
 Ele conecta a lógica do composable useFormularioReserva aos subcomponentes visuais modulares
-e preserva todos os slots customizáveis e modais de feedback sem precisar receber props de configuração.
+e preserva todos os slots customizáveis e modais de feedback, expondo também o payloadRecurso
+e os utilitários de erro para validação de campos específicos da aplicação.
 ========
 -->
 <script setup lang="ts">
@@ -37,6 +38,14 @@ const exibirModal = computed({
 const {
     configEntrada,
     recursosDisponiveis,
+    recursoAtual,
+    payloadRecurso,
+    errosCampos,
+    definirErroCampo,
+    limparErroCampo,
+    limparErrosCampos,
+    abrirAviso,
+    abrirPerigo,
     salvando,
     desvinculando,
     modalConfirmarDesvinculoAberto,
@@ -90,6 +99,14 @@ const aoCancelarModal = () => {
       name="topo-modal"
       :dados-reserva="formReserva"
       :payload="formReserva.payload"
+      :recurso-atual="recursoAtual"
+      :payload-recurso="payloadRecurso"
+      :erros-campos="errosCampos"
+      :definir-erro-campo="definirErroCampo"
+      :limpar-erro-campo="limparErroCampo"
+      :limpar-erros-campos="limparErrosCampos"
+      :abrir-aviso="abrirAviso"
+      :abrir-perigo="abrirPerigo"
       :modo-edicao="ehModoEdicao"
       :editando-em-grupo="editandoEmGrupo"
       :texto-dia-selecionado="textoDiaSelecionado"
@@ -110,6 +127,14 @@ const aoCancelarModal = () => {
       name="visualizacao-dados"
       :dados-reserva="formReserva"
       :payload="formReserva.payload"
+      :recurso-atual="recursoAtual"
+      :payload-recurso="payloadRecurso"
+      :erros-campos="errosCampos"
+      :definir-erro-campo="definirErroCampo"
+      :limpar-erro-campo="limparErroCampo"
+      :limpar-erros-campos="limparErrosCampos"
+      :abrir-aviso="abrirAviso"
+      :abrir-perigo="abrirPerigo"
       :modo-edicao="ehModoEdicao"
       :editando-em-grupo="editandoEmGrupo"
       :recursos-disponiveis="recursosDisponiveis"
@@ -128,6 +153,8 @@ const aoCancelarModal = () => {
         name="campo-nome"
         :dados-reserva="formReserva"
         :payload="formReserva.payload"
+        :recurso-atual="recursoAtual"
+        :payload-recurso="payloadRecurso"
         :recursos-disponiveis="recursosDisponiveis"
         :ocultar-titulo-modal="configEntrada.ocultarTituloModal"
       >
@@ -141,6 +168,8 @@ const aoCancelarModal = () => {
         name="campo-horario"
         :dados-reserva="formReserva"
         :payload="formReserva.payload"
+        :recurso-atual="recursoAtual"
+        :payload-recurso="payloadRecurso"
         :texto-dia-selecionado="textoDiaSelecionado"
         :texto-intervalo-horario="textoIntervaloHorario"
         :mostrar-ajuste-horario="mostrarAjusteHorario"
@@ -165,6 +194,8 @@ const aoCancelarModal = () => {
         name="campo-recorrencia"
         :dados-reserva="formReserva"
         :payload="formReserva.payload"
+        :recurso-atual="recursoAtual"
+        :payload-recurso="payloadRecurso"
         :repetir-reserva="repetirReserva"
         :definir-repetir-reserva="definirRepetirReserva"
         :nome-dia-semana="nomeDiaSemana"
@@ -182,6 +213,14 @@ const aoCancelarModal = () => {
         name="campos-extras"
         :payload="formReserva.payload"
         :dados-reserva="formReserva"
+        :recurso-atual="recursoAtual"
+        :payload-recurso="payloadRecurso"
+        :erros-campos="errosCampos"
+        :definir-erro-campo="definirErroCampo"
+        :limpar-erro-campo="limparErroCampo"
+        :limpar-erros-campos="limparErrosCampos"
+        :abrir-aviso="abrirAviso"
+        :abrir-perigo="abrirPerigo"
         :modo-edicao="ehModoEdicao"
         :editando-em-grupo="editandoEmGrupo"
         :texto-dia-selecionado="textoDiaSelecionado"

@@ -2,7 +2,8 @@
 ========
 Este arquivo centraliza o estado reativo, os cálculos de validação de grade e as chamadas de persistência
 do formulário de criação e edição de reservas. Ele consome diretamente as configurações globais do useAgenda,
-gerenciando edição em lote recorrente, desvinculação de grupo, ajuste automático de horários e interceptação antes de salvar.
+gerenciando edição em lote recorrente, desvinculação de grupo, ajuste automático de horários, acesso ao payload
+do recurso selecionado, tratamento de erros customizados por campo e interceptação antes de salvar.
 ========
 */
 import { ref, computed, watch } from 'vue';
@@ -17,7 +18,7 @@ interface OpcoesFormularioReserva {
 }
 
 // Recebe os gatilhos de abertura e fechamento do modal e devolve os estados reativos e funções de controle do formulário.
-// É usada pelo ModalReserva para isolar a lógica de validação, manipulação de grupo e envio para a API.
+// É usada pelo ModalReserva para isolar a lógica de validação, manipulação de grupo, regras de payload do recurso e envio para a API.
 export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
     const {
         configEntrada,
@@ -58,6 +59,9 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
     // Armazena a lista de strings com os intervalos de horários disponíveis para exibição.
     const horariosDisponiveisFormatados = ref<string[]>([]);
 
+    // Armazena as mensagens de erro por campo customizado geradas pelas regras do payload do recurso na aplicação.
+    const errosCampos = ref<Record<string, string>>({});
+
     // Armazena o estado de edição e o vínculo de grupo da reserva aberta.
     const estadoEdicao = ref({
         ativo: false,
@@ -97,10 +101,10 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         payload: {}
     });
 
-    // Recebe o payload bruto vindo do banco e um booleano indicando se está em edição, devolvendo um objeto isolado.
-    // É usada para garantir que o objeto de campos extras esteja sempre limpo e reativo ao abrir o modal.
-    const normalizarPayloadInicial = (payloadBruto: any, modoEdicao: boolean): Record<string, any> => {
-        if (!modoEdicao || payloadBruto === undefined || payloadBruto === null) {
+    // Recebe um valor bruto de payload e devolve sempre um objeto seguro e desacoplado.
+    // É usada tanto para o payload da reserva quanto para normalizar o payload_recurso.
+    const normalizarObjetoPayload = (payloadBruto: any): Record<string, any> => {
+        if (payloadBruto === undefined || payloadBruto === null) {
             return {};
         }
         if (typeof payloadBruto === 'string') {
@@ -118,6 +122,50 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
             return JSON.parse(JSON.stringify(payloadBruto));
         }
         return {};
+    };
+
+    // Recebe o payload bruto vindo do banco e um booleano indicando se está em edição, devolvendo um objeto isolado.
+    // É usada para garantir que o objeto de campos extras esteja sempre limpo e reativo ao abrir o modal.
+    const normalizarPayloadInicial = (payloadBruto: any, modoEdicao: boolean): Record<string, any> => {
+        if (!modoEdicao && (payloadBruto === undefined || payloadBruto === null)) {
+            return {};
+        }
+        return normalizarObjetoPayload(payloadBruto);
+    };
+
+    // Localiza o objeto completo do recurso atualmente selecionado no formulário de reserva.
+    const recursoAtual = computed<Record<string, any> | null>(() => {
+        if (!formReserva.value.id_recurso) return null;
+        return recursosDisponiveis.value.find(
+            (r: any) => Number(r.id_recurso) === Number(formReserva.value.id_recurso)
+        ) || null;
+    });
+
+    // Devolve o payload configurado especificamente no recurso selecionado (payload_recurso) para uso nas regras do modal.
+    const payloadRecurso = computed<Record<string, any>>(() => {
+        const bruto = recursoAtual.value?.payload_recurso
+            ?? recursoAtual.value?.payload
+            ?? opcoes.obterDadosIniciais()?.payload_recurso;
+        return normalizarObjetoPayload(bruto);
+    });
+
+    // Registra uma mensagem de erro para um campo customizado específico do modal.
+    const definirErroCampo = (campo: string, mensagem: string) => {
+        if (!mensagem) {
+            delete errosCampos.value[campo];
+        } else {
+            errosCampos.value[campo] = mensagem;
+        }
+    };
+
+    // Remove o erro de um campo customizado específico.
+    const limparErroCampo = (campo: string) => {
+        delete errosCampos.value[campo];
+    };
+
+    // Limpa todas as mensagens de erro de campos customizados do modal.
+    const limparErrosCampos = () => {
+        errosCampos.value = {};
     };
 
     // Indica se o modal está operando em modo de edição de uma reserva já existente.
@@ -155,7 +203,7 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
     );
 
     // Recebe o título e a descrição e abre o modal de aviso.
-    // É usada para alertar sobre campos obrigatórios ou horários fora do expediente.
+    // É usada para alertar sobre campos obrigatórios, regras do payload do recurso ou horários fora do expediente.
     const abrirAviso = (titulo: string, descricao: string) => {
         feedbackModal.value.titulo = titulo;
         feedbackModal.value.descricao = descricao;
@@ -339,6 +387,7 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
                 payload: normalizarPayloadInicial(dadosIniciais.payload, modoEdicao)
             };
 
+            limparErrosCampos();
             precisaValidar.value = false;
             mostrarAjusteHorario.value = modoEdicao;
             repetirReserva.value = false;
@@ -403,7 +452,7 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         }
     };
 
-    // Valida os horários, checa obrigatoriedade do título e conflitos locais, e dispara o salvamento direto ou via interceptador.
+    // Valida os horários, checa obrigatoriedade do título, executa regras customizadas baseadas no payload do recurso e dispara o salvamento.
     const salvarReserva = async () => {
         if (precisaValidar.value) return;
 
@@ -471,6 +520,53 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
             return;
         }
 
+        limparErrosCampos();
+
+        if (typeof configEntrada.validarCamposExtras === 'function') {
+            const resultadoValidacao = await configEntrada.validarCamposExtras({
+                payload: formReserva.value.payload,
+                payloadRecurso: payloadRecurso.value,
+                recursoAtual: recursoAtual.value,
+                dadosReserva: formReserva.value,
+                modoEdicao: ehModoEdicao.value,
+                errosCampos: errosCampos.value,
+                definirErroCampo,
+                limparErrosCampos,
+                abrirAviso,
+                abrirPerigo
+            });
+
+            if (resultadoValidacao === false) {
+                const primeiraMensagem = Object.values(errosCampos.value)[0];
+                if (primeiraMensagem && !feedbackModal.value.avisoAberto && !feedbackModal.value.perigoAberto) {
+                    abrirAviso('Verifique os campos', primeiraMensagem);
+                }
+                return;
+            }
+
+            if (typeof resultadoValidacao === 'string' && resultadoValidacao.trim()) {
+                abrirAviso('Verifique os campos', resultadoValidacao.trim());
+                return;
+            }
+
+            if (resultadoValidacao && typeof resultadoValidacao === 'object' && resultadoValidacao.valido === false) {
+                if (resultadoValidacao.erros && typeof resultadoValidacao.erros === 'object') {
+                    errosCampos.value = { ...errosCampos.value, ...resultadoValidacao.erros };
+                }
+                const msg = resultadoValidacao.mensagem || Object.values(errosCampos.value)[0] || 'Verifique os campos informados.';
+                abrirAviso(resultadoValidacao.titulo || 'Verifique os campos', msg);
+                return;
+            }
+
+            if (Object.keys(errosCampos.value).length > 0) {
+                const primeiraMensagem = Object.values(errosCampos.value)[0];
+                if (primeiraMensagem && !feedbackModal.value.avisoAberto && !feedbackModal.value.perigoAberto) {
+                    abrirAviso('Verifique os campos', primeiraMensagem);
+                }
+                return;
+            }
+        }
+
         salvando.value = true;
 
         const payloadCustomizado = formReserva.value.payload && typeof formReserva.value.payload === 'object'
@@ -493,12 +589,21 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
             dispararAntesDeSalvar({
                 payloadBase,
                 payload: payloadCustomizado,
+                payloadRecurso: payloadRecurso.value,
+                recursoAtual: recursoAtual.value,
+                errosCampos: errosCampos.value,
+                definirErroCampo,
+                limparErroCampo,
+                limparErrosCampos,
+                abrirAviso,
+                abrirPerigo,
                 modoEdicao: ehModoEdicao.value,
                 codigoReferenciaReserva: estadoEdicao.value.codigoReferencia || null,
                 grupoRecorrenciaReserva: estadoEdicao.value.grupoRecorrencia || null,
                 dadosReserva: {
                     ...formReserva.value,
                     payload: payloadCustomizado,
+                    payload_recurso: payloadRecurso.value,
                     repetir_reserva: repetirReserva.value,
                     modo_edicao: ehModoEdicao.value,
                     codigo_referencia_reserva: estadoEdicao.value.codigoReferencia || null,
@@ -507,9 +612,13 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
                 proceed: (novoPayloadModificado?: any) => {
                     executarPersistenciaAPI(novoPayloadModificado || payloadBase);
                 },
-                abort: (callbackAcaoCustomizada?: Function) => {
+                abort: (acaoOuMensagem?: Function | string, tituloOpcional?: string) => {
                     salvando.value = false;
-                    if (typeof callbackAcaoCustomizada === 'function') callbackAcaoCustomizada();
+                    if (typeof acaoOuMensagem === 'function') {
+                        acaoOuMensagem();
+                    } else if (typeof acaoOuMensagem === 'string' && acaoOuMensagem.trim()) {
+                        abrirAviso(tituloOpcional || 'Verifique os campos', acaoOuMensagem.trim());
+                    }
                 }
             });
         } else {
@@ -520,6 +629,15 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
     return {
         configEntrada,
         recursosDisponiveis,
+        recursoAtual,
+        payloadRecurso,
+        errosCampos,
+        definirErroCampo,
+        limparErroCampo,
+        limparErrosCampos,
+        abrirAviso,
+        abrirPerigo,
+        abrirSucesso,
         salvando,
         desvinculando,
         modalConfirmarDesvinculoAberto,
