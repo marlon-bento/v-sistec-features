@@ -38,14 +38,16 @@ export default defineConfig({
       formats: ['es'] // 'es' (ES Module) é o mais importante para Vite
     },
     rollupOptions: {
-      external: ['vue', '@tabler/icons-vue', 'vuedraggable', 'v-required', 'pinia', 'vue-toastification'],
+      external: ['vue', '@tabler/icons-vue', 'vuedraggable', 'v-required', 'pinia', 'vue-toastification', /^v-required\/.*/],
       output: {
         // Garante que os arquivos de saída mantenham a estrutura de pastas
         entryFileNames: '[name].js',
         // Para o formato UMD, se você usar
         globals: {
           vue: 'Vue',
-          '@tabler/icons-vue': 'TablerIconsVue'
+          '@tabler/icons-vue': 'TablerIconsVue',
+          //tratar como externo
+          'v-required': 'vRequired',
         }
       }
     }

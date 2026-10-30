@@ -41,6 +41,7 @@ const {
     recursoAtual,
     payloadRecurso,
     errosCampos,
+    activeError,
     definirErroCampo,
     limparErroCampo,
     limparErrosCampos,
@@ -215,6 +216,7 @@ const aoCancelarModal = () => {
         :dados-reserva="formReserva"
         :recurso-atual="recursoAtual"
         :payload-recurso="payloadRecurso"
+        :active-error="activeError"
         :erros-campos="errosCampos"
         :definir-erro-campo="definirErroCampo"
         :limpar-erro-campo="limparErroCampo"

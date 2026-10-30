@@ -1,11 +1,12 @@
 /*
 ========
-Este arquivo centraliza o estado reativo, os cálculos de encaixe na grade e o fluxo de salvamento
-do modal de reservas. Gerencia criação simples, lotes recorrentes, desvinculação de grupo
-e interceptação de dados antes do envio para a API.
+Este ficheiro centraliza o estado reativo, os cálculos de encaixe na grelha e o fluxo de gravação
+do modal de reservas. Gere a criação simples, lotes recorrentes, desvinculação de grupo,
+validação reativa nativa com v-required e interceção de dados antes do envio para a API.
 ========
 */
 import { ref, computed, watch } from 'vue';
+import { initVrequired } from 'v-required/validation';
 import { useAgenda } from './useAgenda';
 import {
     criarDataLocal,
@@ -37,7 +38,7 @@ function normalizarObjetoPayload(payloadBruto: any): Record<string, any> {
     return {};
 }
 
-// Extrai a mensagem de erro amigável retornada pelo backend nas respostas de falha da API.
+// Extrai a mensagem de erro amigável devolvida pelo backend nas respostas de falha da API.
 function extrairMensagemErroApi(erro: any, mensagemPadrao: string): string {
     return erro?.response?.data?.mensagem?.texto
         || erro?.response?.data?.detail
@@ -45,7 +46,7 @@ function extrairMensagemErroApi(erro: any, mensagemPadrao: string): string {
         || mensagemPadrao;
 }
 
-// Controla o ciclo de vida, validações de grade e persistência do formulário de criação e edição de reservas.
+// Controla o ciclo de vida, validações de grelha, v-required e persistência do formulário de reservas.
 export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
     const {
         configEntrada,
@@ -60,7 +61,11 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         desvincularReservaGrupo
     } = useAgenda();
 
-    // Flags de carregamento e controle de modais secundários de confirmação e horários.
+    // Inicializa o provedor central do v-required para todos os componentes filhos e slots do modal.
+    const { haveError, rules, config } = initVrequired();
+    const activeError = ref(false);
+
+    // Flags de carregamento e controlo de modais secundários de confirmação e horários.
     const salvando = ref(false);
     const desvinculando = ref(false);
     const modalConfirmarDesvinculoAberto = ref(false);
@@ -70,10 +75,10 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
     const exibirHorariosModal = ref(false);
     const horariosDisponiveisFormatados = ref<string[]>([]);
 
-    // Mapa de erros por campo customizado preenchido durante a validação do payload.
+    // Mapa de erros manual mantido apenas para retrocompatibilidade com validarCamposExtras.
     const errosCampos = ref<Record<string, string>>({});
 
-    // Estado de controle da reserva quando o modal opera em modo de edição.
+    // Estado de controlo da reserva quando o modal opera em modo de edição.
     const estadoEdicao = ref({
         ativo: false,
         codigoReferencia: '',
@@ -111,7 +116,7 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         ) || null;
     });
 
-    // Objeto payload configurado no recurso atual para leitura de regras específicas na tela.
+    // Objeto payload configurado no recurso atual para leitura de regras específicas no ecrã.
     const payloadRecurso = computed<Record<string, any>>(() => {
         const bruto = recursoAtual.value?.payload_recurso
             ?? recursoAtual.value?.payload
@@ -167,14 +172,16 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         `Das ${formReserva.value.hora_inicio || '--:--'} até as ${formReserva.value.hora_fim || '--:--'}`
     );
 
-    // Funções de gerenciamento de erros de campos customizados e abertura de modais de alerta.
     const definirErroCampo = (campo: string, mensagem: string) => {
         if (!mensagem) delete errosCampos.value[campo];
         else errosCampos.value[campo] = mensagem;
     };
 
     const limparErroCampo = (campo: string) => { delete errosCampos.value[campo]; };
-    const limparErrosCampos = () => { errosCampos.value = {}; };
+    const limparErrosCampos = () => {
+        errosCampos.value = {};
+        activeError.value = false;
+    };
 
     const abrirAviso = (titulo: string, descricao: string) => {
         Object.assign(feedbackModal.value, { titulo, descricao, avisoAberto: true });
@@ -191,7 +198,6 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
     const alternarAjusteHorario = () => { mostrarAjusteHorario.value = !mostrarAjusteHorario.value; };
     const definirRepetirReserva = (valor: boolean) => { repetirReserva.value = valor; };
 
-    // Atualiza a data final ao mudar a data de início manualmente e exige revalidação na grade.
     const marcarComoAlterado = () => {
         if (formReserva.value.data_inicio) {
             formReserva.value.data_fim = formReserva.value.data_inicio;
@@ -202,7 +208,6 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         precisaValidar.value = true;
     };
 
-    // Retorna os períodos reserváveis ordenados para o dia da semana e recurso selecionados.
     const obterPeriodosReservaveisDoDia = () => {
         if (!formReserva.value.id_recurso || !dataInicioLocal.value) return null;
 
@@ -224,7 +229,6 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
             .sort((a: any, b: any) => a.inicioMin - b.inicioMin);
     };
 
-    // Carrega e exibe a camada sobreposta com todos os horários disponíveis no dia.
     const mostrarHorariosPossiveis = () => {
         if (!formReserva.value.id_recurso || !formReserva.value.data_inicio) {
             return abrirAviso('Dados incompletos', 'Selecione um recurso e uma data para ver os horários possíveis.');
@@ -238,7 +242,6 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         exibirHorariosModal.value = true;
     };
 
-    // Encaixa os horários digitados pelo usuário nos blocos válidos mais próximos da grade da agenda.
     const ajustarHorarios = (silencioso = false) => {
         const { id_recurso, data_inicio, hora_inicio, hora_fim } = formReserva.value;
         if (!id_recurso || !data_inicio || !hora_inicio || !hora_fim) return;
@@ -271,7 +274,7 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         }
     };
 
-    // Hidrata o formulário sempre que o modal é aberto para criação ou edição.
+    // Hidrata o formulário e reinicia o activeError sempre que o modal é aberto.
     watch(opcoes.obterAberto, (aberto) => {
         const iniciais = opcoes.obterDadosIniciais();
         if (!aberto || !iniciais) return;
@@ -308,7 +311,6 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         ajustarHorarios(true);
     });
 
-    // Desvincula a reserva atual do seu lote recorrente na API para permitir edição individual.
     const confirmarRetiradaDoGrupo = async () => {
         if (!estadoEdicao.value.codigoReferencia) return;
 
@@ -333,9 +335,17 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         }
     };
 
-    // Executa a função customizada validarCamposExtras passada por prop e trata os diferentes formatos de retorno.
+    // Valida primeiro as regras declarativas do v-required (<VRequired> / <VRule>) e depois validarCamposExtras (se existir).
     const validarRegrasCustomizadas = async (): Promise<boolean> => {
-        limparErrosCampos();
+        errosCampos.value = {};
+        activeError.value = true;
+
+        // 1. Verifica automaticamente todos os <VRequired> / <VRule> montados dentro do modal
+        if (haveError()) {
+            return false;
+        }
+
+        // 2. Suporte opcional caso o utilizador também passe uma função validarCamposExtras
         if (typeof configEntrada.validarCamposExtras !== 'function') return true;
 
         const resultado = await configEntrada.validarCamposExtras({
@@ -374,7 +384,6 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         return true;
     };
 
-    // Envia o payload validado para a rota correspondente da API (edição, lote recorrente ou criação simples).
     const executarPersistenciaAPI = async (payloadParaEnviar: any) => {
         try {
             if (ehModoEdicao.value) {
@@ -397,7 +406,6 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         }
     };
 
-    // Orquestra as validações de preenchimento do formulário e aciona o interceptador ou a persistência direta na API.
     const salvarReserva = async () => {
         if (precisaValidar.value) return;
 
@@ -459,6 +467,7 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
             payload: payloadCustomizado,
             payloadRecurso: payloadRecurso.value,
             recursoAtual: recursoAtual.value,
+            activeError: activeError.value,
             errosCampos: errosCampos.value,
             definirErroCampo,
             limparErroCampo,
@@ -496,6 +505,10 @@ export function useFormularioReserva(opcoes: OpcoesFormularioReserva) {
         recursosDisponiveis,
         recursoAtual,
         payloadRecurso,
+        activeError,
+        haveError,
+        rules,
+        config,
         errosCampos,
         definirErroCampo,
         limparErroCampo,
