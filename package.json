@@ -10,54 +10,56 @@
   "description": "Componentes, composables, styles e ferramentas para o Sistec",
   "license": "ISC",
   "type": "module",
+  "files": [
+    "dist"
+  ],
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./core": {
-      "import": "./dist/core.js",
-      "types": "./dist/core.d.ts"
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.js"
     },
     "./vDataTable": {
-      "import": "./dist/vDataTable.js",
-      "types": "./dist/vDataTable.d.ts"
+      "types": "./dist/vDataTable.d.ts",
+      "import": "./dist/vDataTable.js"
     },
     "./vDataPage": {
-      "import": "./dist/vDataPage.js",
-      "types": "./dist/vDataPage.d.ts"
+      "types": "./dist/vDataPage.d.ts",
+      "import": "./dist/vDataPage.js"
     },
     "./vDataAgenda": {
-      "import": "./dist/vDataAgenda.js",
-      "types": "./dist/vDataAgenda.d.ts"
+      "types": "./dist/vDataAgenda.d.ts",
+      "import": "./dist/vDataAgenda.js"
     },
     "./Modals": {
-      "import": "./dist/Modals.js",
-      "types": "./dist/Modals.d.ts"
+      "types": "./dist/Modals.d.ts",
+      "import": "./dist/Modals.js"
     },
     "./Pagination": {
-      "import": "./dist/Pagination.js",
-      "types": "./dist/Pagination.d.ts"
+      "types": "./dist/Pagination.d.ts",
+      "import": "./dist/Pagination.js"
     },
     "./iframeCommunicator": {
-      "import": "./dist/iframeCommunicator.js",
-      "types": "./dist/iframeCommunicator.d.ts"
-    },
-    "./style.css": {
-      "import": "./dist/v-sistec-features.css",
-      "require": "./dist/v-sistec-features.css"
+      "types": "./dist/iframeCommunicator.d.ts",
+      "import": "./dist/iframeCommunicator.js"
     },
     "./toast": {
-      "import": "./dist/toast.js",
-      "types": "./dist/toast.d.ts"
-    }
+      "types": "./dist/toast.d.ts",
+      "import": "./dist/toast.js"
+    },
+    "./style.css": "./dist/v-sistec-features.css",
+    "./dist/style.css": "./dist/v-sistec-features.css"
   },
-  "files": [
-    "dist",
-    "src"
-  ],
   "scripts": {
-    "build": "vue-tsc -b && vite build"
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "build:watch": "vite build --watch",
+    "typecheck": "vue-tsc --noEmit"
   },
   "peerDependencies": {
     "@tabler/icons-vue": "^3.35.0",
