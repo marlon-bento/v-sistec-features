@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.33.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.32.1...v1.33.0) (2026-11-05)
+
+
+### Features
+
+* melhorias na estrutura da biblioteca e inclusão das novas features de agenda ([963d029](https://github.com/marlon-bento/v-sistec-features/commit/963d029fe964b0d5829d13adf87296e331c2168c))
+
 ## [1.32.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.32.0...v1.32.1) (2026-10-27)
 
 
