@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.34.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.33.0...v1.34.0) (2026-11-06)
+
+
+### Features
+
+* adicionado visualização de mapa no estilo google analytics seguindo o padrão do sistec ([4276736](https://github.com/marlon-bento/v-sistec-features/commit/4276736800a54d514f0806bbb5317fcd87cbdeb5))
+
 # [1.33.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.32.1...v1.33.0) (2026-11-05)
 
 
