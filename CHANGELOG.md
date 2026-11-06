@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.34.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.34.1...v1.34.2) (2026-11-06)
+
+
+### Bug Fixes
+
+* adicionando todas as melhorias feitas anteriormente ([eaebfa4](https://github.com/marlon-bento/v-sistec-features/commit/eaebfa4a31404934ece6b516ddd4bf1e7d58bbea))
+
 ## [1.34.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.34.0...v1.34.1) (2026-11-06)
 
 
