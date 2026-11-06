@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.34.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.34.0...v1.34.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* resolvendo o ponto a mais que ficou na versão anterior no style do vmapaanalytics ([aeff4ee](https://github.com/marlon-bento/v-sistec-features/commit/aeff4ee48912580c1e01eae08f651c1006d196f2))
+
 # [1.34.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.33.0...v1.34.0) (2026-11-06)
 
 
