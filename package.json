@@ -36,6 +36,10 @@
       "types": "./dist/vDataAgenda.d.ts",
       "import": "./dist/vDataAgenda.js"
     },
+    "./UploadArquivos": {
+      "types": "./dist/UploadArquivos/index.d.ts",
+      "import": "./dist/UploadArquivos.js"
+    },
     "./Modals": {
       "types": "./dist/Modals.d.ts",
       "import": "./dist/Modals.js"

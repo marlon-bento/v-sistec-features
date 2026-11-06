@@ -39,7 +39,8 @@ export default defineConfig({
         Pagination: resolve(__dirname, 'src/Pagination/index.ts'),
         toast: resolve(__dirname, 'src/toast/index.ts'),
         Modals: resolve(__dirname, 'src/Modals/index.ts'),
-        DashboardComponents: resolve(__dirname, 'src/DashboardComponents/index.ts')
+        DashboardComponents: resolve(__dirname, 'src/DashboardComponents/index.ts'),
+        UploadArquivos: resolve(__dirname, 'src/UploadArquivos/index.ts'),
       },
       name: 'VSistecFeatures',
       formats: ['es'] // 'es' (ES Module) é o mais importante para Vite
