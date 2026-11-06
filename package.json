@@ -40,6 +40,10 @@
       "types": "./dist/UploadArquivos/index.d.ts",
       "import": "./dist/UploadArquivos.js"
     },
+    "./Midia": {
+      "types": "./dist/Midia.d.ts",
+      "import": "./dist/Midia.js"
+    },
     "./Modals": {
       "types": "./dist/Modals.d.ts",
       "import": "./dist/Modals.js"
