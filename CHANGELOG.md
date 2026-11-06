@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.35.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.34.2...v1.35.0) (2026-11-06)
+
+
+### Features
+
+* adicionando visualização de imagens e de carousel ao sistec ([8e08a8e](https://github.com/marlon-bento/v-sistec-features/commit/8e08a8ecd5b4f055f18741248ef82172752f7b82))
+
 ## [1.34.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.34.1...v1.34.2) (2026-11-06)
 
 
