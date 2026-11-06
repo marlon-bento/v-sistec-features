@@ -503,7 +503,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-..mapa-wrapper {
+.mapa-wrapper {
   min-height: 320px;
   border-radius: 8px;
   overflow: hidden;
