@@ -12,9 +12,9 @@ legenda em escala logarítmica e tooltip flutuante via Teleport.
       <h3 class="card-title fw-bold">{{ props.titulo }}</h3>
     </div>
 
-    <div class="row card-body pt-3 align-items-stretch">
+    <div class="row card-body pt-3 ">
       <div class="col-12 col-lg-7 d-flex flex-column justify-content-between">
-        <div class="mapa-wrapper position-relative flex-grow-1">
+        <div class="mapa-wrapper position-relative ">
           <div
             ref="mapContainer"
             class="w-100 h-100 map-custom"
@@ -504,15 +504,15 @@ onUnmounted(() => {
 
 <style scoped>
 .mapa-wrapper {
-  min-height: 320px;
+  height: 320px;
   border-radius: 8px;
   overflow: hidden;
 }
 
 .map-custom {
-  min-height: 320px;
+  width: 100%;
+  height: 100%;
 }
-
 /* Dock flutuante com mais destaque para não se misturar ao mapa */
 .controles-zoom-mapa {
   position: absolute;
