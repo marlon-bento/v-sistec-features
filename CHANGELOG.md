@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.35.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.35.0...v1.35.1) (2026-11-10)
+
+
+### Bug Fixes
+
+* arrumando bug de quando clica em ver menos la na lista de paises do vmapaanalytics ele não voltava ao tamanho normal ([51470ec](https://github.com/marlon-bento/v-sistec-features/commit/51470ec7722ab4cbe6dd4f76aa15025ffaf2dd67))
+
 # [1.35.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.34.2...v1.35.0) (2026-11-06)
 
 
