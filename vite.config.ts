@@ -42,6 +42,7 @@ export default defineConfig({
         DashboardComponents: resolve(__dirname, 'src/DashboardComponents/index.ts'),
         UploadArquivos: resolve(__dirname, 'src/UploadArquivos/index.ts'),
         Midia: resolve(__dirname, 'src/Midia/index.ts'),
+        localStorage: resolve(__dirname, 'src/localStorage/index.ts'),
       },
       name: 'VSistecFeatures',
       formats: ['es'] // 'es' (ES Module) é o mais importante para Vite

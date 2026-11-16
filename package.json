@@ -24,6 +24,10 @@
       "types": "./dist/core.d.ts",
       "import": "./dist/core.js"
     },
+    "./localStorage": {
+      "types": "./dist/localStorage.d.ts",
+      "import": "./dist/localStorage.js"
+    },
     "./vDataTable": {
       "types": "./dist/vDataTable.d.ts",
       "import": "./dist/vDataTable.js"
