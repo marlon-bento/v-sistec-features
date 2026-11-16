@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.36.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.36.0...v1.36.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* faltou exportar o localstorage ([02dde95](https://github.com/marlon-bento/v-sistec-features/commit/02dde95aff9a5527c441303e77c7a46bc72b09bd))
+* mandando pro npm ([75c1723](https://github.com/marlon-bento/v-sistec-features/commit/75c17231edae2a959517862c116bd2a10af407e1))
+
 # [1.36.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.35.1...v1.36.0) (2026-11-16)
 
 
