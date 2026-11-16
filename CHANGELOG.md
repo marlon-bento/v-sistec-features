@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.36.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.35.1...v1.36.0) (2026-11-16)
+
+
+### Features
+
+* adicionando test e também adicionando o novo loaclstorage autogerenciavel para facilitar o uso do sistec salvando tudo em um lugar só e alto atualizando com watch ([5c2c592](https://github.com/marlon-bento/v-sistec-features/commit/5c2c5924c12b916237e9ac961dcf20389465eae2))
+
 ## [1.35.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.35.0...v1.35.1) (2026-11-10)
 
 
