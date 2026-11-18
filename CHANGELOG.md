@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.37.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.36.1...v1.37.0) (2026-11-18)
+
+
+### Features
+
+* adicionada possibilidade de não paginar e possibilidade de paginar pelo front no vdatapage ([ca29b97](https://github.com/marlon-bento/v-sistec-features/commit/ca29b97cba279607e11bbf33fe41251f4744d14f))
+
 ## [1.36.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.36.0...v1.36.1) (2026-11-16)
 
 
