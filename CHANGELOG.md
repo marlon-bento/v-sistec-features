@@ -1,5 +1,12 @@
 # Changelog
 
+# [1.38.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.37.0...v1.38.0) (2026-11-19)
+
+
+### Features
+
+* acessibilidade adicionada ao sistec ([1b9477b](https://github.com/marlon-bento/v-sistec-features/commit/1b9477b4e4bc550aab3c8bb7fe62c4e50b6a9b86))
+
 # [1.37.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.36.1...v1.37.0) (2026-11-18)
 
 
