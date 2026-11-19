@@ -763,4 +763,51 @@ onUnmounted(() => {
 .fade-carrossel-lightbox-leave-to {
     opacity: 0;
 }
+
+
+</style>
+
+
+<style>
+html[data-acessibilidade-contraste="alto"] .v-carrossel__seta {
+  background: var(--tblr-bg-surface, #000000);
+  color: var(--tblr-primary, #ffff00);
+  border: 2px solid var(--tblr-border-color, #ffff00);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+html[data-acessibilidade-contraste="alto"] .v-carrossel__seta:hover {
+  background: var(--tblr-primary, #ffff00);
+  color: var(--tblr-primary-fg, #000000);
+  border-color: var(--tblr-border-color, #ffff00);
+}
+
+html[data-acessibilidade-contraste="alto"] .v-carrossel__indicadores {
+  background: var(--tblr-bg-surface, #000000);
+  border: 2px solid var(--tblr-border-color, #ffff00);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html[data-acessibilidade-contraste="alto"] .v-carrossel__ponto {
+  background-color: var(--tblr-body-color, #ffffff);
+  opacity: 0.65;
+}
+
+html[data-acessibilidade-contraste="alto"] .v-carrossel__ponto:hover {
+  opacity: 1;
+}
+
+html[data-acessibilidade-contraste="alto"] .v-carrossel__ponto--ativo {
+  background-color: var(--tblr-primary, #ffff00);
+  opacity: 1;
+}
+
+html[data-acessibilidade-contraste="alto"] .v-carrossel-lightbox {
+  background: rgba(0, 0, 0, 0.96);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
 </style>

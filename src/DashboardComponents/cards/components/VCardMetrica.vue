@@ -256,4 +256,14 @@ const classeBadgeVariacao = computed(() => {
   opacity: 1;
   transform: translateY(0);
 }
+
+
+
+</style>
+<style>
+html[data-acessibilidade-contraste="alto"] .icone-metrica-box {
+  background: var(--tblr-bg-surface, #000000);
+  color: var(--tblr-primary, #ffff00);
+  border: 1px solid var(--tblr-border-color, #ffff00);
+}
 </style>

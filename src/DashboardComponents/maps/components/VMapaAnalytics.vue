@@ -610,7 +610,7 @@ onUnmounted(() => {
 }
 
 .percentual-fixo {
-  min-width: 48px;
+  min-width: 3.5rem;
   text-align: right;
 }
 
@@ -654,5 +654,35 @@ onUnmounted(() => {
 .list-leave-to {
   opacity: 0;
   transform: scaleY(0.4) translateY(-20px);
+}
+
+
+</style>
+<style>
+html[data-acessibilidade-contraste="alto"] .controles-zoom-mapa {
+  background: var(--tblr-bg-surface, #000000);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid #ffffff;
+  box-shadow: none;
+}
+
+html[data-acessibilidade-contraste="alto"] .btn-zoom-mapa {
+  color: var(--tblr-primary, #ffff00);
+}
+
+html[data-acessibilidade-contraste="alto"] .divisor-zoom {
+  background: #a3a3a3;
+}
+
+html[data-acessibilidade-contraste="alto"] .pilula-legenda {
+  background: var(--tblr-bg-surface, #000000);
+  border: 1px solid #a3a3a3;
+}
+
+html[data-acessibilidade-contraste="alto"] .progress-custom {
+  height: 5px;
+  background: #333333;
+  border: none;
 }
 </style>

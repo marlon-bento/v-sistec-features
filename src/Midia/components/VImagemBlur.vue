@@ -339,4 +339,20 @@ onUnmounted(() => {
 .fade-lightbox-leave-to {
   opacity: 0;
 }
+
+
+
+</style>
+
+<style>
+html[data-acessibilidade-contraste="alto"] .v-imagem-blur__lightbox {
+  background: rgba(0, 0, 0, 0.96);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html[data-acessibilidade-contraste="alto"] .v-imagem-blur__lightbox-img {
+  border: 2px solid var(--tblr-border-color, #ffff00);
+  box-shadow: none;
+}
 </style>

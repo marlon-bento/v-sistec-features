@@ -115,4 +115,23 @@ function alternar() {
 .icone-expansao.modo-minimizar .seta {
   transform: rotate(180deg);
 }
+
+
+</style>
+
+<style>
+html[data-acessibilidade-contraste="alto"] .botao-tela-cheia {
+  background: var(--tblr-bg-surface, #000000);
+  color: var(--tblr-primary, #ffff00);
+  border: 2px solid var(--tblr-border-color, #ffff00);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+
+html[data-acessibilidade-contraste="alto"] .botao-tela-cheia:hover {
+  background: var(--tblr-primary, #ffff00);
+  color: var(--tblr-primary-fg, #000000);
+  border-color: var(--tblr-border-color, #ffff00);
+}
 </style>

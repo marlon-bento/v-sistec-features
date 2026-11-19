@@ -1,0 +1,86 @@
+/*
+========
+Tokens globais de acessibilidade da biblioteca v-sistec-features.
+Redefine apenas variaveis CSS (--tblr-*) e filtros de leitura no elemento raiz,
+sem sobrescrever classes estruturais da aplicacao consumidora.
+========
+*/
+
+/* Modo Alto Contraste: apenas tokens nativos do Tabler e variaveis semanticas */
+html[data-acessibilidade-contraste="alto"] {
+  color-scheme: dark;
+
+  /* Superficies e fundos */
+  --tblr-body-bg: #000000;
+  --tblr-body-bg-rgb: 0, 0, 0;
+  --tblr-bg-surface: #000000;
+  --tblr-bg-surface-secondary: #0a0a0a;
+  --tblr-bg-surface-tertiary: #141414;
+  --tblr-bg-surface-dark: #000000;
+  --tblr-bg-forms: #000000;
+  --tblr-navbar-bg: #000000;
+  --tblr-card-bg: #000000;
+  --tblr-dropdown-bg: #000000;
+  --tblr-modal-bg: #000000;
+  --tblr-table-bg: #000000;
+  --tblr-table-striped-bg: #111111;
+  --tblr-table-hover-bg: #1a1a1a;
+
+  /* Textos */
+  --tblr-body-color: #ffffff;
+  --tblr-body-color-rgb: 255, 255, 255;
+  --tblr-secondary: #e2e8f0;
+  --tblr-secondary-color: #e2e8f0;
+  --tblr-tertiary-color: #cbd5e1;
+  --tblr-muted: #e2e8f0;
+  --tblr-nav-link-color: #ffffff;
+  --tblr-navbar-color: #ffffff;
+  --tblr-navbar-hover-color: #ffff00;
+  --tblr-navbar-active-color: #ffff00;
+
+  /* Bordas */
+  --tblr-border-color: #a3a3a3;
+  --tblr-border-color-translucent: #a3a3a3;
+  --tblr-navbar-border-color: #ffffff;
+  --tblr-card-border-color: #ffffff;
+  --tblr-dropdown-border-color: #ffffff;
+
+  /* Acoes e links */
+  --tblr-primary: #ffff00;
+  --tblr-primary-rgb: 255, 255, 0;
+  --tblr-primary-fg: #000000;
+  --tblr-link-color: #ffff00;
+  --tblr-link-hover-color: #00ffff;
+
+  --tblr-secondary-fg: #000000;
+}
+
+/* Foco visivel por teclado */
+html[data-acessibilidade-contraste="alto"] *:focus-visible {
+  outline: 3px solid #00ffff;
+  outline-offset: 2px;
+}
+
+/* Filtros globais de leitura */
+html[data-acessibilidade-cinza="true"] {
+  filter: grayscale(100%);
+}
+
+html[data-acessibilidade-fonte-legivel="true"],
+html[data-acessibilidade-fonte-legivel="true"] body,
+html[data-acessibilidade-fonte-legivel="true"] p,
+html[data-acessibilidade-fonte-legivel="true"] li,
+html[data-acessibilidade-fonte-legivel="true"] a,
+html[data-acessibilidade-fonte-legivel="true"] span {
+  font-family: Arial, Helvetica, Verdana, sans-serif !important;
+  letter-spacing: 0.03em !important;
+  line-height: 1.8 !important;
+}
+
+html[data-acessibilidade-destacar-links="true"] a {
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
+  font-weight: 700 !important;
+  outline: 2px solid var(--tblr-primary);
+  border-radius: 3px;
+}

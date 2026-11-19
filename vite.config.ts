@@ -27,6 +27,8 @@ export default defineConfig({
     })
   ],
   build: {
+    // minify: false por que tava dando erro de import h duplicado
+    minify: false,
     lib: {
       // Múltiplos pontos de entrada
       entry: {

@@ -14,7 +14,8 @@ import vRequired from "v-required";
 import '../assets/v-required-style.css';
 import Toast, { type PluginOptions as ToastPluginOptions } from "vue-toastification";
 import "vue-toastification/dist/index.css";
-
+import '../acessibilidade/acessibilidade.css';
+import { useAcessibilidade } from '../globais/useAcessibilidade';
 
 import { DATA_TABLE_CONFIG, type DataTableGlobalConfig } from '@/DatatableVue/config/datatableConfig';
 
@@ -51,7 +52,8 @@ const SistecPlugin = {
     const configuracaoTabela = opcoes.dataTable || {};
     app.provide(DATA_TABLE_CONFIG, configuracaoTabela);
 
-    
+    const { inicializarAcessibilidade } = useAcessibilidade();
+    inicializarAcessibilidade();
   }
 };
 

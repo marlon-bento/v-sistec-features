@@ -233,7 +233,7 @@ const {
 }
 
 .col-metrica-header {
-  width: 140px;
+  width: 9.5rem;
 }
 
 .celula-truncada {
@@ -268,7 +268,7 @@ const {
 }
 
 .percentual-fixo {
-  min-width: 48px;
+  min-width: 3.5rem;
   text-align: right;
 }
 
@@ -308,5 +308,15 @@ const {
 .list-leave-to {
   opacity: 0;
   transform: scaleY(0.4) translateY(-20px);
+}
+
+
+
+</style>
+<style>
+html[data-acessibilidade-contraste="alto"] .progress-custom {
+  height: 5px;
+  background: #333333;
+  border: none;
 }
 </style>

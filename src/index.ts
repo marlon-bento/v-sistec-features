@@ -6,3 +6,7 @@ export * from './iframeCommunicator';
 
 // Re-exporta tudo do Tabler Icons Vue para facilitar o uso
 export * from '@tabler/icons-vue';
+
+export { default as WidgetAcessibilidade } from './globais/WidgetAcessibilidade.vue';
+export { default as WidgetVLibras } from './globais/WidgetVLibras.vue';
+export { useAcessibilidade } from './globais/useAcessibilidade';

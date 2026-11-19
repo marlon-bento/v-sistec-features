@@ -104,4 +104,16 @@ const intervaloFormatado = computed(() => formatarIntervalo(props.dados.periodo)
 .numero-tabular {
   font-variant-numeric: tabular-nums;
 }
+
+</style>
+
+<style>
+
+html[data-acessibilidade-contraste="alto"] .card-tooltip-mapa {
+  background: var(--tblr-bg-surface, #000000);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 2px solid var(--tblr-border-color, #ffff00);
+  box-shadow: none;
+}
 </style>

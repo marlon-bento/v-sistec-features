@@ -89,3 +89,6 @@
 
 
 
+html[data-acessibilidade-contraste="alto"] {
+  --color-error-inputs: #ff6b6b;
+}
