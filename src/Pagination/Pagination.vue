@@ -132,7 +132,7 @@ const svg_uma_seta = `
 </script>
 
 <template>
-  <div class="d-flex align-items-center justify-content-between w-100" v-if="props.pagination.count > 0">
+  <div class="d-flex align-items-center justify-content-between w-100 sistec-pagination"  v-if="props.pagination.count > 0">
     <span>
       Mostrando de
       {{
@@ -222,5 +222,18 @@ const svg_uma_seta = `
 .icon-tabler {
   margin: 0 !important;
   padding: 0 !important;
+}
+</style>
+<style>
+html[data-acessibilidade-contraste="alto"] .sistec-pagination  .page-select {
+  background-color: #ffff00 !important;
+  border-color: #ffff00 !important;
+  color: #000000 !important;
+  font-weight: 700;
+}
+html[data-acessibilidade-contraste="alto"] .sistec-pagination .page-estilo:hover {
+  background-color: #ffff00 !important;
+  border-color: #ffff00 !important;
+  color: #000000 !important;
 }
 </style>

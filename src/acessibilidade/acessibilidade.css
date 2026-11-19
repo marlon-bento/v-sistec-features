@@ -51,7 +51,8 @@ html[data-acessibilidade-contraste="alto"] {
   --tblr-primary-fg: #000000;
   --tblr-link-color: #ffff00;
   --tblr-link-hover-color: #00ffff;
-
+  --tblr-active-color: #000000;
+  --tblr-active-bg: #ffff00;
   --tblr-secondary-fg: #000000;
 }
 
