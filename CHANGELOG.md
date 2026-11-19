@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.38.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.38.0...v1.38.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* melhorias na acessibilidade do sistec na parte de paginação ([72c6df1](https://github.com/marlon-bento/v-sistec-features/commit/72c6df1114f6193b9702171edcfb33f496ad48c6))
+
 # [1.38.0](https://github.com/marlon-bento/v-sistec-features/compare/v1.37.0...v1.38.0) (2026-11-19)
 
 
