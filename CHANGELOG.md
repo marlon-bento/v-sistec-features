@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.38.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.38.1...v1.38.2) (2026-11-19)
+
+
+### Bug Fixes
+
+* colocando pro ci rodar os tests primeiro e também colocando vitest em devdependencies em vez de ter que baixar em produção ([d34d9e0](https://github.com/marlon-bento/v-sistec-features/commit/d34d9e04b51214f4dec8e414355c870bc4c988b0))
+
 ## [1.38.1](https://github.com/marlon-bento/v-sistec-features/compare/v1.38.0...v1.38.1) (2026-11-19)
 
 
