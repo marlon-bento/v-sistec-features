@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.38.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.38.2...v1.38.3) (2026-11-25)
+
+
+### Bug Fixes
+
+* exportando acessibilidade ([ce8de17](https://github.com/marlon-bento/v-sistec-features/commit/ce8de17771eb0a5570ef9422bd9cecbb1c59100e))
+
 ## [1.38.2](https://github.com/marlon-bento/v-sistec-features/compare/v1.38.1...v1.38.2) (2026-11-19)
 
 
