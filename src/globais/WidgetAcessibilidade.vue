@@ -170,6 +170,12 @@ function fecharModal() {
 onMounted(() => {
   acessibilidade.inicializarAcessibilidade();
 });
+
+defineExpose({
+  acessibilidade,
+  mostrarModal,
+  fecharModal,
+});
 </script>
 
 <style scoped>
