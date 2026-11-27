@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.38.5](https://github.com/marlon-bento/v-sistec-features/compare/v1.38.4...v1.38.5) (2026-11-27)
+
+
+### Bug Fixes
+
+* como voltei pra versão 22 do npm ela não vem com registry por padrão, então estou adicionando agora ([152e357](https://github.com/marlon-bento/v-sistec-features/commit/152e357c66930f2d84cff03b01be28a52fad0323))
+
 ## [1.38.4](https://github.com/marlon-bento/v-sistec-features/compare/v1.38.3...v1.38.4) (2026-11-27)
 
 
