@@ -67,16 +67,6 @@ html[data-acessibilidade-cinza="true"] {
   filter: grayscale(100%);
 }
 
-html[data-acessibilidade-fonte-legivel="true"],
-html[data-acessibilidade-fonte-legivel="true"] body,
-html[data-acessibilidade-fonte-legivel="true"] p,
-html[data-acessibilidade-fonte-legivel="true"] li,
-html[data-acessibilidade-fonte-legivel="true"] a,
-html[data-acessibilidade-fonte-legivel="true"] span {
-  font-family: Arial, Helvetica, Verdana, sans-serif !important;
-  letter-spacing: 0.03em !important;
-  line-height: 1.8 !important;
-}
 
 html[data-acessibilidade-destacar-links="true"] a {
   text-decoration: underline !important;
