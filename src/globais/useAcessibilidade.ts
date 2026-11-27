@@ -81,11 +81,17 @@ function restaurarPadroes() {
   fonteLegivel.value = false;
   aplicarNoDom();
 }
-
+// Constantes padrao de limite de tamanho de fonte
+const LIMITE_FONTE_MINIMA_PADRAO = 80;
+const LIMITE_FONTE_MAXIMA_PADRAO = 140;
 // Exporta o estado reativo e as acoes de controle para os componentes Vue
-export function useAcessibilidade() {
-  const podeAumentar = computed(() => percentualFonte.value < 140);
-  const podeDiminuir = computed(() => percentualFonte.value > 80);
+export function useAcessibilidade(
+  limiteFonteMinima: number = LIMITE_FONTE_MINIMA_PADRAO,
+  limiteFonteMaxima: number = LIMITE_FONTE_MAXIMA_PADRAO
+) {
+  
+  const podeAumentar = computed(() => percentualFonte.value < limiteFonteMaxima);
+  const podeDiminuir = computed(() => percentualFonte.value > limiteFonteMinima);
   const possuiFiltroAtivo = computed(
     () =>
       percentualFonte.value !== 100 ||

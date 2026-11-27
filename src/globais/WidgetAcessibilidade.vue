@@ -144,15 +144,22 @@ const props = withDefaults(
   defineProps<{
     posicao?: "esquerda" | "direita";
     zIndex?: number;
+    limiteFonteMinima?: number;
+    limiteFonteMaxima?: number;
   }>(),
   {
     posicao: "esquerda",
     zIndex: 1040,
+    limiteFonteMinima: 80,
+    limiteFonteMaxima: 140,
   }
 );
 
 // Estado global compartilhado das configuracoes de acessibilidade
-const acessibilidade = useAcessibilidade();
+const acessibilidade = useAcessibilidade(
+  props.limiteFonteMinima,
+  props.limiteFonteMaxima
+);
 
 // Controla a visibilidade do modal de configuracoes
 const mostrarModal = ref(false);

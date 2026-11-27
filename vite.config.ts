@@ -26,6 +26,10 @@ export default defineConfig({
       outDir: 'dist'
     })
   ],
+  test: {
+    environment: "happy-dom",
+    globals: true,
+  },
   build: {
     // minify: false por que tava dando erro de import h duplicado
     minify: false,
