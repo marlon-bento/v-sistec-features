@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.38.7](https://github.com/marlon-bento/v-sistec-features/compare/v1.38.6...v1.38.7) (2026-11-27)
+
+
+### Bug Fixes
+
+* melhoria no widiget de acessibilidade ([6b19021](https://github.com/marlon-bento/v-sistec-features/commit/6b190217c0ccd28a71d1a169168de7f99d97127d))
+
 ## [1.38.6](https://github.com/marlon-bento/v-sistec-features/compare/v1.38.5...v1.38.6) (2026-11-27)
 
 
