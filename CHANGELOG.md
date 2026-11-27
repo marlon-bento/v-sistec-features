@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.38.6](https://github.com/marlon-bento/v-sistec-features/compare/v1.38.5...v1.38.6) (2026-11-27)
+
+
+### Bug Fixes
+
+* colocando novos exports para acessibilidade e colocando também a opção de sumir com o widgetAcessibilidade ([27a42db](https://github.com/marlon-bento/v-sistec-features/commit/27a42db7ca85f68fc189b9f63757c2e72d754b44))
+
 ## [1.38.5](https://github.com/marlon-bento/v-sistec-features/compare/v1.38.4...v1.38.5) (2026-11-27)
 
 
