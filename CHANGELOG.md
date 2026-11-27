@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.38.4](https://github.com/marlon-bento/v-sistec-features/compare/v1.38.3...v1.38.4) (2026-11-27)
+
+
+### Bug Fixes
+
+* dando a possibilidade de mudar o limite de texto por prop na acessibilidade, para poder diminuir ou aumentar o limite de tamanho ([80482e8](https://github.com/marlon-bento/v-sistec-features/commit/80482e88db70da10d8baef064c4562a14428b384))
+* vendo se o problema do test falhar da ultima vez era a versão do node ([ae8ee15](https://github.com/marlon-bento/v-sistec-features/commit/ae8ee154d6d8fd0421a9bd1ded8e25e1a9071a55))
+
 ## [1.38.3](https://github.com/marlon-bento/v-sistec-features/compare/v1.38.2...v1.38.3) (2026-11-25)
 
 
