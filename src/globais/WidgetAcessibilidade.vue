@@ -6,7 +6,7 @@ alto contraste, escala de cinza, destaque de links e fonte legivel.
 ========
 -->
 <template>
-  <div class="d-print-none">
+  <div class="d-print-none" :class="{ 'd-none': props.naoExibirWidget }">
     <button
       type="button"
       class="botao-flutuante-acessibilidade"
@@ -146,19 +146,24 @@ const props = withDefaults(
     zIndex?: number;
     limiteFonteMinima?: number;
     limiteFonteMaxima?: number;
+    incrementoFonte?: number;
+    naoExibirWidget?: boolean;
   }>(),
   {
     posicao: "esquerda",
     zIndex: 1040,
     limiteFonteMinima: 80,
     limiteFonteMaxima: 140,
+    naoExibirWidget: false,
+    incrementoFonte: 10,
   }
 );
 
 // Estado global compartilhado das configuracoes de acessibilidade
 const acessibilidade = useAcessibilidade(
   props.limiteFonteMinima,
-  props.limiteFonteMaxima
+  props.limiteFonteMaxima,
+  props.incrementoFonte
 );
 
 // Controla a visibilidade do modal de configuracoes

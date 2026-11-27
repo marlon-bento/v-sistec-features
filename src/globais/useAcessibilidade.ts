@@ -81,13 +81,31 @@ function restaurarPadroes() {
   fonteLegivel.value = false;
   aplicarNoDom();
 }
+function restaurarFontePadrao() {
+  percentualFonte.value = 100;
+  aplicarNoDom();
+}
+function restaurarAltoContraste() {
+  altoContraste.value = false;
+}
+function restaurarEscalaCinza() {
+  escalaCinza.value = false;
+}
+function restaurarDestacarLinks() {
+  destacarLinks.value = false;
+}
+function restaurarFonteLegivel() {
+  fonteLegivel.value = false;
+}
 // Constantes padrao de limite de tamanho de fonte
 const LIMITE_FONTE_MINIMA_PADRAO = 80;
 const LIMITE_FONTE_MAXIMA_PADRAO = 140;
+const INCREMENTO_FONTE_PADRAO = 10;
 // Exporta o estado reativo e as acoes de controle para os componentes Vue
 export function useAcessibilidade(
   limiteFonteMinima: number = LIMITE_FONTE_MINIMA_PADRAO,
-  limiteFonteMaxima: number = LIMITE_FONTE_MAXIMA_PADRAO
+  limiteFonteMaxima: number = LIMITE_FONTE_MAXIMA_PADRAO,
+  incrementoFonte: number = INCREMENTO_FONTE_PADRAO
 ) {
   
   const podeAumentar = computed(() => percentualFonte.value < limiteFonteMaxima);
@@ -104,14 +122,14 @@ export function useAcessibilidade(
   // Aumenta o tamanho da fonte em 10% ate o limite maximo
   function aumentarFonte() {
     if (!podeAumentar.value) return;
-    percentualFonte.value += 10;
+    percentualFonte.value += incrementoFonte;
     aplicarNoDom();
   }
 
   // Diminui o tamanho da fonte em 10% ate o limite minimo
   function diminuirFonte() {
     if (!podeDiminuir.value) return;
-    percentualFonte.value -= 10;
+    percentualFonte.value -= incrementoFonte;
     aplicarNoDom();
   }
 
@@ -150,6 +168,11 @@ export function useAcessibilidade(
     possuiFiltroAtivo,
     inicializarAcessibilidade,
     restaurarPadroes,
+    restaurarFontePadrao,
+    restaurarAltoContraste,
+    restaurarEscalaCinza,
+    restaurarDestacarLinks,
+    restaurarFonteLegivel,
     aumentarFonte,
     diminuirFonte,
     alternarAltoContraste,

@@ -63,4 +63,16 @@ describe("useAcessibilidade", () => {
     const salvo = JSON.parse(localStorage.getItem("sistec_acessibilidade") || "{}");
     expect(salvo.altoContraste).toBe(true);
   });
+
+  it("deve aumentar e diminuir com base no incremento de fonte passado por parametro", () => {
+    const { percentualFonte, aumentarFonte, diminuirFonte } = useAcessibilidade(80, 120, 5);
+
+    expect(percentualFonte.value).toBe(100);
+
+    aumentarFonte(); // 105
+    expect(percentualFonte.value).toBe(105);
+
+    diminuirFonte(); // 100
+    expect(percentualFonte.value).toBe(100);
+  });
 });
